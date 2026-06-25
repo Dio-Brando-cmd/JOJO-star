@@ -1,0 +1,48 @@
+# 依赖
+node_modules/
+
+# 构建产物
+client/dist/
+release/win-unpacked/
+release/*.exe
+release/狼人杀-联机版/狼人杀_Setup.exe
+release/狼人杀-联机版/client_dist/
+release/狼人杀-联机版/server_src/
+release/狼人杀-联机版/node_modules/
+release/狼人杀-联机版/deploy/
+release/狼人杀-联机版/package.json
+release/狼人杀-联机版/server_pkg.json
+release/狼人杀-联机版/start-public.js
+release/狼人杀-联机版/*.bat
+release/狼人杀-联机版/*.txt
+release/狼人杀-联机版/*.html
+release/狼人杀-联机版/*.json
+release/狼人杀-联机版/*.svg
+release/狼人杀-联机版/*.js
+release/.icon-ico/
+release/*.yml
+
+# 数据文件
+server/data/users.json
+
+# 二进制/压缩包
+*.exe
+*.tar.gz
+*.zip
+BGM/
+
+# 环境/IDE
+.env
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+
+# 临时文件
+.deploy-tmp/

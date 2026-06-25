@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  werewolf:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "80:4000"
+    restart: unless-stopped
+    environment:
+      - PORT=4000

@@ -1,0 +1,8 @@
+{
+  "appId": "com.werewolf.online",
+  "appName": "狼人杀",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true
+  }
+}

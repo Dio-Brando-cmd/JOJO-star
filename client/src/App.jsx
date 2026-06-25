@@ -1,0 +1,360 @@
+// ============================================================
+// 主应用组件
+// ============================================================
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSocket } from './hooks/useSocket';
+import { useAudio } from './hooks/useAudio';
+import { useBGM } from './hooks/useBGM';
+import { useAuth } from './hooks/useAuth';
+import { useVoiceChat } from './hooks/useVoiceChat';
+import Lobby from './components/Lobby';
+import GameBoard from './components/GameBoard';
+import GameOver from './components/GameOver';
+import SettingsPanel from './components/SettingsPanel';
+import UpdatePrompt from './components/UpdatePrompt';
+
+export default function App() {
+  const socket = useSocket();
+  const audio = useAudio();
+  const bgm = useBGM();
+  const auth = useAuth(socket.socket ? { current: socket.socket } : { current: null });
+  // 更新 auth hook 的 socket 引用
+  useEffect(() => { auth.socketRef = { current: socket.socket }; }, [socket.socket]);
+
+  const [playerName, setPlayerName] = useState('');
+  const [joined, setJoined] = useState(false);
+  const [showName, setShowName] = useState(() => {
+    return localStorage.getItem('werewolf_show_name') !== 'false';
+  });
+  const [showSettings, setShowSettings] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState(null);
+
+  // 检查版本更新
+  useEffect(() => {
+    if (socket.connected && socket.socket) {
+      socket.socket.emit('app:checkVersion', (info) => {
+        if (info) setUpdateInfo(info);
+      });
+    }
+  }, [socket.connected]);
+
+  const handleCheckUpdate = useCallback(() => {
+    if (socket.socket) {
+      socket.socket.emit('app:checkVersion', (info) => {
+        if (info) {
+          setUpdateInfo(info);
+          setShowUpdate(true);
+        }
+      });
+    } else {
+      // 离线时用 REST API
+      fetch('/api/version').then(r => r.json()).then(info => {
+        setUpdateInfo(info);
+        setShowUpdate(true);
+      }).catch(() => {});
+    }
+  }, [socket.socket]);
+
+  // 语音聊天（有游戏状态时才初始化）
+  const gamePhase = socket.gameState?.phase;
+  const voiceChat = useVoiceChat(socket.socket, socket.playerId, socket.gameState);
+
+  // 游戏阶段切换 BGM
+  useEffect(() => {
+    const phase = socket.gameState?.phase;
+    if (!phase) return;
+
+    // BGM 优先（使用真实MP3）
+    if (bgm.bgmEnabled) {
+      const phaseMap = { LOBBY: 'lobby', NIGHT: 'night', DAY: 'day', VOTE: 'vote', GAME_OVER: 'gameOver' };
+      const mappedPhase = phaseMap[phase] || 'lobby';
+      bgm.playForPhase(mappedPhase);
+      // 同时停止程序化音乐
+      audio.stopMusic();
+    } else {
+      // 回退到程序化音乐
+      bgm.stop();
+      switch (phase) {
+        case 'LOBBY': audio.playMusic('lobby'); break;
+        case 'NIGHT': audio.playMusic('night'); break;
+        case 'DAY': case 'VOTE': audio.playMusic('day'); break;
+        default: break;
+      }
+    }
+
+    return () => {
+      if (phase === 'GAME_OVER') {
+        bgm.stop();
+        audio.stopMusic();
+      }
+    };
+  }, [socket.gameState?.phase, bgm.bgmEnabled]);
+
+  // 游戏结束播放对应音乐 + 更新战绩
+  useEffect(() => {
+    if (socket.gameState?.phase === 'GAME_OVER') {
+      const myTeam = socket.privateState?.myTeam;
+      const winner = socket.gameState.gameResult?.winner;
+      const won = myTeam === winner;
+      if (won) {
+        audio.playMusic('game_over_win');
+      } else {
+        audio.playMusic('game_over_lose');
+      }
+      voiceChat.leaveVoice();
+      // 更新用户战绩
+      if (auth.user) {
+        auth.updateStats(won);
+      }
+    }
+  }, [socket.gameState?.phase]);
+
+  const handleToggleShowName = useCallback(() => {
+    const next = !showName;
+    setShowName(next);
+    localStorage.setItem('werewolf_show_name', String(next));
+  }, [showName]);
+
+  // 未登录 → 登录/注册界面
+  if (!auth.user && !playerName) {
+    return (
+      <LoginScreen
+        auth={auth}
+        socketConnected={socket.connected}
+        onQuickPlay={(name) => {
+          setPlayerName(name);
+          auth.setUser({ username: name, stats: { gamesPlayed: 0, wins: 0, losses: 0, winRate: 0 } });
+        }}
+        onCheckUpdate={handleCheckUpdate}
+        updateInfo={updateInfo}
+      />
+    );
+  }
+
+  // 已登录/已设置名字 → 进入大厅
+  const displayName = auth.user?.username || playerName;
+
+  // 未加入房间 → 大厅界面
+  if (!joined && !socket.gameState) {
+    return (
+      <>
+        <Lobby
+          socket={socket}
+          playerName={displayName}
+          bgm={bgm}
+          onJoined={() => {
+            setJoined(true);
+            audio.playSFX('button_click');
+          }}
+          onChangeName={() => {
+            setPlayerName('');
+            auth.logout();
+            socket.leaveRoom();
+          }}
+          onCheckUpdate={handleCheckUpdate}
+        />
+        <UpdatePrompt
+          show={showUpdate}
+          onClose={() => setShowUpdate(false)}
+          updateInfo={updateInfo}
+        />
+      </>
+    );
+  }
+
+  // 游戏结束 → 结算界面
+  if (socket.gameState?.phase === 'GAME_OVER') {
+    return (
+      <GameOver
+        gameState={socket.gameState}
+        privateState={socket.privateState}
+        playerName={displayName}
+        onBackToLobby={() => {
+          socket.backToLobby();
+          setJoined(false);
+          audio.playSFX('button_click');
+          audio.playMusic('lobby');
+        }}
+      />
+    );
+  }
+
+  // 游戏中 → 游戏主界面
+  return (
+    <>
+      <GameBoard
+        socket={socket}
+        playerName={showName ? displayName : '***'}
+        audio={audio}
+        voiceChat={voiceChat}
+        onOpenSettings={() => setShowSettings(true)}
+        auth={auth}
+      />
+      <SettingsPanel
+        show={showSettings}
+        onClose={() => setShowSettings(false)}
+        playerName={displayName}
+        showName={showName}
+        onToggleShowName={handleToggleShowName}
+        isHost={socket.gameState?.hostId === socket.playerId}
+        isPrivate={socket.gameState?.isPrivate}
+        hasPassword={false}
+        onTogglePrivacy={socket.toggleRoomPrivacy}
+        onSetPassword={socket.setRoomPassword}
+        maxPlayers={socket.gameState?.maxPlayers || 12}
+        onUpdateMaxPlayers={socket.updateMaxPlayers}
+        playerCount={socket.gameState?.players?.length || 0}
+        onLeaveRoom={null}
+        onExitGame={() => {
+          socket.backToLobby();
+          setJoined(false);
+          audio.playSFX('button_click');
+        }}
+        isInGame={true}
+        bgm={bgm}
+        user={auth.user}
+        onCheckUpdate={handleCheckUpdate}
+      />
+      <UpdatePrompt
+        show={showUpdate}
+        onClose={() => setShowUpdate(false)}
+        updateInfo={updateInfo}
+      />
+    </>
+  );
+}
+
+// ==================== 登录/注册界面 ====================
+
+function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, updateInfo }) {
+  const [tab, setTab] = useState('login'); // 'login' | 'register' | 'quick'
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [localError, setLocalError] = useState('');
+  const [serverUrl, setServerUrl] = useState(() => {
+    return localStorage.getItem('werewolf_server_url') || '';
+  });
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!username.trim()) { setLocalError('请输入用户名'); return; }
+    if (!password) { setLocalError('请输入密码'); return; }
+    setLocalError('');
+    const result = await auth.login(username.trim(), password);
+    if (result.error) setLocalError(result.error);
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!username.trim()) { setLocalError('请输入用户名'); return; }
+    if (username.trim().length < 2) { setLocalError('用户名至少2个字符'); return; }
+    if (!password || password.length < 4) { setLocalError('密码至少4个字符'); return; }
+    setLocalError('');
+    const result = await auth.register(username.trim(), password);
+    if (result.error) setLocalError(result.error);
+  };
+
+  const handleQuickPlay = (e) => {
+    e.preventDefault();
+    const name = username.trim();
+    if (!name) { setLocalError('请输入昵称'); return; }
+    if (name.length > 10) { setLocalError('昵称最长10个字符'); return; }
+    if (serverUrl.trim()) localStorage.setItem('werewolf_server_url', serverUrl.trim());
+    onQuickPlay(name);
+  };
+
+  return (
+    <div className="screen login-screen">
+      <div className="login-card">
+        <div className="game-logo">
+          <span className="logo-icon">🐺</span>
+          <h1>狼人杀</h1>
+          <p className="subtitle">在线联机版</p>
+        </div>
+
+        {/* 标签切换 */}
+        <div className="auth-tabs">
+          <button className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => { setTab('login'); setLocalError(''); }}>
+            登录
+          </button>
+          <button className={`auth-tab ${tab === 'register' ? 'active' : ''}`} onClick={() => { setTab('register'); setLocalError(''); }}>
+            注册
+          </button>
+          <button className={`auth-tab ${tab === 'quick' ? 'active' : ''}`} onClick={() => { setTab('quick'); setLocalError(''); }}>
+            快速游戏
+          </button>
+        </div>
+
+        {tab === 'quick' ? (
+          <form onSubmit={handleQuickPlay} className="login-form">
+            <label>输入你的昵称（无需注册）</label>
+            <input
+              type="text"
+              value={username}
+              onChange={e => { setUsername(e.target.value); setLocalError(''); }}
+              placeholder="游戏昵称..."
+              maxLength={10}
+              autoFocus
+            />
+            <label>服务器地址（留空自动检测）</label>
+            <input
+              type="text"
+              value={serverUrl}
+              onChange={e => setServerUrl(e.target.value)}
+              placeholder="例: http://123.456.789.0:4000"
+            />
+            {localError && <p className="error-text">{localError}</p>}
+            <button type="submit" className="btn btn-primary btn-large">
+              进入游戏
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={tab === 'login' ? handleLogin : handleRegister} className="login-form">
+            <label>用户名</label>
+            <input
+              type="text"
+              value={username}
+              onChange={e => { setUsername(e.target.value); setLocalError(''); }}
+              placeholder="2-12个字符"
+              maxLength={12}
+              autoFocus
+            />
+            <label>密码</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setLocalError(''); }}
+              placeholder={tab === 'register' ? '至少4个字符' : '输入密码'}
+              maxLength={30}
+            />
+            {localError && <p className="error-text">{localError}</p>}
+            {auth.authError && <p className="error-text">{auth.authError}</p>}
+            <button type="submit" className="btn btn-primary btn-large" disabled={auth.authLoading}>
+              {auth.authLoading ? '处理中...' : tab === 'login' ? '登录' : '注册'}
+            </button>
+          </form>
+        )}
+
+        {/* 版本检查和更新 */}
+        <div className="login-update">
+          {updateInfo && (
+            <button className="btn btn-small btn-secondary" onClick={onCheckUpdate} style={{width:'100%'}}>
+              🔄 检查更新 (当前服务端: v{updateInfo.version})
+            </button>
+          )}
+          {!socketConnected && (
+            <div className="connection-warning">
+              ⚠️ 未连接到服务器，请确认服务器已启动
+            </div>
+          )}
+        </div>
+
+        <p className="login-footer">
+          注册账号可记录战绩 | 快速游戏无需注册
+        </p>
+      </div>
+    </div>
+  );
+}
