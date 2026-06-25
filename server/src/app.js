@@ -1,0 +1,137 @@
+// ============================================================
+// 服务器应用工厂 —— 可被独立运行或 Electron 导入
+// ============================================================
+
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { GameManager } from './game/GameManager.js';
+import { registerHandlers } from './socket/handlers.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export function createServer(options = {}) {
+  const app = express();
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST'],
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+  });
+
+  app.use(cors());
+  app.use(express.json());
+
+  // 初始化游戏管理器
+  const gameManager = new GameManager();
+  gameManager.setIO(io);  // 供全局大厅广播使用
+
+  // REST API: 获取大厅列表（仅公开房间）
+  app.get('/api/lobby', (req, res) => {
+    // getLobbyList 已过滤私密房间
+    const rooms = gameManager.getLobbyList();
+    // 移除敏感字段（仅保留大厅展示需要的信息）
+    const safe = rooms.map(r => ({
+      id: r.id,
+      hostName: r.hostName,
+      playerCount: r.playerCount,
+      maxPlayers: r.maxPlayers,
+    }));
+    res.json({ success: true, rooms: safe });
+  });
+
+  // REST API: 服务器状态
+  app.get('/api/status', (req, res) => {
+    res.json({
+      success: true,
+      online: true,
+      version: process.env.APP_VERSION || '1.1.0',
+      rooms: gameManager.games.size,
+      players: Array.from(gameManager.playerRooms.keys()).length,
+      timestamp: Date.now(),
+    });
+  });
+
+  // REST API: 版本信息
+  app.get('/api/version', (req, res) => {
+    res.json({
+      version: process.env.APP_VERSION || '1.1.0',
+      downloadUrl: '/download/狼人杀_Setup.exe',
+      releaseDate: '2026-06-25',
+      releaseNotes: '新增用户注册/登录、5首BGM音乐、私密房间密码保护、自动更新、大量bug修复',
+      fileSize: 113 * 1024 * 1024, // ~113MB
+    });
+  });
+
+  // 下载目录（安装包等）
+  const downloadPath = process.env.DOWNLOAD_PATH || path.join(__dirname, '..', '..', 'download');
+  if (!fs.existsSync(downloadPath)) {
+    fs.mkdirSync(downloadPath, { recursive: true });
+  }
+  app.use('/download', express.static(downloadPath, {
+    maxAge: 0,
+    setHeaders: (res) => {
+      res.set('Content-Disposition', 'attachment');
+    },
+  }));
+
+  // 生产环境部署前端静态文件
+  const distPath = options.clientDist || path.join(__dirname, '..', '..', 'client', 'dist');
+  if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+    // Express 5 兼容：捕获所有非 API 路由，返回 SPA 入口
+    app.use((req, res, next) => {
+      if (req.url.startsWith('/socket.io')) return next();
+      if (req.url.startsWith('/api/')) return next();
+      // 已由 static 中间件尝试处理，这里兜底返回 index.html
+      if (req.method === 'GET' && !req.url.includes('.')) {
+        res.sendFile(path.join(distPath, 'index.html'));
+      } else {
+        next();
+      }
+    });
+  }
+
+  // 注册Socket事件处理
+  io.on('connection', (socket) => {
+    console.log(`[连接] ${socket.id}`);
+    registerHandlers(io, socket, gameManager);
+
+    socket.on('disconnect', () => {
+      console.log(`[断开] ${socket.id}`);
+      const game = gameManager.handleDisconnect(socket.id);
+      if (game) {
+        game.setIO(io);
+        // 游戏进行中发送公共状态保持其他客户端同步，而非 lobby 状态
+        if (game.phase !== 'LOBBY') {
+          io.to(game.id).emit('game:state', game.getPublicState());
+        } else {
+          io.to(game.id).emit('game:state', game.getLobbyState());
+        }
+      }
+    });
+  });
+
+  return { app, server, io, gameManager };
+}
+
+export function startServer(port) {
+  const PORT = port || process.env.PORT || 4000;
+  const { server } = createServer();
+
+  return new Promise((resolve) => {
+    server.listen(PORT, () => {
+      console.log(`🐺 狼人杀服务器运行在端口 ${PORT}`);
+      console.log(`   客户端地址: http://localhost:${PORT}`);
+      resolve({ server, port: PORT });
+    });
+  });
+}

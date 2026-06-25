@@ -1,0 +1,651 @@
+// ============================================================
+// Socket.IO 事件处理
+// ============================================================
+
+import { PHASES, ROLES, getRoleConfig } from '../game/constants.js';
+import { UserManager } from '../auth/UserManager.js';
+
+const userManager = new UserManager();
+
+// ===== 输入校验 =====
+function sanitizeName(name) {
+  if (typeof name !== 'string') return null;
+  const trimmed = name.trim();
+  if (trimmed.length === 0 || trimmed.length > 12) return null;
+  // 移除 HTML/脚本标签，替换危险字符
+  return trimmed.replace(/[<>"'&/\\]/g, '').substring(0, 12);
+}
+
+function sanitizeMessage(msg) {
+  if (typeof msg !== 'string') return '';
+  // 去除 HTML/脚本标签，防止 XSS（纵深防御）
+  return msg.replace(/[<>]/g, '').trim().substring(0, 500);
+}
+
+// ===== 简易密码哈希 =====
+import crypto from 'crypto';
+const PASSWORD_SALT = 'werewolf-server-salt-2024';
+
+function hashPassword(password) {
+  if (!password || typeof password !== 'string') return null;
+  return crypto.createHmac('sha256', PASSWORD_SALT).update(password).digest('hex');
+}
+
+// ===== 速率限制 =====
+const rateLimits = new Map(); // key -> { count, resetAt }
+
+function checkRateLimit(key, maxPerMinute = 30) {
+  const now = Date.now();
+  let entry = rateLimits.get(key);
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 1, resetAt: now + 60000 };
+    rateLimits.set(key, entry);
+    return true;
+  }
+  entry.count++;
+  if (entry.count > maxPerMinute) return false;
+  return true;
+}
+
+// 定期清理过期条目
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimits) {
+    if (now > entry.resetAt) rateLimits.delete(key);
+  }
+}, 120000);
+
+// ===== 安全错误消息 =====
+function safeError(err) {
+  console.error('[Server Error]', err);
+  return '服务器内部错误，请稍后重试';
+}
+
+export function registerHandlers(io, socket, gameManager) {
+  // ==================== 用户认证 ====================
+
+  // 注册
+  socket.on('auth:register', ({ username, password }, callback) => {
+    const result = userManager.register(username, password);
+    callback?.(result);
+  });
+
+  // 登录
+  socket.on('auth:login', ({ username, password }, callback) => {
+    const result = userManager.login(username, password);
+    if (result.success) {
+      userManager.setSession(socket.id, result.user.username);
+    }
+    callback?.(result);
+  });
+
+  // 获取用户信息
+  socket.on('auth:profile', (callback) => {
+    const user = userManager.getUserBySocket(socket.id);
+    if (!user) {
+      callback?.({ error: '未登录' });
+      return;
+    }
+    callback?.({
+      success: true,
+      username: user.username,
+      stats: user.stats,
+      createdAt: user.createdAt,
+    });
+  });
+
+  // 登出
+  socket.on('auth:logout', () => {
+    userManager.clearSession(socket.id);
+  });
+
+  // 更新游戏统计
+  socket.on('auth:updateStats', ({ won }) => {
+    const user = userManager.getUserBySocket(socket.id);
+    if (user) {
+      userManager.updateStats(user.username, won);
+    }
+  });
+
+  // ==================== 版本检查（自动更新） ====================
+
+  socket.on('app:checkVersion', (callback) => {
+    const currentVersion = process.env.APP_VERSION || '1.0.0';
+    const downloadUrl = '/download/狼人杀_Setup.exe';
+    callback?.({
+      version: currentVersion,
+      downloadUrl,
+      releaseDate: '2026-06-25',
+      releaseNotes: '新增用户注册/登录、BGM系统、私密房间密码、大量bug修复',
+    });
+  });
+
+  // ==================== 房间操作 ====================
+
+  // ===== 断线重连 =====
+  socket.on('room:rejoin', ({ roomCode, oldPlayerId }, callback) => {
+    try {
+      if (!oldPlayerId || !roomCode) {
+        callback?.({ success: false, error: '缺少重连参数' });
+        return;
+      }
+      const result = gameManager.reconnectPlayer(socket.id, oldPlayerId, roomCode);
+      if (!result) {
+        callback?.({ success: false, error: '重连失败：房间不存在或已超时' });
+        return;
+      }
+      const { game, oldId } = result;
+      game.setIO(io);
+      socket.join(game.id);
+
+      // 更新投票记录中的旧 playerId
+      if (game.votes[oldId] !== undefined) {
+        game.votes[socket.id] = game.votes[oldId];
+        delete game.votes[oldId];
+      }
+
+      // 通知其他玩家
+      io.to(game.id).emit('chat:message', {
+        playerId: 'system',
+        playerName: '系统',
+        message: `${game.getPlayer(socket.id)?.name || '玩家'} 已重新连接`,
+        timestamp: Date.now(),
+      });
+
+      console.log(`[重连] ${oldId} → ${socket.id} (房间 ${game.id})`);
+      callback?.({ success: true, gameState: game.getPublicState() });
+
+      // 发送私有状态
+      const privateState = game.getPrivateState(socket.id);
+      if (privateState) {
+        socket.emit('game:privateState', privateState);
+      }
+    } catch (err) {
+      callback?.({ success: false, error: safeError(err) });
+    }
+  });
+
+  // 创建房间（可传入自定义角色配置、隐私设置）
+  socket.on('room:create', ({ playerName, roleConfig, isPrivate, password, maxPlayers }, callback) => {
+    try {
+      // 速率限制
+      if (!checkRateLimit(`create:${socket.id}`, 5)) {
+        callback({ success: false, error: '操作太频繁，请稍后再试' });
+        return;
+      }
+
+      const name = sanitizeName(playerName);
+      if (!name) {
+        callback({ success: false, error: '昵称格式不合法（1-12字符，不含特殊符号）' });
+        return;
+      }
+      const game = gameManager.createRoom(socket.id, name);
+      game.setIO(io);
+      socket.join(game.id);
+
+      // 隐私设置
+      if (isPrivate !== undefined) game.isPrivate = !!isPrivate;
+      if (password && typeof password === 'string' && password.trim()) {
+        game.password = hashPassword(password.trim());  // 哈希存储密码
+      }
+      // 最大人数（5-18）
+      if (maxPlayers && typeof maxPlayers === 'number' && maxPlayers >= 5 && maxPlayers <= 18) {
+        game.maxPlayers = maxPlayers;
+      }
+
+      // 存储房主的角色配置选择
+      if (roleConfig && game.hostId === socket.id) {
+        game.customRoleConfig = validateRoleConfig(roleConfig, game.maxPlayers);
+        if (!game.customRoleConfig) {
+          callback({ success: false, error: '角色配置不合法：必须包含至少1狼人、至少1好人，且不能全狼人' });
+          return;
+        }
+      }
+
+      console.log(`[房间] ${playerName} 创建了房间 ${game.id} ${game.isPrivate ? '(私密)' : '(公开)'}`);
+      gameManager.broadcastLobbyUpdate();  // 推送大厅更新
+      callback({ success: true, roomCode: game.id, gameState: game.getLobbyState() });
+    } catch (err) {
+      callback({ success: false, error: err.message });
+    }
+  });
+
+  // 加入房间（支持密码）
+  socket.on('room:join', ({ roomCode, playerName, password }, callback) => {
+    try {
+      // 速率限制（防止暴力破解密码）
+      if (!checkRateLimit(`join:${socket.id}`, 10)) {
+        callback({ success: false, error: '尝试次数过多，请稍后再试' });
+        return;
+      }
+
+      const name = sanitizeName(playerName);
+      if (!name) {
+        callback({ success: false, error: '昵称格式不合法（1-12字符，不含特殊符号）' });
+        return;
+      }
+      // 密码哈希比对
+      const hashedPwd = password ? hashPassword(password) : null;
+      const result = gameManager.joinRoom(roomCode, socket.id, name, hashedPwd);
+      socket.join(roomCode);
+      result.game.setIO(io);
+      console.log(`[房间] ${playerName} 加入了房间 ${roomCode}`);
+      io.to(roomCode).emit('game:state', result.game.getLobbyState());
+      gameManager.broadcastLobbyUpdate();  // 人数变化
+      callback({ success: true, gameState: result.game.getLobbyState() });
+    } catch (err) {
+      callback({ success: false, error: err.message });
+    }
+  });
+
+  // 离开房间
+  socket.on('room:leave', () => {
+    const game = gameManager.leaveRoom(socket.id);
+    if (game) {
+      game.setIO(io);
+      socket.leave(game.id);
+      io.to(game.id).emit('game:state', game.getLobbyState());
+      gameManager.broadcastLobbyUpdate();  // 人数变化或房间消失
+    }
+  });
+
+  // 返回大厅（游戏中退出）
+  socket.on('room:backToLobby', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (game) {
+      game.removePlayer(socket.id);
+      gameManager.playerRooms.delete(socket.id);
+      socket.leave(game.id);
+      if (game.players.length === 0) {
+        gameManager.games.delete(game.id);
+        gameManager.broadcastLobbyUpdate();
+      } else {
+        game.setIO(io);
+        io.to(game.id).emit('game:state', game.getLobbyState());
+      }
+    }
+  });
+
+  // 房主更新角色配置
+  socket.on('room:updateRoleConfig', ({ roleConfig }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.hostId !== socket.id) {
+      callback?.({ success: false, error: '仅房主可修改角色配置' });
+      return;
+    }
+    if (game.phase !== PHASES.LOBBY) {
+      callback?.({ success: false, error: '游戏已开始，无法修改配置' });
+      return;
+    }
+
+    const validated = validateRoleConfig(roleConfig, game.maxPlayers);
+    if (!validated) {
+      callback?.({ success: false, error: '角色配置不合法：必须包含至少1狼人、至少1好人，且不能全狼人' });
+      return;
+    }
+
+    game.customRoleConfig = validated;
+    game.setIO(io);
+    io.to(game.id).emit('game:state', game.getLobbyState());
+    io.to(game.id).emit('room:roleConfigUpdated', { roleConfig: validated });
+    callback?.({ success: true });
+  });
+
+  // ==================== 大厅列表 ====================
+
+  // 获取大厅房间列表
+  socket.on('lobby:list', (callback) => {
+    const list = gameManager.getLobbyList();
+    callback?.({ success: true, rooms: list });
+  });
+
+  // ==================== 房间管理（房主特权） ====================
+
+  // 切换房间公开/私密
+  socket.on('room:togglePrivacy', ({ isPrivate, password }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.hostId !== socket.id) {
+      callback?.({ success: false, error: '仅房主可修改隐私设置' });
+      return;
+    }
+    if (game.phase !== 'LOBBY') {
+      callback?.({ success: false, error: '游戏已开始，无法修改' });
+      return;
+    }
+    game.isPrivate = !!isPrivate;
+    if (password !== undefined) {
+      game.password = (password && typeof password === 'string' && password.trim())
+        ? hashPassword(password.trim()) : null;
+    }
+    game.setIO(io);
+    io.to(game.id).emit('game:state', game.getLobbyState());
+    gameManager.broadcastLobbyUpdate();  // 隐私变更影响大厅
+    callback?.({ success: true, isPrivate: game.isPrivate, hasPassword: !!game.password });
+  });
+
+  // 修改房间密码
+  socket.on('room:setPassword', ({ password }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.hostId !== socket.id) {
+      callback?.({ success: false, error: '仅房主可修改密码' });
+      return;
+    }
+    game.password = (password && typeof password === 'string' && password.trim())
+      ? hashPassword(password.trim()) : null;
+    game.setIO(io);
+    io.to(game.id).emit('game:state', game.getLobbyState());
+    callback?.({ success: true });
+  });
+
+  // 修改最大人数
+  socket.on('room:updateMaxPlayers', ({ maxPlayers }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.hostId !== socket.id) {
+      callback?.({ success: false, error: '仅房主可修改人数上限' });
+      return;
+    }
+    if (game.phase !== 'LOBBY') {
+      callback?.({ success: false, error: '游戏已开始，无法修改' });
+      return;
+    }
+    if (typeof maxPlayers !== 'number' || maxPlayers < game.players.length || maxPlayers > 18) {
+      callback?.({ success: false, error: `人数上限需在${game.players.length}-18之间` });
+      return;
+    }
+    game.maxPlayers = maxPlayers;
+    game.setIO(io);
+    io.to(game.id).emit('game:state', game.getLobbyState());
+    callback?.({ success: true });
+  });
+
+  // 获取屋子访客数量
+  socket.on('room:houseVisitors', ({ houseId }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) {
+      callback?.({ success: false, error: '不在游戏中' });
+      return;
+    }
+    const info = game.getHouseVisitorCount(houseId, socket.id);
+    callback?.({ success: true, ...info });
+  });
+
+  // ==================== 游戏操作 ====================
+
+  // 开始游戏（仅房主）—— 支持自定义角色配置
+  socket.on('game:start', ({ roleConfig } = {}) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.hostId !== socket.id) return;
+
+    // 应用最终角色配置
+    if (roleConfig) {
+      const validated = validateRoleConfig(roleConfig, game.players.length);
+      if (validated) {
+        game.customRoleConfig = validated;
+      }
+    }
+
+    const success = game.startGame();
+    if (success) {
+      game.setIO(io);
+      console.log(`[游戏] 房间 ${game.id} 游戏开始`);
+
+      // 向每个玩家发送其私有状态
+      for (const player of game.players) {
+        const privateState = game.getPrivateState(player.id);
+        io.to(player.id).emit('game:privateState', privateState);
+      }
+
+      io.to(game.id).emit('game:started', { round: game.round });
+      gameManager.broadcastLobbyUpdate();  // 游戏开始，房间从大厅移除
+    }
+  });
+
+  // 提交夜晚行动
+  socket.on('night:action', ({ action, target, ability }) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.phase !== PHASES.NIGHT) return;
+
+    const currentStep = game.nightStep;
+    game.submitNightAction(socket.id, action, target, ability);
+
+    // 防止竞态：如果步骤已经推进，不要再检查
+    if (game.nightStep !== currentStep) return;
+
+    // 检查当前步骤是否所有人都提交了
+    const playersForStep = getPlayersForStep(game, currentStep);
+    const allSubmitted = playersForStep.length > 0 && playersForStep.every(p => p.nightAction !== null);
+
+    if (allSubmitted) {
+      game.advanceNightStep();
+    }
+  });
+
+  // 跳过当前夜晚步骤（仅当前步骤的参与者可跳过）
+  socket.on('night:skip', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.phase !== PHASES.NIGHT) return;
+
+    // 只有当前步骤的参与者可以跳过（防止恶意玩家跳过他人回合）
+    const currentStep = game.nightStep;
+    const participants = getPlayersForStep(game, currentStep);
+    const isParticipant = participants.some(p => p.id === socket.id);
+
+    // 如果不是参与者，检查是否是无关角色的等待者（如村民在夜晚只是等待）
+    // 非参与者不能跳过，防止跳过他人回合
+    if (!isParticipant && participants.length > 0) {
+      // 当前步骤有参与者但不是我 — 拒绝跳过
+      return;
+    }
+
+    // 如果当前步骤没有参与者（所有相关角色已死），允许任何人跳过
+    game.advanceNightStep();
+  });
+
+  // 进入投票阶段
+  socket.on('day:startVote', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.phase !== PHASES.DAY) return;
+    game.enterVote();
+  });
+
+  // 提交投票
+  socket.on('vote:submit', ({ targetId }) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.phase !== PHASES.VOTE) return;
+
+    game.submitVote(socket.id, targetId);
+
+    // 防止竞态：如果已经进入结算，不要再检查
+    if (game._resolvingVotes || game.phase !== PHASES.VOTE) return;
+
+    const alivePlayers = game.players.filter(p => p.alive && !p.disconnected);
+    const allVoted = alivePlayers.length > 0 && alivePlayers.every(p => game.votes[p.id] !== undefined);
+
+    if (allVoted) {
+      game.resolveVotes();
+    } else {
+      game.setIO(io);
+      io.to(game.id).emit('game:state', game.getPublicState());
+    }
+  });
+
+  // 猎人白天开枪
+  socket.on('hunter:dayShoot', ({ targetId }) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.phase !== PHASES.DAY) return;
+
+    const player = game.getPlayer(socket.id);
+    if (!player || player.role !== ROLES.HUNTER) return;
+
+    game.hunterDayShootTarget(targetId);
+    game.setIO(io);
+    io.to(game.id).emit('game:state', game.getPublicState());
+  });
+
+  // ==================== 聊天 ====================
+
+  socket.on('chat:message', ({ message }) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) return;
+    const player = game.getPlayer(socket.id);
+    if (!player) return;
+
+    // 速率限制聊天
+    if (!checkRateLimit(`chat:${socket.id}`, 20)) return;
+
+    const safeMsg = sanitizeMessage(message);
+    if (!safeMsg) return;
+
+    io.to(game.id).emit('chat:message', {
+      playerId: socket.id,
+      playerName: player.name,
+      message: safeMsg,
+      timestamp: Date.now(),
+    });
+  });
+
+  // ==================== WebRTC 语音信令 ====================
+
+  // 加入语音频道
+  socket.on('voice:join', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) return;
+    const player = game.getPlayer(socket.id);
+    if (!player) return;
+
+    // 通知房间内其他玩家有新语音参与者
+    socket.to(game.id).emit('voice:peerJoined', {
+      peerId: socket.id,
+      peerName: player.name,
+    });
+
+    console.log(`[语音] ${player.name} 加入语音 (房间 ${game.id})`);
+  });
+
+  // 离开语音频道
+  socket.on('voice:leave', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) return;
+
+    // 通知房间内其他玩家
+    socket.to(game.id).emit('voice:peerLeft', {
+      peerId: socket.id,
+    });
+  });
+
+  // WebRTC Offer 转发
+  socket.on('voice:offer', ({ targetId, offer }) => {
+    io.to(targetId).emit('voice:offer', {
+      peerId: socket.id,
+      offer,
+    });
+  });
+
+  // WebRTC Answer 转发
+  socket.on('voice:answer', ({ targetId, answer }) => {
+    io.to(targetId).emit('voice:answer', {
+      peerId: socket.id,
+      answer,
+    });
+  });
+
+  // ICE Candidate 转发
+  socket.on('voice:iceCandidate', ({ targetId, candidate }) => {
+    io.to(targetId).emit('voice:iceCandidate', {
+      peerId: socket.id,
+      candidate,
+    });
+  });
+
+  // 语音活动状态广播（用于说话指示灯）
+  socket.on('voice:speaking', ({ isSpeaking }) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) return;
+
+    socket.to(game.id).emit('voice:speaking', {
+      peerId: socket.id,
+      isSpeaking,
+    });
+  });
+
+  // ==================== 音效广播 ====================
+
+  // 广播游戏音效事件
+  socket.on('sfx:play', ({ soundId }) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) return;
+    // 转发给房间内其他人
+    socket.to(game.id).emit('sfx:play', { soundId });
+  });
+
+  // ==================== 状态请求 ====================
+
+  socket.on('game:requestState', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) return;
+
+    socket.emit('game:state', game.getPublicState());
+    const privateState = game.getPrivateState(socket.id);
+    if (privateState) {
+      socket.emit('game:privateState', privateState);
+    }
+  });
+}
+
+// ==================== 角色配置验证 ====================
+
+/**
+ * 验证自定义角色配置是否合法
+ * 规则：
+ *  - 至少包含1个狼人阵营角色（ALPHA_WOLF 或 WEREWOLF）
+ *  - 不能全是狼人
+ *  - 至少1个好人阵营角色
+ *  - 总数不能超过最大玩家数
+ */
+function validateRoleConfig(roleConfig, maxPlayers) {
+  if (!roleConfig || !Array.isArray(roleConfig) || roleConfig.length === 0) {
+    return null;
+  }
+  if (roleConfig.length > maxPlayers) {
+    return null;
+  }
+
+  const hasWolf = roleConfig.some(r => r === ROLES.ALPHA_WOLF || r === ROLES.WEREWOLF);
+  const hasVillage = roleConfig.some(r =>
+    [ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.VILLAGER, ROLES.GUARD, ROLES.HUNTER].includes(r)
+  );
+  const allWolves = roleConfig.every(r => r === ROLES.ALPHA_WOLF || r === ROLES.WEREWOLF);
+
+  if (!hasWolf || !hasVillage || allWolves) {
+    return null;
+  }
+
+  // 去除非角色字符串，只保留有效角色
+  return roleConfig;
+}
+
+// ==================== 辅助函数 ====================
+
+function getPlayersForStep(game, step) {
+  const alive = game.players.filter(p => p.alive && !p.disconnected);
+
+  switch (step) {
+    case 'HUNTER':
+      return alive.filter(p => p.role === ROLES.HUNTER && p.canAct);
+    case 'ALPHA_WOLF':
+      return alive.filter(p => p.role === ROLES.ALPHA_WOLF);
+    case 'GUARD':
+      return alive.filter(p => p.role === ROLES.GUARD);
+    case 'WEREWOLF':
+      return alive.filter(p => p.role === ROLES.WEREWOLF ||
+        (p.role === ROLES.ALPHA_WOLF && (p.isTransformed || p.hasUsedInfect)));
+    case 'SEER':
+      return alive.filter(p => p.role === ROLES.SEER);
+    case 'POISON_WITCH':
+      return alive.filter(p => p.role === ROLES.POISON_WITCH);
+    case 'HEAL_WITCH':
+      return alive.filter(p => p.role === ROLES.HEAL_WITCH);
+    default:
+      return [];
+  }
+}

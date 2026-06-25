@@ -1,0 +1,1865 @@
+/* ============================================================
+   狼人杀 —— 全局样式
+   暗色调主题，月夜氛围
+   ============================================================ */
+
+/* ---- CSS变量 ---- */
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --bg-input: #1a1a3e;
+  --text-primary: #e8e8e8;
+  --text-secondary: #a0a0b8;
+  --text-muted: #6a6a80;
+  --accent: #e94560;
+  --accent2: #f5c518;
+  --success: #27ae60;
+  --danger: #c0392b;
+  --wolf: #c0392b;
+  --village: #2980b9;
+  --border: #2a2a4a;
+  --radius: 10px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+/* ---- Reset ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: inherit;
+  transition: all 0.2s;
+}
+
+input {
+  font-family: inherit;
+  font-size: inherit;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--accent);
+}
+
+/* ---- 通用按钮 ---- */
+.btn {
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: #ff5a75; }
+.btn-primary:disabled { background: #555; cursor: not-allowed; }
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: #1a4a80; }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { color: var(--text-primary); }
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+.btn-danger:hover { background: #e74c3c; }
+.btn-link {
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  padding: 4px 8px;
+  font-size: 0.85em;
+}
+.btn-small { padding: 6px 12px; font-size: 0.85em; }
+.btn-large { padding: 14px 28px; font-size: 1.1em; }
+
+/* ---- 页面容器 ---- */
+.screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ---- 登录界面 ---- */
+.login-screen {
+  background: linear-gradient(135deg, #0a0a1a, #1a1a2e, #0f1a30);
+}
+.login-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.game-logo {
+  margin-bottom: 30px;
+}
+.logo-icon { font-size: 4em; }
+.game-logo h1 { font-size: 2.2em; margin: 10px 0; color: var(--accent); }
+.subtitle { color: var(--text-secondary); font-size: 0.95em; }
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+.login-form label { color: var(--text-secondary); font-size: 0.9em; }
+.login-form input { width: 100%; }
+.login-form .btn { margin-top: 8px; }
+.login-footer {
+  margin-top: 24px;
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+.error-text { color: var(--danger); font-size: 0.85em; }
+
+/* ---- 大厅 ---- */
+.lobby-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 550px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.lobby-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.lobby-header h1 { color: var(--accent); font-size: 1.8em; }
+.player-name-display { color: var(--text-secondary); margin-top: 8px; }
+
+.lobby-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.join-section h3 {
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+.room-code-input {
+  width: 100%;
+  font-size: 1.2em;
+  text-align: center;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.connection-warning {
+  background: #ff6b0022;
+  border: 1px solid #ff6b00;
+  color: #ff6b00;
+  padding: 10px;
+  border-radius: var(--radius);
+  margin-top: 16px;
+  font-size: 0.9em;
+}
+
+.lobby-roles {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.lobby-roles h4 {
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+/* ---- 角色画廊 ---- */
+.role-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.role-gallery-item {
+  text-align: center;
+}
+
+/* ---- 角色插图 ---- */
+.role-illustration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.role-illustration.role-large .role-icon-placeholder { width: 100px; height: 100px; font-size: 3em; }
+.role-illustration.role-medium .role-icon-placeholder { width: 64px; height: 64px; font-size: 2em; }
+.role-illustration.role-small .role-icon-placeholder { width: 44px; height: 44px; font-size: 1.4em; }
+.role-icon-placeholder {
+  border: 2px dashed #444;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.role-img-hint {
+  font-size: 0.55em;
+  color: var(--text-muted);
+  position: absolute;
+  bottom: 2px;
+}
+.role-label { font-size: 0.85em; font-weight: 600; }
+
+/* ---- 房间等待 ---- */
+.room-info {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.room-code {
+  font-size: 1.6em;
+  color: var(--accent2);
+  letter-spacing: 4px;
+  background: var(--bg-primary);
+  padding: 4px 12px;
+  border-radius: var(--radius);
+}
+.room-hint { color: var(--text-secondary); font-size: 0.85em; margin-top: 4px; }
+
+.player-list-section h3 {
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.player-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.player-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.player-tag.is-self { border-color: var(--accent); }
+.player-tag.is-host { border-color: var(--accent2); }
+.player-index {
+  width: 24px; height: 24px;
+  background: var(--bg-card);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+}
+.player-name { flex: 1; font-weight: 500; }
+.host-badge, .self-badge { font-size: 0.85em; }
+.self-badge { color: var(--accent); }
+
+.lobby-buttons {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.waiting-hint { color: var(--text-muted); text-align: center; padding: 10px; }
+
+/* ---- 游戏主界面 ---- */
+.game-screen {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.header-left, .header-center, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.room-badge, .round-badge, .player-badge {
+  background: var(--bg-primary);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+.status-badge.alive { color: var(--success); }
+.status-badge.dead { color: var(--danger); }
+
+.phase-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.phase-name { font-weight: 700; font-size: 1.1em; }
+.night-step-name { color: var(--accent2); font-size: 0.9em; }
+
+/* ---- 游戏主体三栏布局 ---- */
+.game-body {
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 56px);
+}
+
+.game-sidebar {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 12px;
+}
+.game-main {
+  overflow-y: auto;
+  padding: 20px;
+}
+.game-rightbar {
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- 玩家列表 ---- */
+.player-list-title {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+}
+.player-item:hover { background: rgba(255,255,255,0.03); }
+.player-item.dead { opacity: 0.5; }
+.player-item.self { border-color: var(--accent); }
+.player-item.voted { background: rgba(233,69,96,0.1); }
+.player-avatar { font-size: 1.4em; width: 32px; text-align: center; }
+.player-info { flex: 1; display: flex; flex-direction: column; }
+.player-name { font-size: 0.9em; }
+.player-role-tag { font-size: 0.75em; color: var(--text-muted); }
+.injury-tag { color: var(--danger); font-size: 0.75em; margin-left: 6px; }
+.guard-tag { color: var(--village); font-size: 0.75em; margin-left: 6px; }
+.self-tag { color: var(--accent); font-size: 0.75em; margin-left: 4px; }
+.dead-mark { font-size: 0.9em; }
+.vote-count { color: var(--accent); font-size: 0.8em; font-weight: 700; }
+
+.dead-group {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.dead-label {
+  color: var(--text-muted);
+  font-size: 0.8em;
+  margin-bottom: 8px;
+}
+
+/* ---- 夜晩面板 ---- */
+.night-panel {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+.night-header {
+  margin-bottom: 24px;
+}
+.night-header h3 {
+  font-size: 1.4em;
+  margin: 8px 0;
+}
+.night-subtitle {
+  color: var(--text-secondary);
+}
+.night-waiting {
+  text-align: center;
+  padding: 40px 20px;
+}
+.night-waiting h3 {
+  margin-bottom: 12px;
+}
+.waiting-text {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.night-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 行动选择卡片 */
+.action-selector {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.action-card {
+  width: 160px;
+  padding: 20px 16px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.action-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.sleep-card { opacity: 0.7; }
+.sleep-card:hover { opacity: 1; border-color: var(--text-muted); }
+.action-icon { font-size: 2em; }
+.action-name { font-weight: 700; }
+.action-desc { font-size: 0.78em; color: var(--text-muted); }
+
+/* 行动详情 */
+.action-detail {
+  text-align: left;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.back-btn { margin-bottom: 16px; display: inline-block; }
+.action-detail h4 {
+  font-size: 1.2em;
+  margin-bottom: 16px;
+}
+.select-label {
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.player-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.target-btn {
+  padding: 10px 16px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.target-btn:hover { border-color: var(--accent2); }
+.target-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+.target-name { font-weight: 600; }
+.target-tag { font-size: 0.75em; color: var(--danger); }
+
+/* 能力选项 */
+.ability-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+}
+.ability-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+.ability-check input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+.ability-note {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+}
+.weapon-note {
+  color: var(--accent2);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.submit-btn {
+  width: 100%;
+  margin-top: 16px;
+}
+
+/* ---- 白天面板 ---- */
+.day-panel {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+.day-header {
+  margin-bottom: 24px;
+}
+.day-header h3 { font-size: 1.4em; }
+.day-subtitle { color: var(--text-secondary); }
+
+.death-announcement {
+  background: rgba(192,57,43,0.15);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.death-announcement h4 { color: var(--danger); margin-bottom: 8px; }
+.death-name { font-size: 1.1em; font-weight: 600; }
+
+.peace-announcement {
+  background: rgba(39,174,96,0.15);
+  border: 1px solid var(--success);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.day-actions {
+  margin: 20px 0;
+}
+
+/* 猎人白天开枪 */
+.hunter-day-shoot {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(211,84,0,0.1);
+  border: 1px solid #d35400;
+  border-radius: var(--radius);
+}
+.hunter-day-shoot h4 { color: #d35400; }
+.shoot-targets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.shoot-btn { font-size: 0.9em; }
+
+/* ---- 投票面板 ---- */
+.vote-panel {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+.vote-subtitle { color: var(--text-secondary); margin-bottom: 16px; }
+.vote-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.vote-btn {
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.vote-btn:hover { border-color: var(--accent); }
+.abstain-btn { opacity: 0.6; }
+.vote-target-name { }
+
+.vote-tally {
+  margin-top: 20px;
+  padding: 14px;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  text-align: left;
+}
+.vote-tally h4 { color: var(--text-secondary); margin-bottom: 8px; font-size: 0.9em; }
+.tally-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tally-row:last-child { border-bottom: none; }
+.tally-name { font-weight: 500; }
+.tally-count { color: var(--accent); font-weight: 700; }
+
+/* ---- 死亡提示 ---- */
+.dead-notice {
+  text-align: center;
+  padding: 40px;
+}
+.dead-icon { font-size: 3em; }
+.dead-notice p { color: var(--text-secondary); margin-top: 8px; }
+.dead-hint { font-size: 0.85em; color: var(--text-muted); }
+
+/* ---- 夜晚日志 ---- */
+.night-log {
+  margin-top: 20px;
+  padding: 14px;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  text-align: left;
+}
+.night-log h4 { color: var(--text-secondary); margin-bottom: 8px; }
+.log-entry {
+  padding: 6px 0;
+  font-size: 0.9em;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.log-entry:last-child { border-bottom: none; }
+
+/* ---- 角色卡 ---- */
+.role-card {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+}
+.role-card-header h4 { color: var(--text-secondary); font-size: 0.85em; margin-bottom: 10px; }
+.role-card-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.role-card-info { flex: 1; }
+.role-name { font-size: 1.3em; }
+.team-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+.team-badge.WOLF { background: var(--wolf); color: white; }
+.team-badge.VILLAGE { background: var(--village); color: white; }
+
+.role-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.detail-tag {
+  font-size: 0.75em;
+  padding: 2px 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+.detail-tag.warning { background: rgba(233,69,96,0.2); color: var(--accent); }
+
+.role-card-allies {
+  margin-bottom: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.role-card-allies h5 { color: var(--wolf); font-size: 0.85em; margin-bottom: 4px; }
+.ally-tag { font-size: 0.8em; color: var(--text-muted); display: block; }
+
+.role-card-log {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.role-card-log h5 { color: var(--accent2); font-size: 0.85em; margin-bottom: 4px; }
+.log-line { font-size: 0.8em; color: var(--text-secondary); padding: 2px 0; }
+
+/* ---- 聊天框 ---- */
+.chat-box {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-height: 300px;
+}
+.chat-title { font-size: 0.85em; color: var(--text-secondary); padding: 10px 12px 6px; }
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  min-height: 100px;
+}
+.chat-empty { color: var(--text-muted); font-size: 0.8em; text-align: center; padding: 20px; }
+.chat-msg {
+  padding: 4px 0;
+  font-size: 0.85em;
+}
+.chat-msg.own { }
+.chat-author { color: var(--accent); font-weight: 600; margin-right: 6px; }
+.chat-text { color: var(--text-primary); }
+.chat-input-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+.chat-input-row input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 0.85em;
+}
+
+/* ---- 游戏结束 ---- */
+.gameover-screen {
+  background: linear-gradient(135deg, #0a0a1a, #1a1a2e);
+}
+.gameover-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.gameover-banner {
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+.gameover-banner.won { background: rgba(39,174,96,0.15); border: 1px solid var(--success); }
+.gameover-banner.lost { background: rgba(192,57,43,0.15); border: 1px solid var(--danger); }
+.gameover-icon { font-size: 3em; }
+.gameover-banner h2 { margin: 8px 0; }
+.gameover-reason { color: var(--text-secondary); }
+.winner-team { color: var(--accent2); margin-top: 8px; font-weight: 600; }
+
+.role-reveal { margin-bottom: 24px; }
+.role-reveal h3 { color: var(--text-secondary); margin-bottom: 14px; }
+.reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+.reveal-item {
+  background: var(--bg-primary);
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.reveal-item.dead { opacity: 0.5; }
+.reveal-info { margin-top: 6px; }
+.reveal-name { display: block; font-weight: 600; font-size: 0.9em; }
+.reveal-status { font-size: 0.75em; }
+.reveal-status.alive { color: var(--success); }
+.reveal-status.dead { color: var(--danger); }
+
+/* ---- Auth Tabs ---- */
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--border);
+}
+.auth-tab {
+  flex: 1;
+  padding: 10px 0;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.95em;
+  font-weight: 600;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.auth-tab:hover { color: var(--text-primary); }
+.auth-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.login-update {
+  margin-top: 12px;
+}
+
+/* ---- Update Modal ---- */
+.update-modal {
+  max-width: 480px;
+  width: 100%;
+  animation: modalSlideIn 0.25s ease;
+}
+.update-body {
+  text-align: center;
+}
+.update-version-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.update-version-badge {
+  background: var(--accent);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 1.2em;
+  font-weight: 700;
+}
+.update-date {
+  color: var(--text-secondary);
+  font-size: 0.85em;
+}
+.update-notes {
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+.update-notes h4 {
+  color: var(--accent2);
+  margin-bottom: 6px;
+  font-size: 0.9em;
+}
+.update-notes p {
+  color: var(--text-secondary);
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+.update-size {
+  color: var(--text-muted);
+  font-size: 0.8em;
+  margin-bottom: 16px;
+}
+.update-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.update-hint {
+  color: var(--text-muted);
+  font-size: 0.75em;
+}
+
+/* ---- Loading ---- */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+/* ==================== 语音聊天 ==================== */
+
+.voice-chat {
+  background: var(--bg-primary);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+}
+.voice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.voice-title { font-size: 0.8em; color: var(--text-secondary); font-weight: 600; }
+.voice-leave-btn {
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.8em;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.voice-leave-btn:hover { color: var(--danger); }
+.voice-join-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 0.85em;
+  cursor: pointer;
+}
+.voice-join-btn:hover { border-color: var(--accent); color: var(--accent); }
+.voice-error {
+  font-size: 0.8em;
+  color: var(--danger);
+  padding: 8px;
+}
+
+.voice-ptt-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.ptt-button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 0.9em;
+  font-weight: 600;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ptt-button:hover { border-color: var(--accent2); }
+.ptt-button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  animation: pulse-ptt 0.5s infinite alternate;
+}
+@keyframes pulse-ptt {
+  from { box-shadow: 0 0 4px var(--accent); }
+  to { box-shadow: 0 0 16px var(--accent); }
+}
+.ptt-hint { font-size: 0.7em; color: var(--text-muted); }
+
+.voice-speakers {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+.speaker-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+}
+.speaker-item.speaking { background: rgba(233,69,96,0.1); }
+.speaker-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.speaker-dot.active {
+  background: var(--success);
+  animation: blink-dot 0.3s infinite alternate;
+}
+@keyframes blink-dot {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+.speaker-name { flex: 1; }
+.speaking-wave { font-size: 0.7em; }
+.no-speakers { color: var(--text-muted); font-size: 0.75em; }
+
+.sidebar-voice {
+  margin-top: 8px;
+}
+
+/* ==================== 角色选择器 ==================== */
+
+.role-selector {
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.role-selector h4 {
+  color: var(--accent2);
+  margin-bottom: 4px;
+}
+.select-hint {
+  color: var(--text-muted);
+  font-size: 0.8em;
+  margin-bottom: 10px;
+}
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.role-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  font-size: 0.8em;
+}
+.role-option:hover { border-color: var(--accent2); }
+.role-option.selected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.role-option.WOLF.selected { border-color: var(--wolf); }
+.role-option.VILLAGE.selected { border-color: var(--village); }
+.role-option-icon { font-size: 1.5em; }
+.role-option-name { font-weight: 600; }
+.role-option-desc { font-size: 0.72em; color: var(--text-muted); }
+.role-count {
+  font-size: 0.75em;
+  background: var(--accent);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.role-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.role-config-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.config-role-tag {
+  font-size: 0.8em;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.config-role-tag.WOLF { background: rgba(192,57,43,0.2); color: var(--wolf); }
+.config-role-tag.VILLAGE { background: rgba(41,128,185,0.2); color: var(--village); }
+
+.role-count-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.role-count-display {
+  font-size: 1em;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.warning-text {
+  color: var(--accent2);
+  font-size: 0.8em;
+  margin: 4px 0;
+}
+
+/* 宽版大厅卡片 */
+.lobby-card-wide { max-width: 650px; }
+
+/* ==================== 音效控制 ==================== */
+
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+.audio-btn {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  font-size: 0.85em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.audio-btn:hover { border-color: var(--text-secondary); }
+.audio-btn.on { border-color: var(--accent); }
+.audio-btn.off { opacity: 0.4; }
+.settings-btn { font-size: 0.75em; }
+
+.volume-sliders {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 100;
+  min-width: 160px;
+  box-shadow: var(--shadow);
+}
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.volume-row:last-child { margin-bottom: 0; }
+.volume-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 4px;
+}
+.vol-val {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  min-width: 35px;
+  text-align: right;
+}
+
+/* ==================== 弹窗/Modal ==================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-content {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+}
+.role-intro-modal {
+  max-width: 850px;
+  width: 100%;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  border-radius: 16px 16px 0 0;
+  z-index: 2;
+}
+.modal-header h3 { color: var(--accent2); font-size: 1.3em; }
+.modal-close {
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.2em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.modal-close:hover { color: var(--text-primary); background: var(--bg-primary); }
+.modal-body {
+  padding: 16px 24px;
+}
+.intro-text {
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.role-intro-card {
+  background: var(--bg-primary);
+  border-left: 4px solid #888;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.role-intro-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.role-intro-icon { font-size: 1.8em; }
+.role-intro-title h4 { font-size: 1.05em; margin: 0; }
+.role-intro-team { font-size: 0.78em; font-weight: 600; }
+.role-intro-desc { color: var(--text-secondary); font-size: 0.85em; margin-bottom: 8px; }
+.role-intro-abilities {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+}
+.role-intro-abilities li {
+  font-size: 0.82em;
+  padding: 2px 0;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.role-intro-abilities li strong { color: var(--accent2); }
+.role-intro-abilities li em { color: var(--text-secondary); font-style: italic; }
+.role-intro-tips {
+  font-size: 0.78em;
+  color: var(--text-muted);
+  font-style: italic;
+  border-top: 1px dashed var(--border);
+  padding-top: 6px;
+}
+.role-intro-summary {
+  background: var(--bg-primary);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+}
+.role-intro-summary h4 { color: var(--accent2); margin-bottom: 10px; }
+.action-order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.order-step {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.82em;
+  font-weight: 600;
+}
+.order-step.wolf { background: rgba(192,57,43,0.15); color: var(--wolf); }
+.order-step.village { background: rgba(41,128,185,0.15); color: var(--village); }
+.order-arrow { color: var(--text-muted); font-size: 0.8em; }
+.order-note { color: var(--text-muted); font-size: 0.78em; }
+.modal-footer {
+  padding: 12px 24px 20px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+/* ==================== 大厅公开房间列表 ==================== */
+
+.lobby-public {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.lobby-public h3 {
+  color: var(--accent2);
+  margin-bottom: 10px;
+  font-size: 1em;
+}
+.lobby-empty {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  text-align: center;
+  padding: 12px;
+}
+.lobby-room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.lobby-room-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: fadeSlideIn 0.3s ease;
+}
+.lobby-room-card:hover {
+  border-color: var(--accent);
+  transform: translateX(4px);
+  background: rgba(233,69,96,0.05);
+}
+.lobby-room-card.private {
+  opacity: 0.7;
+  border-style: dashed;
+}
+.lobby-room-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lobby-room-code {
+  font-family: monospace;
+  font-size: 1.1em;
+  font-weight: 700;
+  color: var(--accent2);
+  letter-spacing: 2px;
+}
+.lobby-room-host {
+  font-size: 0.78em;
+  color: var(--text-secondary);
+}
+.lobby-room-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lobby-room-players {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+.lobby-room-lock, .lobby-room-key {
+  font-size: 0.85em;
+}
+.lobby-room-public-tag {
+  font-size: 0.7em;
+  background: rgba(39,174,96,0.2);
+  color: var(--success);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ---- 创建房间选项 ---- */
+.create-section h3 {
+  margin-bottom: 16px;
+  color: var(--accent);
+}
+.create-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.create-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.create-field label {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+.create-field input {
+  width: 100%;
+}
+
+/* ---- 房间meta标记 ---- */
+.room-meta {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.room-privacy-badge {
+  font-size: 0.75em;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.room-privacy-badge.private { background: rgba(192,57,43,0.15); color: var(--danger); }
+.room-privacy-badge.public { background: rgba(39,174,96,0.15); color: var(--success); }
+.room-privacy-badge.password { background: rgba(245,197,24,0.15); color: var(--accent2); }
+.room-privacy-badge.players { background: rgba(41,128,185,0.15); color: var(--village); }
+
+.room-header-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.room-privacy-summary {
+  text-align: center;
+  padding: 8px;
+  color: var(--text-secondary);
+  font-size: 0.85em;
+}
+
+/* ==================== 设置面板 ==================== */
+
+.settings-modal {
+  max-width: 460px;
+  width: 100%;
+  animation: modalSlideIn 0.25s ease;
+}
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.settings-section {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.settings-section:last-child { border-bottom: none; }
+.settings-section h4 {
+  color: var(--accent2);
+  margin-bottom: 10px;
+  font-size: 0.95em;
+}
+.settings-danger h4 { color: var(--danger); }
+
+.settings-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.settings-toggle span {
+  color: var(--text-primary);
+  font-size: 0.9em;
+}
+.settings-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.settings-hint {
+  color: var(--text-muted);
+  font-size: 0.78em;
+  margin-top: 4px;
+}
+.settings-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.85em;
+  margin-bottom: 4px;
+}
+.settings-input-row {
+  display: flex;
+  gap: 8px;
+}
+.settings-input-row input {
+  flex: 1;
+  font-size: 0.9em;
+}
+.settings-row {
+  margin-bottom: 12px;
+}
+.settings-msg {
+  text-align: center;
+  color: var(--success);
+  font-size: 0.85em;
+  padding: 8px;
+  background: rgba(39,174,96,0.1);
+  border-radius: var(--radius);
+  animation: fadeIn 0.3s ease;
+}
+
+/* ==================== 语音权限提示 ==================== */
+
+.voice-join-prompt {
+  text-align: center;
+  padding: 12px 0;
+}
+.voice-join-icon {
+  font-size: 2em;
+  display: block;
+  margin-bottom: 8px;
+}
+.voice-prompt-text {
+  color: var(--text-secondary);
+  font-size: 0.82em;
+  margin-bottom: 8px;
+}
+
+.voice-permission-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--accent2);
+  border-radius: 12px;
+  padding: 16px;
+  animation: modalSlideIn 0.25s ease;
+}
+.voice-permission-content {
+  text-align: center;
+}
+.voice-permission-content h4 {
+  color: var(--accent2);
+  margin-bottom: 8px;
+  font-size: 1em;
+}
+.voice-permission-content p {
+  color: var(--text-secondary);
+  font-size: 0.85em;
+  margin-bottom: 4px;
+}
+.voice-permission-content strong {
+  color: var(--accent);
+}
+.voice-permission-icon {
+  font-size: 2.5em;
+  display: block;
+  margin-bottom: 8px;
+}
+.voice-permission-note {
+  color: var(--text-muted) !important;
+  font-size: 0.75em !important;
+  margin-top: 8px;
+}
+.voice-permission-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+.voice-permission-buttons .btn {
+  flex: 1;
+  max-width: 120px;
+}
+
+.voice-chat-active {
+  border-color: var(--success) !important;
+}
+
+.voice-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.voice-status-dot.active {
+  background: var(--success);
+  animation: blink-dot 1s infinite alternate;
+}
+
+/* ==================== 动画效果 ==================== */
+
+/* 页面淡入 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 上滑淡入 */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 左滑淡入 */
+@keyframes fadeSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 弹窗滑入 */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 弹窗淡出 */
+@keyframes modalSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+}
+
+/* 脉冲 */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* 轻微浮动 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* 闪烁 */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 死亡效果 */
+@keyframes deathFade {
+  0% { opacity: 1; transform: scale(1); filter: none; }
+  50% { opacity: 0.5; transform: scale(0.95); filter: grayscale(0.5); }
+  100% { opacity: 0.4; transform: scale(0.92); filter: grayscale(1); }
+}
+
+/* 打字光标闪烁 */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 入场应用 */
+.screen {
+  animation: fadeIn 0.4s ease;
+}
+
+.login-card {
+  animation: fadeSlideIn 0.5s ease;
+}
+
+.lobby-card {
+  animation: fadeSlideIn 0.4s ease;
+}
+
+.lobby-room-card:nth-child(1) { animation-delay: 0s; }
+.lobby-room-card:nth-child(2) { animation-delay: 0.05s; }
+.lobby-room-card:nth-child(3) { animation-delay: 0.1s; }
+.lobby-room-card:nth-child(4) { animation-delay: 0.15s; }
+.lobby-room-card:nth-child(5) { animation-delay: 0.2s; }
+
+.gameover-card {
+  animation: fadeSlideIn 0.5s ease;
+}
+
+.gameover-banner {
+  animation: pulse 2s infinite;
+}
+
+/* 玩家标签入场 */
+.player-tag {
+  animation: fadeSlideInLeft 0.3s ease;
+}
+
+/* 玩家死亡渐隐 */
+.player-item.dead {
+  animation: deathFade 0.6s ease forwards;
+}
+
+/* 角色卡悬浮 */
+.role-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.role-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+
+/* 行动卡片悬浮 */
+.action-card {
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.action-card:active {
+  transform: scale(0.95);
+}
+
+/* 目标按钮入场 */
+.target-btn {
+  animation: fadeSlideIn 0.25s ease;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.target-btn:active {
+  transform: scale(0.93);
+}
+
+/* 投票按钮入场 */
+.vote-btn {
+  animation: fadeSlideIn 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.vote-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.vote-btn:active {
+  transform: scale(0.93);
+}
+
+/* 夜晚过渡 */
+.night-panel {
+  animation: fadeIn 0.5s ease;
+}
+
+/* 白天过渡 */
+.day-panel {
+  animation: fadeIn 0.5s ease;
+}
+
+/* 死亡公告 */
+.death-announcement {
+  animation: fadeSlideIn 0.4s ease;
+}
+.peace-announcement {
+  animation: fadeSlideIn 0.4s ease;
+}
+
+/* 身份揭晓项 */
+.reveal-item {
+  animation: fadeSlideIn 0.4s ease;
+  transition: transform 0.2s ease;
+}
+.reveal-item:hover {
+  transform: scale(1.05);
+}
+
+/* 游戏logo浮动 */
+.game-logo {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 聊天消息入场 */
+.chat-msg {
+  animation: fadeSlideIn 0.2s ease;
+}
+
+/* 按钮波纹效果 */
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.btn:active {
+  transform: scale(0.96);
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn:active::after {
+  opacity: 1;
+}
+
+/* 人数badge动画 */
+.room-privacy-badge.players {
+  animation: pulse 2s infinite;
+}
+
+/* 阶段指示器 */
+.phase-indicator .phase-name {
+  animation: fadeIn 0.3s ease;
+}
+
+/* 夜晚步骤名称 */
+.night-step-name {
+  animation: fadeSlideIn 0.3s ease;
+}
+
+/* 设置齿轮旋转 */
+.settings-btn:hover {
+  animation: spin 1s linear;
+}
+
+/* 加载闪屏 */
+.loading {
+  animation: fadeIn 0.5s ease, pulse 1.5s infinite;
+}
+
+/* 游戏结束banner */
+.gameover-banner.won {
+  animation: fadeSlideIn 0.6s ease, pulse 2s 0.6s infinite;
+}
+.gameover-banner.lost {
+  animation: fadeSlideIn 0.6s ease;
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 900px) {
+  .game-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  .game-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  .game-rightbar { border-left: none; border-top: 1px solid var(--border); }
+  .action-selector { flex-direction: column; align-items: center; }
+  .action-card { width: 100%; max-width: 300px; }
+  .role-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .role-cards-grid { grid-template-columns: 1fr; }
+  .role-intro-modal { max-width: 100%; margin: 10px; }
+}

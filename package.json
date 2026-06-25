@@ -1,0 +1,73 @@
+{
+  "name": "werewolf-online",
+  "version": "1.0.0",
+  "description": "狼人杀在线联机版 - PC桌面多人联机游戏",
+  "private": true,
+  "main": "electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && node src/index.js",
+    "dev:client": "cd client && npx vite --host",
+    "build:client": "cd client && npx vite build",
+    "start": "cd server && node src/index.js",
+    "public": "node start-public.js",
+    "electron": "node electron/main.js",
+    "pack": "npm run build:client && npm run build:server && electron-builder --dir",
+    "dist": "npm run build:client && npm run build:server && electron-builder",
+    "dist:win": "npm run build:client && npm run build:server && electron-builder --win portable",
+    "build:server": "cd server && npm install",
+    "deploy:server": "node deploy-server.js",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "build": {
+    "appId": "com.werewolf.online",
+    "productName": "狼人杀",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "client/dist/**/*",
+      "client/public/**/*",
+      "client/public/bgm/*.mp3",
+      "server/src/**/*",
+      "server/package.json",
+      "server/package-lock.json",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "client/public/illustrations",
+        "to": "illustrations"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "client/public/moon.svg"
+    },
+    "portable": {
+      "artifactName": "Werewolf_Setup_${version}.exe"
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^42.5.0",
+    "electron-builder": "^26.15.3",
+    "ssh2": "^1.17.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "localtunnel": "^2.0.2",
+    "socket.io": "^4.8.3",
+    "uuid": "^14.0.1"
+  }
+}
