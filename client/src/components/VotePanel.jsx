@@ -8,6 +8,7 @@ export default function VotePanel({ socket }) {
   const { gameState } = socket;
   const [voted, setVoted] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState(null);
+  const submittingRef = useRef(false); // 必须在组件顶层调用，不能放在条件分支后面
 
   const alivePlayers = gameState.players?.filter(p => p.alive && p.id !== socket.playerId) || [];
   const myVote = gameState.votes?.[socket.playerId];
@@ -26,8 +27,6 @@ export default function VotePanel({ socket }) {
       </div>
     );
   }
-
-  const submittingRef = useRef(false);
 
   const handleVote = (targetId) => {
     if (submittingRef.current) return; // 防止重复提交

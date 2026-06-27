@@ -26,6 +26,9 @@ RUN cd server && npm install --production
 COPY server/src ./server/src
 COPY client/dist ./client/dist
 ENV PORT=4000
+# 安全: 生产环境应通过 docker run -e 传入实际盐值
+ENV USER_PASSWORD_SALT=werewolf-prod-salt-change-me
+ENV ROOM_PASSWORD_SALT=werewolf-room-salt-change-me
 EXPOSE 4000
 CMD ["node", "server/src/index.js"]
 DOCKERFILE
@@ -39,7 +42,11 @@ docker build -t werewolf /opt/werewolf 2>&1
 echo "=== 启动服务 ==="
 docker stop werewolf 2>/dev/null || true
 docker rm werewolf 2>/dev/null || true
-docker run -d --name werewolf --restart=unless-stopped -p 80:4000 -e PORT=4000 werewolf
+docker run -d --name werewolf --restart=unless-stopped -p 80:4000 \
+  -e PORT=4000 \
+  -e USER_PASSWORD_SALT=werewolf-prod-salt-$(date +%s) \
+  -e ROOM_PASSWORD_SALT=werewolf-room-salt-$(date +%s) \
+  werewolf
 
 echo "=== 部署完成 ==="
 docker ps --filter name=werewolf

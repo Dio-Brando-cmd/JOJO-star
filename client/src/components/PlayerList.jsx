@@ -5,7 +5,7 @@
 import React from 'react';
 import { ROLE_ICONS } from '../utils/constants';
 
-export default function PlayerList({ players, privateState, myId, votes }) {
+export default function PlayerList({ players, privateState, myId, votes, seerCheckResults }) {
   if (!players) return null;
 
   // 判断是否能看到某玩家的角色
@@ -37,6 +37,7 @@ export default function PlayerList({ players, privateState, myId, votes }) {
             showRole={canSeeRole(p)}
             votedFor={votes?.[p.id]}
             voters={getVoters(p.id, votes)}
+            checkResult={seerCheckResults?.[p.id]}
           />
         ))}
       </div>
@@ -60,18 +61,27 @@ export default function PlayerList({ players, privateState, myId, votes }) {
   );
 }
 
-function PlayerItem({ player, isSelf, showRole, dead, votedFor, voters }) {
+function PlayerItem({ player, isSelf, showRole, dead, votedFor, voters, checkResult }) {
   const icon = ROLE_ICONS[player.role] || '❓';
   const hasVoters = voters && voters.length > 0;
 
+  // 预言家查验反馈：金色=好人，银白=狼人
+  let avatarStyle = {};
+  if (checkResult === 'GOOD') {
+    avatarStyle = { background: 'linear-gradient(135deg, #FFD700, #FFA500)', boxShadow: '0 0 10px rgba(255, 215, 0, 0.6)' };
+  } else if (checkResult === 'WOLF') {
+    avatarStyle = { background: 'linear-gradient(135deg, #C0C0C0, #808080)', boxShadow: '0 0 10px rgba(192, 192, 192, 0.6)' };
+  }
+
   return (
     <div className={`player-item ${dead ? 'dead' : ''} ${isSelf ? 'self' : ''} ${hasVoters ? 'voted' : ''}`}>
-      <div className="player-avatar">
+      <div className="player-avatar" style={avatarStyle}>
         {showRole ? <span className="avatar-role">{icon}</span> : <span className="avatar-unknown">❓</span>}
       </div>
       <div className="player-info">
         <span className="player-name">
           {player.name}
+          {player.isBot && <span className="bot-badge">🤖人机</span>}
           {isSelf && <span className="self-tag">你</span>}
           {player.heavyInjury && <span className="injury-tag">重伤</span>}
           {player.isGuarding && <span className="guard-tag">守护中</span>}

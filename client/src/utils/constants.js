@@ -50,6 +50,7 @@ export const PHASES = {
   NIGHT: 'NIGHT',
   DAY: 'DAY',
   VOTE: 'VOTE',
+  DISCUSSION: 'DISCUSSION',
   GAME_OVER: 'GAME_OVER',
 };
 
@@ -61,6 +62,7 @@ export const NIGHT_STEPS = {
   SEER: 'SEER',
   POISON_WITCH: 'POISON_WITCH',
   HEAL_WITCH: 'HEAL_WITCH',
+  VILLAGER: 'VILLAGER',
   RESOLUTION: 'RESOLUTION',
 };
 
@@ -72,6 +74,7 @@ export const NIGHT_STEP_NAMES = {
   SEER: '预言家',
   POISON_WITCH: '毒巫',
   HEAL_WITCH: '药巫',
+  VILLAGER: '村民',
   RESOLUTION: '结算',
 };
 
@@ -79,4 +82,5 @@ export const NIGHT_ACTIONS = {
   GO_OUT: 'GO_OUT',
   USE_ABILITY: 'USE_ABILITY',
   SLEEP: 'SLEEP',
+  EAVESDROP: 'EAVESDROP',
 };

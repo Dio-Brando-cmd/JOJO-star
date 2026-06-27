@@ -2,13 +2,15 @@
 // 游戏主界面 —— 玩家列表 + 阶段面板 + 语音 + 聊天 + 音效
 // ============================================================
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import PlayerList from './PlayerList';
 import NightPhase from './NightPhase';
 import DayPhase from './DayPhase';
 import VotePanel from './VotePanel';
+import DiscussionPhase from './DiscussionPhase';
 import ChatBox from './ChatBox';
 import RoleCard from './RoleCard';
+import RoleIntroModal from './RoleIntroModal';
 import { VoiceChatContainer } from './VoiceChat';
 import AudioControls from './AudioControls';
 import { PHASES } from '../utils/constants';
@@ -16,6 +18,9 @@ import { PHASES } from '../utils/constants';
 export default function GameBoard({ socket, playerName, audio, voiceChat, onOpenSettings }) {
   const { gameState, privateState } = socket;
   const { playSFX, playMusic } = audio;
+  const [showRules, setShowRules] = useState(false);
+  const [lastWords, setLastWords] = useState('');
+  const [lastWordsSent, setLastWordsSent] = useState(false);
 
   // 根据游戏阶段切换背景音乐
   useEffect(() => {
@@ -68,6 +73,9 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
           <span className={`status-badge ${isAlive ? 'alive' : 'dead'}`}>
             {isAlive ? '存活' : '已出局'}
           </span>
+          <button className="btn btn-small btn-ghost" onClick={() => setShowRules(true)} title="规则说明">
+            📜
+          </button>
           {onOpenSettings && (
             <button className="btn btn-small btn-ghost" onClick={onOpenSettings} title="设置">
               ⚙️
@@ -85,6 +93,7 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
             privateState={privateState}
             myId={socket.playerId}
             votes={gameState.votes}
+            seerCheckResults={privateState?.seerCheckResults}
           />
           {voiceChat && (
             <div className="sidebar-voice">
@@ -117,6 +126,9 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
               <p>你已出局，请等待投票结束</p>
             </div>
           )}
+          {gameState.phase === PHASES.DISCUSSION && (
+            <DiscussionPhase socket={socket} playerName={playerName} voiceChat={voiceChat} />
+          )}
 
           {/* 夜晚日志 */}
           {gameState.nightLog && gameState.nightLog.length > 0 && gameState.phase === PHASES.DAY && (
@@ -137,6 +149,39 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
           <ChatBox socket={socket} playerName={playerName} />
         </aside>
       </div>
+
+      {/* 遗言输入（死亡玩家可见） */}
+      {!isAlive && !lastWordsSent && gameState.phase !== 'GAME_OVER' && (
+        <div className="last-words-bar">
+          <span className="last-words-label">💀 遗言:</span>
+          <input
+            type="text"
+            value={lastWords}
+            onChange={e => setLastWords(e.target.value)}
+            placeholder="留下你的最后遗言..."
+            maxLength={100}
+            className="last-words-input"
+            onKeyDown={e => {
+              if (e.key === 'Enter' && lastWords.trim()) {
+                socket.socket?.emit('player:lastWords', { message: lastWords.trim() });
+                setLastWordsSent(true);
+              }
+            }}
+          />
+          <button
+            className="btn btn-small btn-ghost"
+            disabled={!lastWords.trim()}
+            onClick={() => {
+              socket.socket?.emit('player:lastWords', { message: lastWords.trim() });
+              setLastWordsSent(true);
+            }}
+          >
+            发送
+          </button>
+        </div>
+      )}
+
+      <RoleIntroModal show={showRules} onClose={() => setShowRules(false)} />
     </div>
   );
 }
@@ -160,6 +205,7 @@ function PhaseIndicator({ phase, nightStep }) {
     SEER: '预言家行动',
     POISON_WITCH: '毒巫行动',
     HEAL_WITCH: '药巫行动',
+    VILLAGER: '村民行动',
     RESOLUTION: '结算中',
   };
 

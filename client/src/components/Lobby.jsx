@@ -284,16 +284,21 @@ export default function Lobby({ socket, playerName, bgm, onJoined, onChangeName 
 
 function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
   const { gameState } = socket;
-  const isHost = gameState.hostId === socket.playerId;
   const playerCount = gameState.players?.length || 0;
   const maxPlayers = gameState.maxPlayers || 12;
-  const canStart = playerCount >= 5;
+  const minPlayers = gameState.minPlayers || 2;
+  // 房主检测：hostId 匹配 或 是首位玩家（兜底）
+  const isHost = gameState.hostId === socket.playerId ||
+    (gameState.players?.length > 0 && gameState.players[0]?.id === socket.playerId);
+  const canStart = playerCount >= minPlayers;
   const [showRoleIntro, setShowRoleIntro] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showName, setShowName] = useState(() => {
     return localStorage.getItem('werewolf_show_name') !== 'false';
   });
   const [privacyMsg, setPrivacyMsg] = useState('');
+  const [startError, setStartError] = useState('');
+  const [starting, setStarting] = useState(false);
 
   const handleRoleConfigUpdate = useCallback((roleConfig) => {
     socket.socket?.emit('room:updateRoleConfig', { roleConfig }, (res) => {
@@ -304,10 +309,33 @@ function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
   }, [socket]);
 
   const handleStartGame = useCallback(() => {
+    if (starting) return;
+    setStarting(true);
+    setStartError('');
     socket.socket?.emit('game:start', {
       roleConfig: gameState.customRoleConfig,
+    }, (response) => {
+      setStarting(false);
+      if (response?.error) {
+        setStartError(response.error);
+      }
     });
-  }, [socket, gameState]);
+  }, [socket, gameState, starting]);
+
+  // 键盘快捷键：Enter 或 3 开始游戏（仅房主）
+  useEffect(() => {
+    if (!isHost) return;
+    const handleKeyDown = (e) => {
+      // 忽略在输入框中按下的键
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      if ((e.key === 'Enter' || e.key === '3') && !starting) {
+        e.preventDefault();
+        handleStartGame();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isHost, starting, handleStartGame]);
 
   const handleToggleShowName = () => {
     const next = !showName;
@@ -388,19 +416,50 @@ function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
           </div>
         )}
 
+        {/* 房主人机开关 */}
+        {isHost && (
+          <div className="bot-toggle-section">
+            <label className="bot-toggle-label">
+              <input
+                type="checkbox"
+                checked={gameState.enableBots !== false}
+                onChange={async (e) => {
+                  await socket.toggleBots(e.target.checked);
+                }}
+              />
+              <span>🤖 自动补足人机至6人</span>
+            </label>
+            <p className="bot-toggle-hint">人数不足时自动添加AI机器人补齐</p>
+          </div>
+        )}
+
         <div className="lobby-buttons">
           {isHost && (
-            <button
-              className="btn btn-primary btn-large"
-              onClick={handleStartGame}
-              disabled={!canStart}
-            >
-              {canStart ? '🎮 开始游戏' : `至少需要5人 (当前${playerCount})`}
-            </button>
+            <>
+              <button
+                className="btn btn-primary btn-large start-game-btn"
+                onClick={handleStartGame}
+                disabled={starting}
+              >
+                {starting ? '⏳ 正在开始...' : canStart
+                  ? `🎮 开始游戏 (Enter/3)`
+                  : `⚠️ 人数不足 (${playerCount}/${minPlayers}) — 点此强制开始`}
+              </button>
+              {!canStart && (
+                <p className="warning-text">⚠️ 当前仅{playerCount}人，低于推荐{minPlayers}人，但可强制开始测试</p>
+              )}
+              {canStart && (
+                <p className="keyboard-hint">💡 按 <kbd>Enter</kbd> 或 <kbd>3</kbd> 快速开始游戏</p>
+              )}
+            </>
           )}
-          {!canStart && !isHost && (
-            <p className="waiting-hint">等待房主开始游戏...（至少需要5人）</p>
+          {!isHost && !canStart && (
+            <p className="waiting-hint">等待房主开始游戏...（至少需要{minPlayers}人）</p>
           )}
+          {!isHost && canStart && (
+            <p className="waiting-hint">等待房主开始游戏...</p>
+          )}
+          {startError && <p className="error-text">❌ {startError}</p>}
           <button className="btn btn-ghost" onClick={handleLeaveRoom}>离开房间</button>
         </div>
       </div>
@@ -425,6 +484,11 @@ function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
         onExitGame={null}
         isInGame={false}
         bgm={bgm}
+        enableBots={gameState.enableBots}
+        botCount={gameState.botCount || 0}
+        onSetBotCount={async (count) => {
+          await socket.setBotCount(count);
+        }}
       />
     </div>
   );

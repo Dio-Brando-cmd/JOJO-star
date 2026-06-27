@@ -13,13 +13,18 @@ export default function NightPhase({ socket }) {
   const { nightStep } = gameState;
   const myRole = privateState?.myRole;
   const myPrivate = privateState?.myPrivateState;
+  const myPlayerId = socket.playerId;
 
   const [action, setAction] = useState(null);
   const [target, setTarget] = useState(null);
   const [ability, setAbility] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [autoSubmitted, setAutoSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const submittingRef = useRef(false);
+  const [countdown, setCountdown] = useState(20);
+  const countdownRef = useRef(null);
+  const TIMEOUT_SECONDS = 20; // 匹配服务端 NIGHT_STEP_TIMEOUT
 
   // 当夜晚步骤变化时重置状态（新步骤 = 新机会）
   useEffect(() => {
@@ -27,9 +32,42 @@ export default function NightPhase({ socket }) {
     setTarget(null);
     setAbility({});
     setSubmitted(false);
+    setAutoSubmitted(false);
     setSubmitError(null);
     submittingRef.current = false;
+    setCountdown(TIMEOUT_SECONDS);
+
+    // 清除旧定时器
+    if (countdownRef.current) clearInterval(countdownRef.current);
+
+    // 启动倒计时
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
   }, [nightStep]);
+
+  // 倒计时归零时自动提交当前选择
+  useEffect(() => {
+    if (countdown === 0 && !submitted && isMyTurn) {
+      const autoAction = action || NIGHT_ACTIONS.SLEEP;
+      const autoTarget = action ? target : null;
+      const autoAbility = action ? ability : null;
+      submittingRef.current = true;
+      socket.submitNightAction(autoAction, autoTarget, autoAbility);
+      setSubmitted(true);
+      setAutoSubmitted(true);
+    }
+  }, [countdown]);
 
   const alivePlayers = gameState.players?.filter(p => p.alive && p.id !== socket.playerId) || [];
 
@@ -59,8 +97,9 @@ export default function NightPhase({ socket }) {
     return (
       <div className="night-panel">
         <div className="night-waiting">
-          <h3>✅ 行动已提交</h3>
+          <h3>{autoSubmitted ? '⏰ 已自动提交' : '✅ 行动已提交'}</h3>
           <p>等待其他玩家完成行动...</p>
+          {autoSubmitted && <p className="auto-submit-note">倒计时结束，已自动提交当前选择</p>}
           <div className="night-spinner" />
           {submitError && (
             <p className="error-text" style={{marginTop:12}}>{submitError}</p>
@@ -77,6 +116,12 @@ export default function NightPhase({ socket }) {
         <RoleIllustration role={myRole} size="small" />
         <h3>🌙 夜晚行动 - {NIGHT_STEP_NAMES[nightStep]}</h3>
         <p className="night-subtitle">选择你今晚的行动</p>
+        <div className="night-countdown">
+          ⏱️ 剩余时间: {countdown}秒
+          <div className="countdown-bar-container">
+            <div className="countdown-bar" style={{width: `${(countdown / TIMEOUT_SECONDS) * 100}%`}} />
+          </div>
+        </div>
       </div>
 
       {/* 第一步：选择行动类型 */}
@@ -96,6 +141,8 @@ export default function NightPhase({ socket }) {
           setTarget={setTarget}
           ability={ability}
           setAbility={setAbility}
+          myPlayerId={myPlayerId}
+          nightStep={nightStep}
           onBack={() => { setAction(null); setTarget(null); setAbility({}); }}
           onSubmit={() => {
             if (submittingRef.current) return;
@@ -106,6 +153,23 @@ export default function NightPhase({ socket }) {
           }}
         />
       )}
+
+      {/* 种狼特殊：告知被感染者 */}
+      {myRole === ROLES.ALPHA_WOLF && myPrivate?.hasUsedInfect && (
+        <div className="alpha-notify-section">
+          <button
+            className="btn btn-secondary alpha-notify-btn"
+            onClick={() => {
+              if (socket.socket) {
+                socket.socket.emit('alpha:notifyInfected');
+              }
+            }}
+          >
+            📢 告知被感染者
+          </button>
+          <p className="alpha-notify-hint">向被你感染的玩家揭露你的身份</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -113,7 +177,7 @@ export default function NightPhase({ socket }) {
 // ==================== 行动类型选择 ====================
 
 function ActionSelector({ myRole, myPrivate, round, onSelect }) {
-  const canGoOut = true; // 所有角色都可以出门
+  const isVillager = isVillagerRole(myRole);
 
   return (
     <div className="action-selector">
@@ -121,15 +185,24 @@ function ActionSelector({ myRole, myPrivate, round, onSelect }) {
       <button className="action-card" onClick={() => onSelect(NIGHT_ACTIONS.GO_OUT)}>
         <span className="action-icon">🚶</span>
         <span className="action-name">出门</span>
-        <span className="action-desc">离开自己的屋子</span>
+        <span className="action-desc">离开自己的屋子去别人家</span>
       </button>
 
-      {/* 使用能力（根据角色不同） */}
-      {!isVillagerRole(myRole) && (
+      {/* 使用能力（非村民角色） */}
+      {!isVillager && (
         <button className="action-card" onClick={() => onSelect(NIGHT_ACTIONS.USE_ABILITY)}>
           <span className="action-icon">✨</span>
           <span className="action-name">使用能力</span>
           <span className="action-desc">{getAbilityDesc(myRole)}</span>
+        </button>
+      )}
+
+      {/* 偷听（村民专属） */}
+      {isVillager && (
+        <button className="action-card eavesdrop-card" onClick={() => onSelect(NIGHT_ACTIONS.EAVESDROP)}>
+          <span className="action-icon">👂</span>
+          <span className="action-name">偷听</span>
+          <span className="action-desc">在目标屋子外偷听，获取模糊情报（不精确）</span>
         </button>
       )}
 
@@ -145,8 +218,11 @@ function ActionSelector({ myRole, myPrivate, round, onSelect }) {
 
 // ==================== 行动详情（选目标 + 选能力） ====================
 
-function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, target, setTarget, ability, setAbility, onBack, onSubmit }) {
+function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, target, setTarget, ability, setAbility, onBack, onSubmit, myPlayerId, nightStep }) {
   const needsTarget = action !== NIGHT_ACTIONS.SLEEP;
+
+  // "自己家"按钮 — 选中自己的屋子（以自己 playerId 标识）
+  const ownHouseId = myPlayerId;
 
   // 守卫特殊处理：守护需要选目标，单纯出门不需要
   const canSubmit = action === NIGHT_ACTIONS.SLEEP || target || (action === NIGHT_ACTIONS.GO_OUT && myRole !== ROLES.GUARD);
@@ -164,8 +240,8 @@ function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, tar
           <div className="player-targets">
             <button
               key="self"
-              className={`target-btn ${target === socketPlayerId() ? 'selected' : ''}`}
-              onClick={() => setTarget(null)}
+              className={`target-btn ${target === ownHouseId ? 'selected' : ''}`}
+              onClick={() => setTarget(ownHouseId)}
             >
               🏠 自己家
             </button>
@@ -192,6 +268,7 @@ function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, tar
           setAbility={setAbility}
           target={target}
           alivePlayers={alivePlayers}
+          nightStep={nightStep}
         />
       )}
 
@@ -209,10 +286,10 @@ function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, tar
 
 // ==================== 角色能力选项 ====================
 
-function AbilityOptions({ myRole, myPrivate, ability, setAbility, target, alivePlayers }) {
+function AbilityOptions({ myRole, myPrivate, ability, setAbility, target, alivePlayers, nightStep }) {
   switch (myRole) {
     case ROLES.ALPHA_WOLF:
-      return <AlphaWolfOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} />;
+      return <AlphaWolfOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} nightStep={nightStep} />;
     case ROLES.GUARD:
       return <p className="ability-note">🏠 前往该玩家家中进行守护（如对方出门则无效）</p>;
     case ROLES.WEREWOLF:
@@ -230,31 +307,35 @@ function AbilityOptions({ myRole, myPrivate, ability, setAbility, target, aliveP
   }
 }
 
-function AlphaWolfOptions({ ability, setAbility, myPrivate }) {
+function AlphaWolfOptions({ ability, setAbility, myPrivate, nightStep }) {
   const toggle = (key) => setAbility(prev => ({ ...prev, [key]: !prev[key] }));
-  const canInfect = !myPrivate?.hasUsedInfect;
-  // 种狼可在同一晚变狼+刀人：变狼 action 先执行，然后刀人
-  const canKill = myPrivate?.isTransformed || !myPrivate?.isTransformed;
+  const canInfect = !myPrivate?.hasUsedInfect && !myPrivate?.hasKilled;
+  // 种狼步骤只能变身/感染；刀人在狼人步骤进行
+  const isWolfStep = nightStep === 'WEREWOLF';
+  const canKill = isWolfStep && myPrivate?.isTransformed && !myPrivate?.hasKilled;
 
   return (
     <div className="ability-options">
-      {!myPrivate?.isTransformed && (
+      {!isWolfStep && !myPrivate?.isTransformed && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.transform} onChange={() => toggle('transform')} />
-          <span>🐺 变狼（变狼前不会被预言家查出；变狼后可在同一晚刀人）</span>
+          <span>🐺 变狼（变狼后可在狼人步骤与同伴一起刀人）</span>
         </label>
       )}
-      {canInfect && !ability.kill && (
+      {!isWolfStep && canInfect && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.infect} onChange={() => toggle('infect')} />
-          <span>🦠 感染目标（下个夜晚生效；使用后当前夜晚算狼人；与刀人互斥）</span>
+          <span>🦠 感染目标（下个夜晚生效；使用后当前夜晚算狼人）</span>
         </label>
       )}
-      {canKill && !ability.infect && (
+      {isWolfStep && canKill && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.kill} onChange={() => toggle('kill')} />
-          <span>🔪 刀人（刀人后无法再使用感染；可与变狼在同一晚）</span>
+          <span>🔪 刀人（作为狼群一员选择击杀目标）</span>
         </label>
+      )}
+      {isWolfStep && myPrivate?.isTransformed && !canKill && (
+        <p className="ability-note" style={{color:'#888', fontSize:'0.9em'}}>🐺 你已变狼，今晚随狼群一起行动（本步骤自动视为刀人目标选择）</p>
       )}
     </div>
   );
@@ -322,19 +403,19 @@ function HunterOptions({ ability, setAbility, myPrivate }) {
   const toggleWeapon = (weapon) => setAbility(prev => ({ ...prev, [weapon]: !prev[weapon] }));
   return (
     <div className="ability-options">
-      <p className="weapon-note">🔫 选择携带的武器（不带出门则会腐蚀）:</p>
+      <p className="weapon-note">🔫 选择携带的武器（只有带出门才会腐蚀，留在家中安全）:</p>
       <label className="ability-check">
         <input type="checkbox" checked={!!ability.hasRifle} onChange={() => toggleWeapon('hasRifle')} />
-        <span>🔫 猎枪 — 观察目标是否出门，可以射杀（不带出门会腐蚀）</span>
+        <span>🔫 猎枪 — 观察目标是否出门，可以射杀（带出门会腐蚀，留在家中安全）</span>
       </label>
       <label className="ability-check">
         <input type="checkbox" checked={!!ability.hasBlunderbuss} onChange={() => toggleWeapon('hasBlunderbuss')} />
-        <span>💥 短火铳 — 受到攻击时反杀（带出门只能保一晚）</span>
+        <span>💥 短火铳 — 受到攻击时反杀（带出门会腐蚀，只能保一晚）</span>
       </label>
       {ability.hasRifle && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.useRifle} onChange={() => setAbility(prev => ({ ...prev, useRifle: !prev.useRifle, rifleTarget: target }))} />
-          <span>🎯 使用猎枪射杀目标（今晚如没出门则猎枪腐蚀不可用）</span>
+          <span>🎯 使用猎枪射杀目标（开枪后猎枪消耗，无论是否出门）</span>
         </label>
       )}
     </div>
@@ -342,10 +423,6 @@ function HunterOptions({ ability, setAbility, myPrivate }) {
 }
 
 // ==================== 辅助函数 ====================
-
-function socketPlayerId() {
-  return null; // placeholder for "own house" option
-}
 
 function checkIsMyTurn(role, nightStep, myPrivate, round) {
   switch (nightStep) {
@@ -356,13 +433,16 @@ function checkIsMyTurn(role, nightStep, myPrivate, round) {
     case NIGHT_STEPS.GUARD:
       return role === ROLES.GUARD;
     case NIGHT_STEPS.WEREWOLF:
-      return role === ROLES.WEREWOLF || (role === ROLES.ALPHA_WOLF && (myPrivate?.isTransformed || myPrivate?.hasUsedInfect));
+      // 普通狼人 + 种狼（种狼在变身/感染后算狼人群，私密状态可能尚未更新故一律放行）
+      return role === ROLES.WEREWOLF || role === ROLES.ALPHA_WOLF;
     case NIGHT_STEPS.SEER:
       return role === ROLES.SEER;
     case NIGHT_STEPS.POISON_WITCH:
       return role === ROLES.POISON_WITCH;
     case NIGHT_STEPS.HEAL_WITCH:
       return role === ROLES.HEAL_WITCH;
+    case NIGHT_STEPS.VILLAGER:
+      return role === ROLES.VILLAGER;
     default:
       return false;
   }

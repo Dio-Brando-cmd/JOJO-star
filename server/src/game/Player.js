@@ -12,6 +12,8 @@ export class Player {
     this.alive = true;        // 是否存活
     this.team = ROLE_TEAM[role]; // 阵营
     this.disconnected = false;    // 是否断线中
+    this.isBot = false;       // 是否是人机
+    this.hasLastWords = true; // 是否有遗言机会（死亡时触发）
 
     // ---- 位置状态 ----
     this.atHome = true;                // 是否在家
@@ -134,14 +136,16 @@ export class Player {
     };
   }
 
-  // 返回只有自己可见的完整信息
+  // 返回只有自己可见的完整信息（敏感信息仅自己可见）
   toPrivateJSON() {
+    const isWitch = this.role === ROLES.POISON_WITCH || this.role === ROLES.HEAL_WITCH;
     return {
       ...this.toJSON(),
       role: this.role,
       team: this.team,
-      hasPotion: this.hasPotion,
-      hasPoison: this.hasPoison,
+      // 仅女巫可见药水状态
+      hasPotion: isWitch ? this.hasPotion : undefined,
+      hasPoison: isWitch ? this.hasPoison : undefined,
       hasRifle: this.hasRifle,
       hasBlunderbuss: this.hasBlunderbuss,
       rifleUsable: this.rifleUsable,
@@ -152,6 +156,8 @@ export class Player {
       infectedByAlpha: this.infectedByAlpha,
       knownWolves: this.knownWolves,
       canShootNextNight: this.canShootNextNight,
+      checkResult: this.checkResult,       // 预言家查验结果
+      checkTarget: this.checkTarget,       // 预言家查验目标
     };
   }
 }

@@ -1,8 +1,9 @@
 // ============================================================
 // 角色简介公告弹窗 —— 加入房间时展示所有角色说明
+// v1.5.4 修正版
 // ============================================================
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ROLES, ROLE_NAMES, ROLE_ICONS } from '../utils/constants';
 
 const ROLE_DETAILS = [
@@ -13,13 +14,14 @@ const ROLE_DETAILS = [
     team: 'WOLF',
     teamName: '狼人阵营',
     color: '#c0392b',
-    desc: '狼群的首领，拥有三种特殊能力。',
+    desc: '狼群的首领。在种狼步骤变身/感染，随后在狼人步骤与同伴一起刀人。',
     abilities: [
-      '🐺 <strong>变狼</strong>：变身成真正的狼人形态。变狼前不会被预言家查出身份。',
-      '🦠 <strong>感染</strong>：感染一名玩家，下个夜晚变为狼人。使用感染后当前夜晚即算作狼人。若感染预言家，预言家保留能力并获知种狼身份，种狼变为普通村民。',
-      '🔪 <strong>刀人</strong>：变狼后才可刀人。刀人后无法再使用感染。变狼和刀人可在同一晚进行。',
+      '🐺 <strong>变狼</strong>：在种狼步骤变身为狼人形态。变狼前不会被预言家查出。',
+      '🦠 <strong>感染</strong>：感染一名玩家，下个夜晚变为狼人（预言家除外）。使用感染后当前夜晚即算作狼人。',
+      '🔮 <strong>感染预言家</strong>：预言家保留能力但查验结果<em>反转</em>（好人→狼人，狼人→好人），种狼仍属狼人阵营。',
+      '🔪 <strong>刀人</strong>：变狼后在<em>狼人步骤</em>与狼群一起选择击杀目标。',
     ],
-    tips: '策略：可以先感染再变狼刀人，或选择潜伏感染。注意感染预言家会导致自己变村民！',
+    tips: '策略：先变身潜伏，再随狼群统一行动。感染预言家会让其查验结果完全颠倒，是强力干扰战术！',
   },
   {
     id: ROLES.WEREWOLF,
@@ -28,13 +30,13 @@ const ROLE_DETAILS = [
     team: 'WOLF',
     teamName: '狼人阵营',
     color: '#e74c3c',
-    desc: '夜晚出没的猎手，锁定的是人而不是屋子。',
+    desc: '夜晚出没的猎手，锁定人而非屋子，与同伴协同击杀。',
     abilities: [
-      '🔪 <strong>刀人</strong>：夜晚击杀目标。狼人锁定的是<em>人</em>而非屋子，会跟随目标移动。',
-      '🐺 <strong>相认机制</strong>：开局互不相识。若去另一狼人家中，双方相认，下回合可共同睁眼、分头行动。',
-      '⚔️ <strong>互刀</strong>：两狼互刀则相认；一狼刀另一狼则被刀者直接死亡。',
+      '🔪 <strong>刀人</strong>：在狼人步骤击杀目标。锁定的是<em>人</em>而非屋子，会跟随目标移动。',
+      '🐺 <strong>相认机制</strong>：开局互不相识。去另一狼人家中则双方相认，下回合可共同睁眼。',
+      '⚔️ <strong>互刀</strong>：两狼互刀则相认不死；一狼刀另一狼则被刀者直接死亡。',
     ],
-    tips: '策略：早期可尝试寻找其他狼人相认，协同行动效率更高。但注意不要误杀同伴！',
+    tips: '策略：尽早出门寻找同伴相认。协同行动时分散去不同屋子可同时获取多条情报。',
   },
   {
     id: ROLES.SEER,
@@ -43,13 +45,13 @@ const ROLE_DETAILS = [
     team: 'VILLAGE',
     teamName: '好人阵营',
     color: '#7d3c98',
-    desc: '拥有看穿一切的眼睛，查验身份是找出狼人的关键。',
+    desc: '每夜查验一名玩家的阵营身份，是好人方的信息核心。',
     abilities: [
-      '🔮 <strong>查验</strong>：每夜查验一名玩家是"好人"还是"狼人"。',
-      '⚠️ <strong>种狼特殊</strong>：种狼变狼前查验结果为"好人"；种狼使用感染后会被查出。',
-      '🦠 <strong>被感染时</strong>：保留预言能力，立即获知种狼身份，种狼变为普通村民。',
+      '🔮 <strong>查验</strong>：每夜查验一名玩家，获知"好人"或"狼人"。查验后在<em>白天</em>查看目标头像：🟡金色=好人，⬜银白=狼人。',
+      '⚠️ <strong>种狼判定</strong>：未变狼且未感染的种狼查验为"好人"；已变狼或已感染则查出"狼人"。',
+      '🦠 <strong>被感染时</strong>：保留预言能力，但查验结果<em>完全反转</em>。你获知种狼身份，种狼仍属狼人阵营。',
     ],
-    tips: '策略：尽早查验可疑玩家。注意种狼可能在早期伪装成好人，需要结合行为判断。',
+    tips: '策略：尽早查验可疑玩家。被感染后结果反转，需重新评估之前的所有查验结论！',
   },
   {
     id: ROLES.POISON_WITCH,
@@ -58,12 +60,13 @@ const ROLE_DETAILS = [
     team: 'VILLAGE',
     teamName: '好人阵营',
     color: '#2e7d32',
-    desc: '手持烈性毒药，能瞬间灭门一屋之人。',
+    desc: '烈性毒药可灭门一屋之人，药水可救活一人。',
     abilities: [
-      '☠️ <strong>烈性毒药</strong>：毒死目标<em>屋子中所有人</em>。若屋内≥3人且有守卫，则守卫重伤、其余毒死。',
-      '💊 <strong>药水</strong>：可救活一人，但<em>不能治疗守卫重伤</em>。一次性使用。',
+      '☠️ <strong>烈性毒药</strong>：毒死目标<em>屋子中所有人</em>。若屋内≥3人且有守卫：守卫重伤、其余毒死。',
+      '💊 <strong>药水</strong>：救活一名本应死亡的玩家。<em>不能治疗守卫重伤</em>。一次性使用。',
+      '👁️ <strong>知情权</strong>：守卫重伤时毒巫会获知。',
     ],
-    tips: '策略：烈性毒药威力巨大但可能误伤队友，需谨慎选择目标屋子。注意屋内人数！',
+    tips: '策略：烈性毒药威力巨大——人多时慎用以免误伤。优先救预言家或确认的好人。',
   },
   {
     id: ROLES.HEAL_WITCH,
@@ -74,10 +77,10 @@ const ROLE_DETAILS = [
     color: '#27ae60',
     desc: '万能医者，药可救一切，毒则精确致命。',
     abilities: [
-      '💚 <strong>万能药</strong>：可治疗<em>一切</em>，包括守卫重伤和死亡。一次性使用。',
-      '🧪 <strong>毒药</strong>：单目标毒杀。若目标离开屋子则毒药失效；若有其他人进入则毒到第一个进入者。一次性使用。',
+      '💚 <strong>万能药</strong>：治疗<em>一切</em>——死亡救活、重伤治愈。唯一能治疗守卫重伤的手段。一次性使用。',
+      '🧪 <strong>单目标毒药</strong>：毒杀一人。若目标离开屋子则毒药转移到第一个进入者。一次性使用。',
     ],
-    tips: '策略：万能药是唯一能治疗守卫重伤的手段。毒药有传递机制，注意目标移动情况。',
+    tips: '策略：万能药是最强治疗，优先留给可能需要救守卫或预言家的场合。毒药有传递机制。',
   },
   {
     id: ROLES.GUARD,
@@ -86,14 +89,13 @@ const ROLE_DETAILS = [
     team: 'VILLAGE',
     teamName: '好人阵营',
     color: '#2980b9',
-    desc: '强壮的守护者，去目标家中守护，但守不住出门的人。',
+    desc: '强壮的守护者。去目标家中守护，用身体挡住袭击。',
     abilities: [
-      '🛡️ <strong>守护</strong>：去目标家中守护（逻辑是去其家中）。若目标出门则守护无效。',
-      '💔 <strong>重伤机制</strong>：守护的屋子1-2人被狼攻击→重伤；独自在家被1狼攻击→重伤且该狼知道你是守卫。',
-      '🚶 <strong>出门</strong>：可以出门躲避危险。去别人家等同于在家。',
-      '⚠️ <strong>不计入人数</strong>：守护姿态的守卫不计入屋子人数。',
+      '🛡️ <strong>守护</strong>：去目标家中守护。守护姿态不计入屋子人数。若目标出门则守护落空。',
+      '💔 <strong>重伤机制</strong>：守护屋≤2人被狼攻击→重伤挡下击杀；独自在家被1狼攻击→重伤且该狼获知你是守卫。',
+      '⚠️ <strong>注意</strong>：只有药巫的万能药能治疗重伤。重伤状态下继续守护无法挡刀。',
     ],
-    tips: '策略：守护姿态不计入人数是关键变量。注意只有药巫能治疗你的重伤！',
+    tips: '策略：守住关键角色（预言家/女巫）。注意守护姿态不计入人数，会影响毒巫的烈性毒药判定。',
   },
   {
     id: ROLES.HUNTER,
@@ -102,14 +104,13 @@ const ROLE_DETAILS = [
     team: 'VILLAGE',
     teamName: '好人阵营',
     color: '#d35400',
-    desc: '第二晚才能行动，手握猎枪和短火铳两把致命武器。',
+    desc: '第二晚起才能行动，猎枪追踪+短火铳反击+白天开枪，三杀手段。',
     abilities: [
-      '🔫 <strong>猎枪</strong>：白天必杀；夜晚观察目标是否出门+射杀。不带出门则腐蚀失效。追踪前一晚出门的目标可100%命中。',
-      '💥 <strong>短火铳</strong>：防御武器。受到狼人攻击或住处/观察房被下毒时反杀攻击者。带出门只能保一晚后腐蚀。',
-      '🎒 <strong>武器携带</strong>：可选带猎枪、短火铳、都带或都不带。',
-      '👁️ <strong>观察</strong>：选择目标观察其是否出门。',
+      '🔫 <strong>猎枪</strong>：①白天讨论阶段必杀一人（无视防御）；②夜晚观察目标+射杀；③追踪：前一晚出门的目标下晚100%可追踪射杀。不带出门则腐蚀失效。',
+      '💥 <strong>短火铳</strong>：防御武器。受狼攻击时反杀攻击者（含多人围攻时反杀所有）。带出门后腐蚀，只能保一晚。',
+      '🎒 <strong>武器携带</strong>：每晚选择携带猎枪和/或短火铳。不带则留在家中安全。先开枪后腐蚀，确保同晚可用。',
     ],
-    tips: '策略：第二晚才能行动！白天猎枪必杀是最强能力之一。注意武器腐蚀管理——不带出门就会失效。',
+    tips: '策略：第二晚才能行动！白天猎枪是最强单杀。短火铳是保命神器。注意武器管理——带出门就会腐蚀。',
   },
   {
     id: ROLES.VILLAGER,
@@ -118,13 +119,14 @@ const ROLE_DETAILS = [
     team: 'VILLAGE',
     teamName: '好人阵营',
     color: '#5d6d7e',
-    desc: '普通村民，数量最多的好人。夜晚可出门或睡觉。',
+    desc: '普通村民，在所有神职和狼人之后行动。可通过出门观察或偷听获取情报。',
     abilities: [
-      '🚶 <strong>出门</strong>：可去别人家中（注意：屋内人数<3时才能进入其他村民家）。',
-      '😴 <strong>睡觉</strong>：留在自己家中，最简单安全的选择。',
-      '🔢 <strong>编号区分</strong>：各村民之间有编号区分，便于讨论时指认。',
+      '🚶 <strong>出门</strong>：去别人家中，天亮后得知目标屋子的访客人数（≥3人显示"很多人"并被赶回家）。',
+      '👂 <strong>偷听</strong>：在目标屋子外偷听。<em>基于屋内实际成员</em>随机给线索：狼嚎=有狼人、祈祷=有神职、多人在活动、空无一人等。',
+      '😴 <strong>睡觉</strong>：留在自己家中。安全但无信息。',
+      '🔢 <strong>编号</strong>：每个村民有唯一编号，便于讨论时区分。',
     ],
-    tips: '策略：虽然无特殊能力，但村民的投票和讨论是好人获胜的根本。注意分析信息，找出矛盾。',
+    tips: '策略：出门看人数+偷听听线索，是好人方的情报基石。3人以上被赶回家说明目标屋子很热闹！',
   },
 ];
 
@@ -169,9 +171,9 @@ export default function RoleIntroModal({ show, onClose }) {
           </div>
 
           <div className="role-intro-summary">
-            <h4>🌙 夜晚行动顺序（第二晚起）</h4>
+            <h4>🌙 夜晚行动顺序</h4>
             <div className="action-order">
-              <span className="order-step wolf">🐺 猎人</span>
+              <span className="order-step hunter">🔫 猎人</span>
               <span className="order-arrow">→</span>
               <span className="order-step wolf">👑 种狼</span>
               <span className="order-arrow">→</span>
@@ -184,8 +186,12 @@ export default function RoleIntroModal({ show, onClose }) {
               <span className="order-step village">☠️ 毒巫</span>
               <span className="order-arrow">→</span>
               <span className="order-step village">💚 药巫</span>
+              <span className="order-arrow">→</span>
+              <span className="order-step village">👨‍🌾 村民</span>
             </div>
-            <p className="order-note">第一晚猎人不能行动</p>
+            <p className="order-note">
+              第一晚猎人不能行动；村民在所有神和狼之后行动
+            </p>
           </div>
         </div>
 

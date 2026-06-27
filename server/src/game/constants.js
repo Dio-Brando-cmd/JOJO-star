@@ -62,6 +62,7 @@ export const PHASES = {
   NIGHT: 'NIGHT',             // 夜晚阶段
   DAY: 'DAY',                 // 白天讨论阶段
   VOTE: 'VOTE',               // 投票阶段
+  DISCUSSION: 'DISCUSSION',   // 轮流发言阶段（每人30秒）
   GAME_OVER: 'GAME_OVER',     // 游戏结束
 };
 
@@ -74,6 +75,7 @@ export const NIGHT_STEPS = {
   SEER: 'SEER',               // 预言家
   POISON_WITCH: 'POISON_WITCH', // 毒巫
   HEAL_WITCH: 'HEAL_WITCH',   // 药巫
+  VILLAGER: 'VILLAGER',       // 村民（所有神和狼之后）
   RESOLUTION: 'RESOLUTION',   // 结算
 };
 
@@ -85,6 +87,7 @@ export const NIGHT_STEPS_NIGHT1 = [
   NIGHT_STEPS.SEER,
   NIGHT_STEPS.POISON_WITCH,
   NIGHT_STEPS.HEAL_WITCH,
+  NIGHT_STEPS.VILLAGER,
   NIGHT_STEPS.RESOLUTION,
 ];
 
@@ -97,6 +100,7 @@ export const NIGHT_STEPS_FULL = [
   NIGHT_STEPS.SEER,
   NIGHT_STEPS.POISON_WITCH,
   NIGHT_STEPS.HEAL_WITCH,
+  NIGHT_STEPS.VILLAGER,
   NIGHT_STEPS.RESOLUTION,
 ];
 
@@ -105,6 +109,7 @@ export const NIGHT_ACTIONS = {
   GO_OUT: 'GO_OUT',           // 出门
   USE_ABILITY: 'USE_ABILITY', // 使用能力
   SLEEP: 'SLEEP',             // 睡觉（留在家中）
+  EAVESDROP: 'EAVESDROP',     // 偷听（村民专属）
 };
 
 // ---- 种狼能力子选项 ----

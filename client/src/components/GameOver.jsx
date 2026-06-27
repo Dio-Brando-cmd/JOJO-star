@@ -26,22 +26,30 @@ export default function GameOver({ gameState, privateState, playerName, onBackTo
 
         {/* 所有玩家角色展示 */}
         <div className="role-reveal">
-          <h3>身份揭晓</h3>
+          <h3>🃏 身份揭晓</h3>
           <div className="reveal-grid">
-            {players.map(p => (
-              <div key={p.id} className={`reveal-item ${!p.alive ? 'dead' : ''}`}>
-                <RoleIllustration role={p.role} size="small" />
-                <div className="reveal-info">
-                  <span className="reveal-name">
-                    {p.name}
-                    {p.id === gameState.hostId && ' 👑'}
-                  </span>
-                  <span className={`reveal-status ${p.alive ? 'alive' : 'dead'}`}>
-                    {p.alive ? '存活' : '出局'}
-                  </span>
+            {players.map(p => {
+              const roleName = ROLE_NAMES[p.role] || '未知';
+              const teamName = p.team ? TEAM_NAMES[p.team] : '';
+              return (
+                <div key={p.id} className={`reveal-item ${!p.alive ? 'dead' : ''}`}>
+                  <RoleIllustration role={p.role} size="small" />
+                  <div className="reveal-info">
+                    <span className="reveal-name">
+                      {p.name}
+                      {p.id === gameState.hostId && ' 👑'}
+                    </span>
+                    <span className="reveal-role">
+                      {p.role ? roleName : '???'}
+                    </span>
+                    {teamName && <span className={`reveal-team ${p.team}`}>{teamName}</span>}
+                    <span className={`reveal-status ${p.alive ? 'alive' : 'dead'}`}>
+                      {p.alive ? '✅ 存活' : '💀 出局'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

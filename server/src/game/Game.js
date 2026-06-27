@@ -5,6 +5,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Player } from './Player.js';
 import { NightResolver } from './NightResolver.js';
+import { BotManager } from './BotManager.js';
 import {
   ROLES, ROLE_NAMES, TEAMS, ROLE_TEAM,
   PHASES, NIGHT_STEPS, NIGHT_STEPS_NIGHT1, NIGHT_STEPS_FULL,
@@ -22,7 +23,7 @@ export class Game {
     this.nightStep = null;           // 当前夜晚子步骤
     this.nightStepIndex = 0;
     this.maxPlayers = 12;
-    this.minPlayers = 5;
+    this.minPlayers = 2;
 
     // 房间隐私设置
     this.isPrivate = false;
@@ -44,9 +45,23 @@ export class Game {
     this.timer = null;
     this.timeLeft = 0;
     this._phaseTimeout = null;   // 阶段超时句柄
-    this.NIGHT_STEP_TIMEOUT = 60000;  // 60s 每步骤
-    this.DAY_TIMEOUT = 120000;        // 120s 讨论
-    this.VOTE_TIMEOUT = 60000;        // 60s 投票
+    this.NIGHT_STEP_TIMEOUT = 20000;  // 20s 每步骤（优化结算速度）
+    this.DAY_TIMEOUT = 60000;         // 60s 讨论
+    this.VOTE_TIMEOUT = 40000;        // 40s 投票
+    this.DISCUSSION_PER_SPEAKER = 30; // 每人30秒发言
+
+    // 讨论阶段状态
+    this.discussionOrder = [];        // 发言顺序 (playerIds)
+    this.currentSpeakerIndex = 0;
+    this.currentSpeakerId = null;
+    this.discussionTimeLeft = 0;
+
+    // 人机管理
+    this.botManager = new BotManager(this);
+    this.enableBots = true;           // 默认开启人机
+    this.minBots = 6;                 // 自动补足至6人
+    this.botCount = 0;                // 房主指定人机数量（0=自动补足至minBots）
+    this._botIdCounter = 0;
 
     // 自定义角色配置（房主可选）
     this.customRoleConfig = null;
@@ -136,17 +151,66 @@ export class Game {
 
   _startNightStepTimer() {
     this._clearPhaseTimeout();
-    this.timeLeft = this.NIGHT_STEP_TIMEOUT / 1000;
-    this._phaseTimeout = setTimeout(() => {
-      if (this.phase !== PHASES.NIGHT) return;
-      // 自动跳过当前步骤（未操作的玩家默认睡觉）
-      for (const p of this.players) {
-        if (p.alive && p.nightAction === null) {
-          p.nightAction = 'SLEEP';
+    // RESOLUTION 步骤不需要等待，直接推进结算
+    if (this.nightStep === NIGHT_STEPS.RESOLUTION) {
+      this._phaseTimeout = setTimeout(() => {
+        if (this.phase !== PHASES.NIGHT) return;
+        this.advanceNightStep();
+      }, 500); // 短暂延迟让客户端渲染
+      return;
+    }
+    // 检查当前步骤是否有存活且符合条件的玩家
+    const playersForStep = this._getPlayersForStep(this.nightStep);
+    if (playersForStep.length === 0) {
+      // 当前角色全部出局 → 随机 3-7 秒模拟决策延迟后自动推进
+      const delay = 3000 + Math.floor(Math.random() * 4001);
+      this.timeLeft = Math.round(delay / 1000);
+      console.log(`[游戏] ${this.id} 步骤 ${this.nightStep} 无存活角色，${this.timeLeft}s 后自动推进`);
+      this._phaseTimeout = setTimeout(() => {
+        if (this.phase !== PHASES.NIGHT) return;
+        this.advanceNightStep();
+      }, delay);
+    } else {
+      this.timeLeft = this.NIGHT_STEP_TIMEOUT / 1000;
+      // 人机自动行动
+      this.botManager.autoActForStep(this.nightStep);
+      this._phaseTimeout = setTimeout(() => {
+        if (this.phase !== PHASES.NIGHT) return;
+        // 自动跳过当前步骤（未操作的玩家默认睡觉）
+        for (const p of this.players) {
+          if (p.alive && p.nightAction === null) {
+            p.nightAction = 'SLEEP';
+          }
         }
-      }
-      this.advanceNightStep();
-    }, this.NIGHT_STEP_TIMEOUT);
+        this.advanceNightStep();
+      }, this.NIGHT_STEP_TIMEOUT);
+    }
+  }
+
+  // 获取当前夜晚步骤的存活参与者
+  _getPlayersForStep(step) {
+    const alive = this.players.filter(p => p.alive && !p.disconnected);
+    switch (step) {
+      case NIGHT_STEPS.HUNTER:
+        return alive.filter(p => p.role === ROLES.HUNTER && p.canAct);
+      case NIGHT_STEPS.ALPHA_WOLF:
+        return alive.filter(p => p.role === ROLES.ALPHA_WOLF);
+      case NIGHT_STEPS.GUARD:
+        return alive.filter(p => p.role === ROLES.GUARD);
+      case NIGHT_STEPS.WEREWOLF:
+        return alive.filter(p => p.role === ROLES.WEREWOLF ||
+          (p.role === ROLES.ALPHA_WOLF && (p.isTransformed || p.hasUsedInfect)));
+      case NIGHT_STEPS.SEER:
+        return alive.filter(p => p.role === ROLES.SEER);
+      case NIGHT_STEPS.POISON_WITCH:
+        return alive.filter(p => p.role === ROLES.POISON_WITCH);
+      case NIGHT_STEPS.HEAL_WITCH:
+        return alive.filter(p => p.role === ROLES.HEAL_WITCH);
+      case NIGHT_STEPS.VILLAGER:
+        return alive.filter(p => p.role === ROLES.VILLAGER);
+      default:
+        return [];
+    }
   }
 
   _startDayTimer() {
@@ -154,7 +218,7 @@ export class Game {
     this.timeLeft = this.DAY_TIMEOUT / 1000;
     this._phaseTimeout = setTimeout(() => {
       if (this.phase === PHASES.DAY) {
-        this.enterVote();
+        this.enterDiscussion(); // 讨论阶段在投票之前
       }
     }, this.DAY_TIMEOUT);
   }
@@ -178,11 +242,37 @@ export class Game {
   // ==================== 阶段转换 ====================
 
   startGame() {
+    // 自动补足人机至 minBots 人
+    if (this.enableBots) {
+      this._autoFillBots();
+    }
     if (this.players.length < this.minPlayers) return false;
     this.assignRoles();
     this.round = 1;
     this.enterNight();
     return true;
+  }
+
+  // 自动补足人机
+  _autoFillBots() {
+    // 房主指定了具体数量则用指定数量，否则自动补足至 minBots
+    const target = this.botCount > 0 ? this.botCount : Math.max(0, this.minBots - this.players.length);
+    const need = Math.max(0, target);
+    for (let i = 0; i < need; i++) {
+      this._botIdCounter++;
+      const botName = `人机${this._botIdCounter}`;
+      const botId = `bot_${this.id}_${this._botIdCounter}`;
+      const bot = new Player(botId, botName, null);
+      bot.isBot = true;
+      this.players.push(bot);
+    }
+  }
+
+  // 移除所有人机
+  _removeBots() {
+    this.botManager.cleanup();
+    this.players = this.players.filter(p => !p.isBot);
+    this._botIdCounter = 0;
   }
 
   enterNight() {
@@ -231,6 +321,7 @@ export class Game {
   }
 
   async resolveNight() {
+    this._clearPhaseTimeout(); // 清除夜晚步骤计时器
     const resolver = new NightResolver(this);
     const result = await resolver.resolve();
     this.nightLog = result.log;
@@ -256,6 +347,16 @@ export class Game {
       if (hunter) hunter.canAct = true;
     }
 
+    // 推送每个玩家的私有状态（确保预言家等角色看到夜间反馈）
+    for (const player of this.players) {
+      if (player.alive) {
+        const privateState = this.getPrivateState(player.id);
+        if (privateState && this._io) {
+          this._io.to(player.id).emit('game:privateState', privateState);
+        }
+      }
+    }
+
     // 进入白天
     if (this.phase !== PHASES.GAME_OVER) {
       this.enterDay();
@@ -275,7 +376,81 @@ export class Game {
     this.votes = {};
     this._clearPhaseTimeout();
     this.broadcastPhaseChange();
+    // 人机自动投票（延迟1-3秒模拟思考）
+    const bots = this.players.filter(p => p.alive && p.isBot);
+    for (const bot of bots) {
+      const delay = 1000 + Math.floor(Math.random() * 3000);
+      setTimeout(() => {
+        if (this.phase === PHASES.VOTE) {
+          this.botManager.submitBotVote(bot);
+          if (this._io) this._io.to(this.id).emit('game:state', this.getPublicState());
+        }
+      }, delay);
+    }
     this._startVoteTimer();
+  }
+
+  // ==================== 讨论阶段（投票后轮流发言） ====================
+
+  enterDiscussion() {
+    // 按存活玩家顺序排列发言顺序
+    this.discussionOrder = this.players.filter(p => p.alive && !p.disconnected).map(p => p.id);
+    this.currentSpeakerIndex = 0;
+    this.currentSpeakerId = this.discussionOrder[0] || null;
+    this.phase = PHASES.DISCUSSION;
+    this._clearPhaseTimeout();
+    this.broadcastPhaseChange();
+    if (this.currentSpeakerId) {
+      this._startDiscussionSpeakerTimer();
+    } else {
+      this._endDiscussion();
+    }
+  }
+
+  _startDiscussionSpeakerTimer() {
+    this._clearPhaseTimeout();
+    this.discussionTimeLeft = this.DISCUSSION_PER_SPEAKER;
+    // 人机发言者自动跳过
+    const speaker = this.getPlayer(this.currentSpeakerId);
+    if (speaker?.isBot) {
+      this.botManager.skipBotDiscussion(speaker);
+      return;
+    }
+    this._phaseTimeout = setTimeout(() => {
+      this._nextDiscussionSpeaker();
+    }, this.DISCUSSION_PER_SPEAKER * 1000);
+    this.broadcast('game:state', this.getPublicState());
+  }
+
+  _nextDiscussionSpeaker() {
+    this.currentSpeakerIndex++;
+    if (this.currentSpeakerIndex >= this.discussionOrder.length) {
+      this._endDiscussion();
+      return;
+    }
+    this.currentSpeakerId = this.discussionOrder[this.currentSpeakerIndex];
+    this._startDiscussionSpeakerTimer();
+    this.broadcast('discussion:nextSpeaker', {
+      speakerId: this.currentSpeakerId,
+      speakerIndex: this.currentSpeakerIndex,
+      totalSpeakers: this.discussionOrder.length,
+    });
+    this.broadcast('game:state', this.getPublicState());
+  }
+
+  skipDiscussionSpeaker(playerId) {
+    if (this.phase !== PHASES.DISCUSSION) return;
+    if (playerId !== this.currentSpeakerId) return; // 只有当前发言人可跳过自己
+    this._clearPhaseTimeout();
+    this._nextDiscussionSpeaker();
+  }
+
+  _endDiscussion() {
+    this._clearPhaseTimeout();
+    this.currentSpeakerId = null;
+    this.discussionOrder = [];
+    // 讨论结束后进入投票阶段
+    this.enterVote();
   }
 
   // ==================== 玩家行动提交 ====================
@@ -347,25 +522,36 @@ export class Game {
       .filter(([id, count]) => id !== 'ABSTAIN' && count === maxVotes)
       .map(([id]) => id);
 
-    if (topCandidates.length === 1 && maxVotes > 0) {
+    // 投票生效门槛：需要 >50% 存活玩家参与投票，且最高票 > 1（防止单人票秒杀）
+    const totalVotes = Object.values(tally).reduce((a, b) => a + b, 0);
+    const minRequired = Math.ceil(alivePlayers.length / 2);
+
+    if (topCandidates.length === 1 && maxVotes > 0 && maxVotes >= minRequired) {
       const target = this.getPlayer(eliminated);
       if (target) {
         target.alive = false;
-        this.voteResults = { eliminated: eliminated, votes: tally, tie: false };
+        this.voteResults = { eliminated: eliminated, votes: tally, tie: false, totalVotes };
       }
+    } else if (topCandidates.length === 1 && maxVotes > 0 && maxVotes < minRequired) {
+      // 票数不足，无人出局
+      this.voteResults = { eliminated: null, votes: tally, tie: false, totalVotes, reason: '票数不足半数，无人出局' };
     } else {
-      this.voteResults = { eliminated: null, votes: tally, tie: true };
+      this.voteResults = { eliminated: null, votes: tally, tie: true, totalVotes };
     }
 
-    this.broadcastVoteResults();
+    // 先发送投票结果状态（保持 VOTE 阶段 + 投票结果）
+    this.broadcast('game:state', this.getPublicState());
 
-    // 检查胜利条件
-    this.checkWinCondition();
+    // 短暂延迟让客户端先渲染投票结果，再进入下一夜
+    setTimeout(() => {
+      // 检查胜利条件
+      this.checkWinCondition();
 
-    if (this.phase !== PHASES.GAME_OVER) {
-      this.round++;
-      this.enterNight();
-    }
+      if (this.phase !== PHASES.GAME_OVER) {
+        this.round++;
+        this.enterNight();
+      }
+    }, 2000);
     } finally {
       this._resolvingVotes = false;
     }
@@ -416,8 +602,127 @@ export class Game {
     this.gameResult = { winner: winnerTeam, reason };
     this._clearPhaseTimeout();
     this.broadcastGameOver();
-    // 5 分钟后自动清理房间
-    this._gameManager?.scheduleGameCleanup(this.id);
+
+    // 保存游戏回放
+    this._saveReplay(winnerTeam, reason);
+
+    // 30 秒后自动返回大厅（保留房间）
+    this._returnTimeout = setTimeout(() => {
+      this.returnToLobby();
+    }, 30000);
+  }
+
+  // 保存回放数据
+  _saveReplay(winnerTeam, reason) {
+    try {
+      const replayData = {
+        roomId: this.id,
+        winner: winnerTeam,
+        reason,
+        round: this.round,
+        players: this.players.map(p => ({
+          name: p.name,
+          role: p.role,
+          team: p.team,
+          alive: p.alive,
+        })),
+        date: Date.now(),
+      };
+      // 通过 GameManager 访问 UserManager
+      if (this._gameManager?.userManager) {
+        this._gameManager.userManager.saveGameReplay(replayData);
+      }
+    } catch (e) {
+      console.error('[回放] 保存失败:', e.message);
+    }
+  }
+
+  // 返回大厅（保留房间，重置游戏状态）
+  returnToLobby() {
+    if (this._returnTimeout) {
+      clearTimeout(this._returnTimeout);
+      this._returnTimeout = null;
+    }
+
+    // 清理人机
+    this._removeBots();
+
+    // 重置所有玩家状态
+    for (const p of this.players) {
+      p.alive = true;
+      p.role = null;
+      p.team = null;
+      p.disconnected = false;
+      // 重置所有角色状态
+      p.isTransformed = false;
+      p.hasUsedInfect = false;
+      p.hasKilled = false;
+      p.infectedByAlpha = false;
+      p.willBecomeWolf = false;
+      p.guardingTarget = null;
+      p.isGuarding = false;
+      p.heavyInjury = false;
+      p.whoKnowsGuardHeavyInjury = [];
+      p.knownWolves = [];
+      p.wolvesOpenEyesTogether = [];
+      p.wolfKillTarget = null;
+      p.hasRifle = false;
+      p.hasBlunderbuss = false;
+      p.rifleUsable = false;
+      p.blunderbussUsable = false;
+      p.observedTarget = null;
+      p.observedTargetWentOut = false;
+      p.canShootNextNight = null;
+      p.hasPotion = true;
+      p.hasPoison = true;
+      p.potionTarget = null;
+      p.poisonTarget = null;
+      p.checkTarget = null;
+      p.checkResult = null;
+      p.currentHouse = p.id;
+      p.atHome = true;
+      p.goingTo = null;
+      p.nightAction = null;
+      p.nightTarget = null;
+      p.nightAbility = null;
+    }
+
+    // 重置游戏状态
+    this.phase = PHASES.LOBBY;
+    this.round = 0;
+    this.votes = {};
+    this.voteResults = null;
+    this.nightLog = [];
+    this.privateLogs = {};
+    this.nightStep = null;
+    this.nightStepIndex = 0;
+    this.hunterDayShoot = null;
+    this.dayLog = [];
+    this.gameResult = null;
+    this.customRoleConfig = null;
+
+    this._clearPhaseTimeout();
+
+    // 广播回大厅
+    if (this._io) {
+      this._io.to(this.id).emit('game:returnToLobby', { roomId: this.id });
+      this._io.to(this.id).emit('game:state', this.getLobbyState());
+    }
+
+    // 推送大厅更新
+    if (this._gameManager) {
+      this._gameManager.broadcastLobbyUpdate();
+    }
+
+    console.log(`[房间] ${this.id} 返回大厅（保留房间）`);
+  }
+
+  // 取消返回大厅定时器
+  cancelReturnToLobby() {
+    if (this._returnTimeout) {
+      clearTimeout(this._returnTimeout);
+      this._returnTimeout = null;
+    }
   }
 
   setGameManager(manager) {
@@ -432,6 +737,8 @@ export class Game {
       round: this.round,
       nightStep: this.nightStep,
       timeLeft: this.timeLeft,
+      discussionTimeLeft: this.discussionTimeLeft,
+      currentSpeakerId: this.currentSpeakerId,
     });
     this.broadcast('game:state', this.getPublicState());
   }
@@ -440,6 +747,7 @@ export class Game {
     this.broadcast('game:nightStep', {
       nightStep: this.nightStep,
       nightStepIndex: this.nightStepIndex,
+      timeLeft: this.timeLeft,
     });
     this._startNightStepTimer();
   }
@@ -484,10 +792,12 @@ export class Game {
         id: p.id,
         name: p.name,
         alive: p.alive,
-        // 公开状态不发送 role — 由 getPrivateState 按权限决定可见性
-        role: !p.alive ? p.role : undefined,  // 只有死亡角色公开身份
-        heavyInjury: p.heavyInjury,            // 重伤状态可见（所有人都能看到）
-        isGuarding: p.isGuarding,              // 守护姿态可见
+        isBot: p.isBot,
+        // 游戏结束或玩家死亡时公开角色身份
+        role: (this.phase === PHASES.GAME_OVER || !p.alive) ? p.role : undefined,
+        team: this.phase === PHASES.GAME_OVER ? p.team : undefined,
+        heavyInjury: p.heavyInjury,
+        isGuarding: p.isGuarding,
         villagerIndex: p.villagerIndex,
       })),
       votes: this.phase === PHASES.VOTE ? this.votes : {},
@@ -495,18 +805,33 @@ export class Game {
       nightLog: this.nightLog,
       dayLog: this.dayLog,
       hunterDayShoot: this.hunterDayShoot,
+      // 讨论阶段
+      discussionOrder: this.phase === PHASES.DISCUSSION ? this.discussionOrder : [],
+      currentSpeakerId: this.phase === PHASES.DISCUSSION ? this.currentSpeakerId : null,
+      discussionTimeLeft: this.phase === PHASES.DISCUSSION ? this.discussionTimeLeft : 0,
     };
   }
 
   getPrivateState(playerId) {
     const player = this.getPlayer(playerId);
     if (!player) return null;
+
+    // 从私密日志中提取预言家查验结果 { targetId: 'GOOD'|'WOLF' }
+    const seerCheckResults = {};
+    const myLogs = this.privateLogs[playerId] || [];
+    for (const entry of myLogs) {
+      if (entry.type === 'seer_check' && entry.target && entry.result) {
+        seerCheckResults[entry.target] = entry.result;
+      }
+    }
+
     return {
       ...this.getPublicState(),
       myRole: player.role,
       myTeam: player.team,
       myPrivateState: player.toPrivateJSON(),
-      privateLog: this.privateLogs[playerId] || [],
+      privateLog: myLogs,
+      seerCheckResults,  // { targetPlayerId: 'GOOD'|'WOLF' }
       // 只返回该玩家应看到的信息
       players: this.players.map(p => {
         const base = {
@@ -542,11 +867,15 @@ export class Game {
       isPrivate: this.isPrivate,
       hasPassword: !!this.password,
       maxPlayers: this.maxPlayers,
+      minPlayers: this.minPlayers,
       customRoleConfig: this.customRoleConfig,
+      enableBots: this.enableBots,
+      botCount: this.botCount,
       players: this.players.map(p => ({
         id: p.id,
         name: p.name,
         alive: p.alive,
+        isBot: p.isBot,
       })),
     };
   }

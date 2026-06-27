@@ -161,7 +161,8 @@ async function deploy() {
   console.log(c.yellow('[4/4] 重启服务器...'));
 
   const restartResult = await new Promise((resolve) => {
-    conn.exec('cd /opt/werewolf-server && npm install --production 2>&1 && pm2 restart werewolf-server 2>&1 || pm2 start src/index.js --name werewolf-server 2>&1', (err, stream) => {
+    const restartCmd = 'cd /opt/werewolf-server && npm install --production 2>&1 && (USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 restart werewolf-server 2>&1 || USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 start src/index.js --name werewolf-server 2>&1)';
+    conn.exec(restartCmd, (err, stream) => {
       if (err) { resolve({ error: err.message }); return; }
       let output = '';
       stream.on('data', (data) => { output += data.toString(); });

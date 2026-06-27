@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 允许所有HTTP明文连接（游戏服务器使用HTTP） -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- 明确允许游戏服务器域名/IP -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">210.16.170.144</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">serveo.net</domain>
+    </domain-config>
+</network-security-config>

@@ -14,13 +14,28 @@ import GameOver from './components/GameOver';
 import SettingsPanel from './components/SettingsPanel';
 import UpdatePrompt from './components/UpdatePrompt';
 
+// 当前客户端版本号（与服务端比较判断是否需要更新）
+const CLIENT_VERSION = '1.5.4';
+
+// 简易版本比较：返回 1 表示 v1 > v2, -1 表示 v1 < v2, 0 表示相等
+function compareVersion(v1, v2) {
+  const parts1 = (v1 || '0.0.0').split('.').map(Number);
+  const parts2 = (v2 || '0.0.0').split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((parts1[i] || 0) > (parts2[i] || 0)) return 1;
+    if ((parts1[i] || 0) < (parts2[i] || 0)) return -1;
+  }
+  return 0;
+}
+
 export default function App() {
   const socket = useSocket();
   const audio = useAudio();
   const bgm = useBGM();
   const auth = useAuth(socket.socket ? { current: socket.socket } : { current: null });
-  // 更新 auth hook 的 socket 引用
-  useEffect(() => { auth.socketRef = { current: socket.socket }; }, [socket.socket]);
+  // 更新 auth hook 的 socket 引用（注意：必须 mutate 已有对象，不能替换！
+  // 因为 useAuth 内的 useCallback 闭包捕获了首次渲染时的 socketRef 对象引用）
+  useEffect(() => { auth.socketRef.current = socket.socket; }, [socket.socket]);
 
   const [playerName, setPlayerName] = useState('');
   const [joined, setJoined] = useState(false);
@@ -31,12 +46,32 @@ export default function App() {
   const [showUpdate, setShowUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
 
-  // 检查版本更新
+  // 自动检查版本更新
   useEffect(() => {
+    const doCheck = () => {
+      if (socket.socket) {
+        socket.socket.emit('app:checkVersion', (info) => {
+          if (info) {
+            setUpdateInfo(info);
+            if (compareVersion(info.version, CLIENT_VERSION) > 0) {
+              setShowUpdate(true);
+            }
+          }
+        });
+      }
+    };
+    // 连接后自动检查
     if (socket.connected && socket.socket) {
-      socket.socket.emit('app:checkVersion', (info) => {
-        if (info) setUpdateInfo(info);
-      });
+      doCheck();
+    }
+    // 移动端额外通过 REST API 检查（socket 可能不稳定）
+    if (typeof window !== 'undefined') {
+      fetch('/api/version').then(r => r.json()).then(info => {
+        if (info && compareVersion(info.version, CLIENT_VERSION) > 0) {
+          setUpdateInfo(info);
+          setShowUpdate(true);
+        }
+      }).catch(() => {});
     }
   }, [socket.connected]);
 
@@ -136,8 +171,8 @@ export default function App() {
   // 已登录/已设置名字 → 进入大厅
   const displayName = auth.user?.username || playerName;
 
-  // 未加入房间 → 大厅界面
-  if (!joined && !socket.gameState) {
+  // 未加入房间 或 在房间大厅等待中 → 大厅界面
+  if (!socket.gameState || socket.gameState.phase === 'LOBBY') {
     return (
       <>
         <Lobby
@@ -216,6 +251,11 @@ export default function App() {
         bgm={bgm}
         user={auth.user}
         onCheckUpdate={handleCheckUpdate}
+        enableBots={socket.gameState?.enableBots}
+        botCount={socket.gameState?.botCount || 0}
+        onSetBotCount={async (count) => {
+          await socket.setBotCount(count);
+        }}
       />
       <UpdatePrompt
         show={showUpdate}
@@ -242,6 +282,7 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
     if (!username.trim()) { setLocalError('请输入用户名'); return; }
     if (!password) { setLocalError('请输入密码'); return; }
     setLocalError('');
+    // auth hook 会自动等待 socket 连接，无需手动检查
     const result = await auth.login(username.trim(), password);
     if (result.error) setLocalError(result.error);
   };
@@ -252,17 +293,21 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
     if (username.trim().length < 2) { setLocalError('用户名至少2个字符'); return; }
     if (!password || password.length < 4) { setLocalError('密码至少4个字符'); return; }
     setLocalError('');
+    // auth hook 会自动等待 socket 连接
     const result = await auth.register(username.trim(), password);
     if (result.error) setLocalError(result.error);
   };
 
-  const handleQuickPlay = (e) => {
+  const handleQuickPlay = async (e) => {
     e.preventDefault();
     const name = username.trim();
     if (!name) { setLocalError('请输入昵称'); return; }
     if (name.length > 10) { setLocalError('昵称最长10个字符'); return; }
+    setLocalError('');
     if (serverUrl.trim()) localStorage.setItem('werewolf_server_url', serverUrl.trim());
-    onQuickPlay(name);
+    // 等待连接后再进入
+    const ok = await auth.quickPlay(name);
+    if (ok) onQuickPlay(name);
   };
 
   return (
@@ -306,8 +351,8 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
               placeholder="例: http://123.456.789.0:4000"
             />
             {localError && <p className="error-text">{localError}</p>}
-            <button type="submit" className="btn btn-primary btn-large">
-              进入游戏
+            <button type="submit" className="btn btn-primary btn-large" disabled={auth.authLoading}>
+              {auth.authLoading ? '⏳ 连接中...' : '进入游戏'}
             </button>
           </form>
         ) : (
@@ -332,22 +377,31 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
             {localError && <p className="error-text">{localError}</p>}
             {auth.authError && <p className="error-text">{auth.authError}</p>}
             <button type="submit" className="btn btn-primary btn-large" disabled={auth.authLoading}>
-              {auth.authLoading ? '处理中...' : tab === 'login' ? '登录' : '注册'}
+              {auth.authLoading ? '⏳ 连接中...' : tab === 'login' ? '登录' : '注册'}
             </button>
           </form>
         )}
 
-        {/* 版本检查和更新 */}
+        {/* 连接状态和版本 */}
         <div className="login-update">
-          {updateInfo && (
-            <button className="btn btn-small btn-secondary" onClick={onCheckUpdate} style={{width:'100%'}}>
-              🔄 检查更新 (当前服务端: v{updateInfo.version})
-            </button>
-          )}
-          {!socketConnected && (
+          {!socketConnected ? (
             <div className="connection-warning">
-              ⚠️ 未连接到服务器，请确认服务器已启动
+              <div className="connecting-spinner" />
+              <div>
+                <strong>正在连接服务器...</strong>
+                <p style={{margin:0, fontSize:'0.8em'}}>请确认服务器已启动且网络可达</p>
+              </div>
             </div>
+          ) : (
+            <div className="connection-ok">
+              ✅ 已连接到服务器
+              {updateInfo && <span> (v{updateInfo.version})</span>}
+            </div>
+          )}
+          {updateInfo && (
+            <button className="btn btn-small btn-secondary" onClick={onCheckUpdate} style={{width:'100%', marginTop:8}}>
+              🔄 检查更新
+            </button>
           )}
         </div>
 

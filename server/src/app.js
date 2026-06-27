@@ -10,6 +10,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { GameManager } from './game/GameManager.js';
+import { UserManager } from './auth/UserManager.js';
 import { registerHandlers } from './socket/handlers.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,9 +31,13 @@ export function createServer(options = {}) {
   app.use(cors());
   app.use(express.json());
 
+  // 初始化用户管理器
+  const userManager = new UserManager();
+
   // 初始化游戏管理器
   const gameManager = new GameManager();
   gameManager.setIO(io);  // 供全局大厅广播使用
+  gameManager.userManager = userManager;  // 供回放保存使用
 
   // REST API: 获取大厅列表（仅公开房间）
   app.get('/api/lobby', (req, res) => {
@@ -53,7 +58,7 @@ export function createServer(options = {}) {
     res.json({
       success: true,
       online: true,
-      version: process.env.APP_VERSION || '1.1.0',
+      version: process.env.APP_VERSION || '1.5.4',
       rooms: gameManager.games.size,
       players: Array.from(gameManager.playerRooms.keys()).length,
       timestamp: Date.now(),
@@ -63,16 +68,18 @@ export function createServer(options = {}) {
   // REST API: 版本信息
   app.get('/api/version', (req, res) => {
     res.json({
-      version: process.env.APP_VERSION || '1.1.0',
+      version: process.env.APP_VERSION || '1.5.4',
       downloadUrl: '/download/狼人杀_Setup.exe',
-      releaseDate: '2026-06-25',
-      releaseNotes: '新增用户注册/登录、5首BGM音乐、私密房间密码保护、自动更新、大量bug修复',
+      apkDownloadUrl: '/download/werewolf.apk',
+      releaseDate: '2026-06-26',
+      releaseNotes: 'v1.5.4 👂村民偷听改为基于屋内实际成员推断线索、🛡️夜晚行动白名单防作弊、💀遗言系统、🔒JSON写入保护',
       fileSize: 113 * 1024 * 1024, // ~113MB
     });
   });
 
-  // 下载目录（安装包等）
-  const downloadPath = process.env.DOWNLOAD_PATH || path.join(__dirname, '..', '..', 'download');
+  // 下载目录（安装包等）。开发环境在项目根 download/；生产环境在 app.js 同级 download/
+  const downloadPath = process.env.DOWNLOAD_PATH
+    || (fs.existsSync(path.join(__dirname, 'download')) ? path.join(__dirname, 'download') : path.join(__dirname, '..', '..', 'download'));
   if (!fs.existsSync(downloadPath)) {
     fs.mkdirSync(downloadPath, { recursive: true });
   }
@@ -83,9 +90,22 @@ export function createServer(options = {}) {
     },
   }));
 
-  // 生产环境部署前端静态文件
-  const distPath = options.clientDist || path.join(__dirname, '..', '..', 'client', 'dist');
-  if (fs.existsSync(distPath)) {
+  // 生产环境部署前端静态文件（多路径回退）
+  let distPath = options.clientDist || null;
+  if (!distPath || !fs.existsSync(distPath)) {
+    // 优先尝试开发路径 (server/src/app.js → ../../client/dist)
+    const devPath = path.join(__dirname, '..', '..', 'client', 'dist');
+    // 其次尝试生产路径 (app.js 与 dist/ 平级)
+    const prodPath = path.join(__dirname, 'dist');
+    if (fs.existsSync(devPath)) {
+      distPath = devPath;
+    } else if (fs.existsSync(prodPath)) {
+      distPath = prodPath;
+    } else {
+      distPath = null;
+    }
+  }
+  if (distPath && fs.existsSync(distPath)) {
     app.use(express.static(distPath));
     // Express 5 兼容：捕获所有非 API 路由，返回 SPA 入口
     app.use((req, res, next) => {
@@ -103,7 +123,7 @@ export function createServer(options = {}) {
   // 注册Socket事件处理
   io.on('connection', (socket) => {
     console.log(`[连接] ${socket.id}`);
-    registerHandlers(io, socket, gameManager);
+    registerHandlers(io, socket, gameManager, userManager);
 
     socket.on('disconnect', () => {
       console.log(`[断开] ${socket.id}`);

@@ -16,6 +16,9 @@ COPY server/src ./server/src
 COPY client/dist ./client/dist
 
 ENV PORT=4000
+# 安全: 生产环境通过 docker run -e 覆盖此处默认值
+ENV USER_PASSWORD_SALT=werewolf-prod-salt-change-me
+ENV ROOM_PASSWORD_SALT=werewolf-room-salt-change-me
 EXPOSE 4000
 
 CMD ["node", "server/src/index.js"]
