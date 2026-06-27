@@ -1,6 +1,6 @@
 {
   "name": "werewolf-online",
-  "version": "1.0.0",
+  "version": "1.5.4",
   "description": "狼人杀在线联机版 - PC桌面多人联机游戏",
   "private": true,
   "main": "electron/main.js",
@@ -59,15 +59,21 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "docx": "^9.7.1",
     "electron": "^42.5.0",
     "electron-builder": "^26.15.3",
     "ssh2": "^1.17.0"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/filesystem": "^8.1.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "localtunnel": "^2.0.2",
     "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "uuid": "^14.0.1"
   }
 }

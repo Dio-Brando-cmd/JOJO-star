@@ -46,3 +46,6 @@ npm-debug.log*
 
 # 临时文件
 .deploy-tmp/
+
+# 下载/发布目录
+download/

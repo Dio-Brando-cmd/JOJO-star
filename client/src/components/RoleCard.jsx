@@ -27,14 +27,15 @@ export default function RoleCard({ privateState }) {
         </div>
       </div>
 
-      {/* 角色详细信息 */}
+      {/* 角色详细信息（仅对持有该能力的角色显示） */}
       <div className="role-card-details">
         {pvt?.isTransformed && <span className="detail-tag">🐺 已变狼</span>}
         {pvt?.hasUsedInfect && <span className="detail-tag">🦠 已感染</span>}
-        {pvt?.hasPotion !== undefined && (
+        {/* 仅毒巫/药巫可见自己的药水状态 */}
+        {(role === ROLES.POISON_WITCH || role === ROLES.HEAL_WITCH) && pvt?.hasPotion !== undefined && (
           <span className="detail-tag">💊 解药: {pvt.hasPotion ? '有' : '已用'}</span>
         )}
-        {pvt?.hasPoison !== undefined && (
+        {(role === ROLES.POISON_WITCH || role === ROLES.HEAL_WITCH) && pvt?.hasPoison !== undefined && (
           <span className="detail-tag">🧪 毒药: {pvt.hasPoison ? '有' : '已用'}</span>
         )}
         {pvt?.hasRifle && pvt?.rifleUsable && <span className="detail-tag">🔫 猎枪可用</span>}
@@ -100,6 +101,10 @@ function formatPrivateLog(entry) {
       return '🔫 猎枪未带出门，已腐蚀';
     case 'hunter_observe':
       return `🔍 观察到目标${entry.wentOut ? '出门了' : '没有出门'}`;
+    case 'eavesdrop':
+      return `👂 ${entry.result || entry.msg || '偷听结果不明'}`;
+    case 'house_visit':
+      return `🏠 ${entry.desc || `去了目标家`}`;
     default:
       return entry.msg || entry.type;
   }

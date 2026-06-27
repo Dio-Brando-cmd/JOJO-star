@@ -5,15 +5,38 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-// 自动检测服务器地址：
-// 1. 环境变量（开发用）
-// 2. 本地存储（用户手动输入的服务器地址）
-// 3. 当前页面的 host（适配公网/局域网）
+// 检测是否在 Capacitor 原生 APP 中运行
+function isCapacitorNative() {
+  if (typeof window === 'undefined') return false;
+  // Capacitor 核心注入的全局对象
+  try {
+    if (window.Capacitor?.isNativePlatform?.()) return true;
+  } catch (e) { /* ignore */ }
+  // 备用: Android WebView 特征 (Capacitor 在 Android 上用 WebView)
+  const ua = window.navigator?.userAgent || '';
+  if (ua.includes('Android') && ua.includes('wv')) return true;
+  if (ua.includes('WerewolfApp')) return true;
+  return false;
+}
+
+// 服务器地址: 优先级从高到低
 function getServerURL() {
+  // 1. 构建时环境变量（VITE_SERVER_URL=http://...）
   if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL;
+  // 2. 用户手动保存的服务器地址
   const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('werewolf_server_url') : null;
   if (stored) return stored;
-  return window.location.origin;
+  // 3. 移动端原生APP → 硬编码公网服务器
+  if (isCapacitorNative()) return 'http://210.16.170.144:4000';
+  // 4. 浏览器环境: 同源
+  if (typeof window !== 'undefined' && window.location.origin) {
+    const origin = window.location.origin;
+    if (origin.startsWith('http://') || origin.startsWith('https://')) {
+      return origin;
+    }
+  }
+  // 5. 兜底
+  return 'http://210.16.170.144:4000';
 }
 const SERVER_URL = getServerURL();
 
@@ -77,8 +100,8 @@ export function useSocket() {
       setPrivateState(state);
     });
 
-    socket.on('game:phaseChange', ({ phase, round, nightStep }) => {
-      setGameState(prev => prev ? { ...prev, phase, round, nightStep } : prev);
+    socket.on('game:phaseChange', ({ phase, round, nightStep, timeLeft }) => {
+      setGameState(prev => prev ? { ...prev, phase, round, nightStep, timeLeft } : prev);
     });
 
     socket.on('game:voteResults', (results) => {
@@ -86,11 +109,21 @@ export function useSocket() {
     });
 
     socket.on('game:over', (result) => {
-      setGameState(prev => prev ? { ...prev, phase: 'GAME_OVER', gameResult: result } : prev);
+      setGameState(prev => {
+        if (!prev) return prev;
+        // 合并 game:over 中的完整玩家信息（含所有角色）
+        const updatedPlayers = result.players
+          ? prev.players.map(p => {
+              const revealed = result.players.find(r => r.id === p.id);
+              return revealed ? { ...p, role: revealed.role, alive: revealed.alive } : p;
+            })
+          : prev.players;
+        return { ...prev, phase: 'GAME_OVER', gameResult: result, players: updatedPlayers };
+      });
     });
 
-    socket.on('game:nightStep', ({ nightStep }) => {
-      setGameState(prev => prev ? { ...prev, nightStep } : prev);
+    socket.on('game:nightStep', ({ nightStep, timeLeft }) => {
+      setGameState(prev => prev ? { ...prev, nightStep, timeLeft } : prev);
     });
 
     // --- 聊天 ---
@@ -166,9 +199,33 @@ export function useSocket() {
     reconnectRef.current = { roomCode: null, oldPlayerId: null, playerName: null };
   }, []);
 
-  const startGame = useCallback(() => {
+  // 游戏结束后返回房间大厅（保留房间）
+  const returnToRoomLobby = useCallback(() => {
     if (!socketRef.current) return;
-    socketRef.current.emit('game:start');
+    socketRef.current.emit('room:returnToLobby');
+  }, []);
+
+  // 监听返回大厅事件（游戏结束自动触发）
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+    const handler = (data) => {
+      // 服务器发出了 returnToLobby 事件，状态由 game:state 处理
+    };
+    socket.on('game:returnToLobby', handler);
+    return () => { socket.off('game:returnToLobby', handler); };
+  }, [socketRef.current]);
+
+  const startGame = useCallback((roleConfig) => {
+    return new Promise((resolve) => {
+      if (!socketRef.current) {
+        resolve({ success: false, error: '未连接到服务器' });
+        return;
+      }
+      socketRef.current.emit('game:start', { roleConfig }, (response) => {
+        resolve(response || { success: false, error: '服务器无响应' });
+      });
+    });
   }, []);
 
   const submitNightAction = useCallback((action, target, ability) => {
@@ -233,6 +290,24 @@ export function useSocket() {
     });
   }, []);
 
+  // 切换人机模式
+  const toggleBots = useCallback((enabled) => {
+    return new Promise((resolve) => {
+      socketRef.current.emit('room:toggleBots', { enabled }, (response) => {
+        resolve(response);
+      });
+    });
+  }, []);
+
+  // 设置人机数量
+  const setBotCount = useCallback((count) => {
+    return new Promise((resolve) => {
+      socketRef.current.emit('room:setBotCount', { count }, (response) => {
+        resolve(response);
+      });
+    });
+  }, []);
+
   // 修改最大人数
   const updateMaxPlayers = useCallback((maxPlayers) => {
     return new Promise((resolve) => {
@@ -262,6 +337,7 @@ export function useSocket() {
     joinRoom,
     leaveRoom,
     backToLobby,
+    returnToRoomLobby,
     startGame,
     submitNightAction,
     skipNightStep,
@@ -273,6 +349,8 @@ export function useSocket() {
     getLobbyList,
     toggleRoomPrivacy,
     setRoomPassword,
+    toggleBots,
+    setBotCount,
     updateMaxPlayers,
     getHouseVisitors,
     playerId: socketRef.current?.id || null,

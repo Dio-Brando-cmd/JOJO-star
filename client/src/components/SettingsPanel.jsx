@@ -22,6 +22,9 @@ export default function SettingsPanel({
   onExitGame,
   isInGame,
   bgm,  // BGM 系统
+  enableBots,
+  botCount,
+  onSetBotCount,
 }) {
   const [passwordInput, setPasswordInput] = useState('');
   const [maxPlayersInput, setMaxPlayersInput] = useState(maxPlayers || 12);
@@ -194,6 +197,37 @@ export default function SettingsPanel({
                   />
                   <button className="btn btn-small btn-secondary" onClick={handleUpdateMaxPlayers}>
                     更新
+                  </button>
+                </div>
+              </div>
+
+              {/* 人机数量 */}
+              <div className="settings-row">
+                <label className="settings-label">
+                  🤖 人机数量：<strong>{botCount > 0 ? `${botCount}个` : '自动'}</strong>
+                </label>
+                <p className="settings-hint">
+                  {botCount === 0
+                    ? '自动补足至6人；设为0恢复自动模式'
+                    : `本局将加入 ${botCount} 个人机`}
+                </p>
+                <div className="settings-input-row" style={{gap:8, marginTop:8}}>
+                  <button
+                    className="btn btn-small btn-secondary"
+                    onClick={() => onSetBotCount(Math.max(0, (botCount || 0) - 1))}
+                    disabled={botCount <= 0}
+                  >
+                    ➖ 减少
+                  </button>
+                  <span style={{minWidth:40, textAlign:'center', fontWeight:'bold', fontSize:'1.1em'}}>
+                    {botCount || 0}
+                  </span>
+                  <button
+                    className="btn btn-small btn-secondary"
+                    onClick={() => onSetBotCount(Math.min(12, (botCount || 0) + 1))}
+                    disabled={botCount >= 12}
+                  >
+                    ➕ 增加
                   </button>
                 </div>
               </div>

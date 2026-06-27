@@ -2,6 +2,10 @@
   "appId": "com.werewolf.online",
   "appName": "狼人杀",
   "webDir": "dist",
+  "server": {
+    "url": "http://210.16.170.144:4000",
+    "cleartext": true
+  },
   "android": {
     "allowMixedContent": true
   }

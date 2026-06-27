@@ -5,16 +5,22 @@
 import React, { useState, useCallback, useEffect } from 'react';
 
 export default function VoiceChat({ voiceChat, players, myId }) {
-  const { isVoiceJoined, isPTT, speakingPeers, error, joinVoice, leaveVoice, requestMicPermission, setPTT } = voiceChat;
+  const {
+    isVoiceJoined, isPTT, speakingPeers, error,
+    joinVoice, leaveVoice, requestMicPermission, setPTT,
+    resumeAudioContext, permissionState, isSecureCtx,
+    testSpeaker, speakerTestResult,
+  } = voiceChat;
 
-  // 权限流程状态
-  const [permissionPhase, setPermissionPhase] = useState('idle'); // idle | asking | requesting | granted | denied
+  const [permissionPhase, setPermissionPhase] = useState('idle');
   const [permissionError, setPermissionError] = useState(null);
+  const [speakerTesting, setSpeakerTesting] = useState(false);
 
   // 用户点击"加入语音"
   const handleStartVoiceFlow = useCallback(() => {
+    if (resumeAudioContext) resumeAudioContext();
     setPermissionPhase('asking');
-  }, []);
+  }, [resumeAudioContext]);
 
   // 用户同意权限请求
   const handleGrantPermission = useCallback(async () => {
@@ -22,47 +28,66 @@ export default function VoiceChat({ voiceChat, players, myId }) {
     setPermissionError(null);
 
     try {
-      // 1. 请求麦克风权限
       const micGranted = await requestMicPermission();
       if (!micGranted) {
         setPermissionPhase('denied');
-        setPermissionError('麦克风权限被拒绝，无法使用语音');
+        setPermissionError(voiceChat.error || '麦克风权限被拒绝');
         return;
       }
 
-      // 2. 尝试枚举扬声器设备（非必须，但尝试获取）
-      try {
-        if (navigator.mediaDevices?.enumerateDevices) {
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          const speakers = devices.filter(d => d.kind === 'audiooutput');
-          const mics = devices.filter(d => d.kind === 'audioinput');
-          console.log(`[VoiceChat] 设备: ${mics.length} 个麦克风, ${speakers.length} 个扬声器`);
-        }
-      } catch (e) {
-        // 扬声器枚举失败不影响语音
-        console.log('[VoiceChat] 扬声器枚举跳过:', e.message);
-      }
-
-      // 3. 成功 — 加入语音
       setPermissionPhase('granted');
       joinVoice();
     } catch (e) {
       setPermissionPhase('denied');
       setPermissionError(e.message || '未知错误');
     }
-  }, [requestMicPermission, joinVoice]);
+  }, [requestMicPermission, joinVoice, voiceChat.error]);
 
-  // 用户拒绝
   const handleDenyPermission = useCallback(() => {
     setPermissionPhase('idle');
     setPermissionError(null);
   }, []);
 
-  // 重试
   const handleRetry = useCallback(() => {
     setPermissionPhase('idle');
     setPermissionError(null);
   }, []);
+
+  // 测试扬声器
+  const handleTestSpeaker = useCallback(async () => {
+    setSpeakerTesting(true);
+    try {
+      await testSpeaker?.();
+    } finally {
+      setSpeakerTesting(false);
+    }
+  }, [testSpeaker]);
+
+  // ====== HTTP 不安全上下文警告 ======
+  if (!isSecureCtx) {
+    return (
+      <div className="voice-chat">
+        <div className="voice-error">
+          <span className="voice-error-icon">🔒</span>
+          <strong>语音功能不可用</strong>
+          <p style={{margin: '8px 0', fontSize: '0.82em', color: 'var(--text-secondary)'}}>
+            当前浏览器因安全策略禁止了麦克风访问。
+          </p>
+          <div style={{fontSize: '0.78em', color: 'var(--text-muted)', marginBottom: '8px'}}>
+            <p><strong>✅ 解决方案（任选其一）：</strong></p>
+            <p>1. 使用 <strong>桌面客户端</strong>（推荐，无限制）</p>
+            <p>2. 通过 <strong>http://localhost:4000</strong> 访问（本地开发）</p>
+            <p>3. 通过 <strong>HTTPS</strong> 访问（需配置证书）</p>
+          </div>
+          {speakerTestResult && (
+            <p style={{fontSize: '0.78em', color: 'var(--text-muted)', marginTop: 6}}>
+              {speakerTestResult}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // ====== 已加入语音 ======
   if (isVoiceJoined) {
@@ -90,7 +115,7 @@ export default function VoiceChat({ voiceChat, players, myId }) {
           >
             {isPTT ? '🔴 说话中...' : '🎙️ 按住说话'}
           </button>
-          <span className="ptt-hint">或按住空格键说话</span>
+          <span className="ptt-hint">或按住空格键说话（按键说话/PTT模式）</span>
         </div>
 
         <div className="voice-speakers">
@@ -105,7 +130,7 @@ export default function VoiceChat({ voiceChat, players, myId }) {
             );
           })}
           {players?.filter(p => p.id !== myId && p.alive).length === 0 && (
-            <span className="no-speakers">等待其他玩家...</span>
+            <span className="no-speakers">等待其他玩家加入...</span>
           )}
         </div>
       </div>
@@ -118,19 +143,31 @@ export default function VoiceChat({ voiceChat, players, myId }) {
       <div className="voice-chat voice-permission-modal">
         <div className="voice-permission-content">
           <span className="voice-permission-icon">🎤</span>
-          <h4>语音聊天权限</h4>
-          <p>狼人杀需要使用你的<strong>麦克风</strong>来进行语音交流。</p>
+          <h4>语音聊天需要权限</h4>
+          <p>狼人杀需要使用你的<strong>麦克风</strong>进行语音交流，以及<strong>扬声器</strong>播放其他玩家的声音。</p>
           <p className="voice-permission-note">
-            只有在你按住说话按钮时才会发送语音，你的隐私受到保护。
+            PTT按键说话模式 — 只有按住按钮时才发送语音，保护你的隐私。
           </p>
           <div className="voice-permission-buttons">
             <button className="btn btn-primary" onClick={handleGrantPermission}>
-              ✅ 允许
+              ✅ 允许麦克风权限
+            </button>
+            <button className="btn btn-ghost" onClick={handleTestSpeaker} disabled={speakerTesting}>
+              {speakerTesting ? '⏳ 测试中...' : '🔊 先测试扬声器'}
             </button>
             <button className="btn btn-ghost" onClick={handleDenyPermission}>
-              ❌ 拒绝
+              ❌ 暂不使用语音
             </button>
           </div>
+          {speakerTestResult && (
+            <p style={{fontSize: '0.78em', color: speakerTestResult.includes('成功') ? 'var(--success)' : 'var(--text-muted)', marginTop: 8}}>
+              {speakerTestResult}
+            </p>
+          )}
+          <p className="voice-permission-note" style={{marginTop: 12}}>
+            💡 <strong>提示：</strong>如果浏览器弹出权限对话框，请点击<strong>「允许」</strong>。
+            <br/>如果误点了「禁止」，可以在地址栏左侧 🔒 图标中重新开启。
+          </p>
         </div>
       </div>
     );
@@ -142,8 +179,8 @@ export default function VoiceChat({ voiceChat, players, myId }) {
       <div className="voice-chat voice-permission-modal">
         <div className="voice-permission-content">
           <div className="night-spinner" style={{margin: '0 auto 12px'}} />
-          <p>正在获取麦克风权限...</p>
-          <p className="voice-permission-note">浏览器会弹出权限请求对话框</p>
+          <p>正在请求麦克风权限...</p>
+          <p className="voice-permission-note">浏览器会弹出权限对话框 — 请点击「允许」</p>
         </div>
       </div>
     );
@@ -154,13 +191,20 @@ export default function VoiceChat({ voiceChat, players, myId }) {
     return (
       <div className="voice-chat">
         <div className="voice-error">
-          <span>🎤 {permissionError || '无法访问麦克风'}</span>
-          <p className="voice-permission-note" style={{marginTop: 8}}>
-            请在浏览器设置中允许麦克风访问，然后重试
+          <span className="voice-error-icon">🚫</span>
+          <strong>麦克风权限未授予</strong>
+          <p style={{margin: '6px 0', fontSize: '0.82em'}}>
+            {permissionError || voiceChat.error || '无法访问麦克风'}
           </p>
+          <div style={{fontSize: '0.78em', color: 'var(--text-secondary)', lineHeight: 1.6}}>
+            <p><strong>🔧 如何恢复权限：</strong></p>
+            <p>1. 点击地址栏左侧的 <strong>🔒/ⓘ 图标</strong></p>
+            <p>2. 找到「麦克风」选项 → 改为<strong>「允许」</strong></p>
+            <p>3. <strong>刷新页面</strong>后重新加入语音</p>
+          </div>
           <button
             className="btn btn-small btn-secondary"
-            style={{marginTop:8,width:'100%'}}
+            style={{marginTop: 8, width: '100%'}}
             onClick={handleRetry}
           >
             🔄 重新尝试
@@ -175,10 +219,12 @@ export default function VoiceChat({ voiceChat, players, myId }) {
     return (
       <div className="voice-chat">
         <div className="voice-error">
-          <span>🎤 {error}</span>
+          <span className="voice-error-icon">⚠️</span>
+          <strong>语音出错</strong>
+          <p style={{margin: '6px 0', fontSize: '0.82em', whiteSpace: 'pre-line'}}>{error}</p>
           <button
             className="btn btn-small btn-secondary"
-            style={{marginTop:8,width:'100%'}}
+            style={{marginTop: 8, width: '100%'}}
             onClick={handleRetry}
           >
             🔄 重新尝试
@@ -188,7 +234,7 @@ export default function VoiceChat({ voiceChat, players, myId }) {
     );
   }
 
-  // ====== 初始状态：邀请加入 ======
+  // ====== 初始状态 ======
   return (
     <div className="voice-chat">
       <div className="voice-join-prompt">
@@ -197,6 +243,24 @@ export default function VoiceChat({ voiceChat, players, myId }) {
         <button className="voice-join-btn" onClick={handleStartVoiceFlow}>
           🎤 加入语音
         </button>
+        <div className="voice-extra-actions">
+          <button
+            className="btn btn-ghost btn-small"
+            onClick={handleTestSpeaker}
+            disabled={speakerTesting}
+            style={{marginTop: 8, width: '100%'}}
+          >
+            {speakerTesting ? '⏳ 测试中...' : '🔊 测试扬声器'}
+          </button>
+        </div>
+        {speakerTestResult && (
+          <p style={{fontSize: '0.75em', color: 'var(--text-muted)', marginTop: 6}}>
+            {speakerTestResult}
+          </p>
+        )}
+        <p style={{fontSize: '0.7em', color: 'var(--text-muted)', marginTop: 6}}>
+          PTT按键说话 · 按住空格键或点击按钮
+        </p>
       </div>
     </div>
   );

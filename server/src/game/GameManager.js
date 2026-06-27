@@ -12,6 +12,7 @@ export class GameManager {
     this.playerRooms = new Map(); // playerId -> roomId
     this.disconnectedPlayers = new Map(); // playerToken -> { roomCode, playerId, timeoutId }
     this._io = null;            // Socket.IO 实例（用于大厅广播）
+    this.userManager = null;    // UserManager 引用（用于回放保存）
   }
 
   // 设置 IO 实例用于全局广播

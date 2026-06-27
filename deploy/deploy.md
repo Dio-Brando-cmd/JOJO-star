@@ -32,7 +32,12 @@ ssh root@你的服务器IP
 cd /root
 tar -xzf werewolf.tar.gz
 docker build -t werewolf -f deploy/Dockerfile .
-docker run -d -p 80:4000 --restart=unless-stopped --name werewolf werewolf
+# 生产环境请修改盐值环境变量（务必修改默认值！）
+docker run -d -p 80:4000 --restart=unless-stopped --name werewolf \
+  -e PORT=4000 \
+  -e USER_PASSWORD_SALT="your-random-salt-here" \
+  -e ROOM_PASSWORD_SALT="your-random-salt-here" \
+  werewolf
 ```
 
 ### 5. 完成！

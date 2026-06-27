@@ -36,6 +36,37 @@ async function detectServer() {
 }
 
 function createWindow(serverUrl) {
+  // 先设置全局会话权限（在所有窗口创建之前）
+  const ses = session.defaultSession;
+
+  // 处理权限请求（麦克风、媒体等）
+  ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    const allowedPermissions = [
+      'media',
+      'microphone',
+      'audioCapture',
+      'videoCapture',
+      'mediaKeySystem',
+    ];
+    if (allowedPermissions.includes(permission)) {
+      console.log(`[权限] 允许: ${permission}`);
+      callback(true);
+    } else {
+      console.log(`[权限] 拒绝: ${permission}`);
+      callback(false);
+    }
+  });
+
+  // 设置权限检查回调（处理 navigator.permissions.query）
+  ses.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
+    const allowedPermissions = ['media', 'microphone', 'audioCapture'];
+    const result = allowedPermissions.includes(permission);
+    if (!result) {
+      console.log(`[权限检查] 拒绝: ${permission} (${requestingOrigin})`);
+    }
+    return result;
+  });
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -47,31 +78,33 @@ function createWindow(serverUrl) {
       nodeIntegration: false,
       contextIsolation: true,
       // 允许麦克风访问（WebRTC语音聊天需要）
-      // Electron默认允许media访问
     },
     autoHideMenuBar: true,
     backgroundColor: '#1a1a2e',
   });
 
-  mainWindow.loadURL(serverUrl);
-
-  mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.setTitle('🐺 狼人杀 — 在线联机');
-  });
-
-  // 处理麦克风权限请求
+  // 窗口级别的权限处理（兜底）
   mainWindow.webContents.session.setPermissionRequestHandler(
     (webContents, permission, callback) => {
-      // 允许麦克风和媒体访问（WebRTC语音需要）
       const allowedPermissions = ['media', 'microphone', 'audioCapture'];
       if (allowedPermissions.includes(permission)) {
-        console.log(`[权限] 允许: ${permission}`);
+        console.log(`[窗口权限] 允许: ${permission}`);
         callback(true);
       } else {
         callback(false);
       }
     }
   );
+
+  // 加载页面
+  mainWindow.loadURL(serverUrl);
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.setTitle('🐺 狼人杀 — 在线联机');
+    console.log('🐺 狼人杀桌面版已启动');
+    console.log('   服务器:', serverUrl);
+    console.log('   互通版本: Web | Android | Desktop');
+  });
 
   // 允许外部链接在浏览器打开
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -87,9 +120,6 @@ function createWindow(serverUrl) {
 app.whenReady().then(async () => {
   const serverUrl = await detectServer();
   createWindow(serverUrl);
-  console.log('🐺 狼人杀桌面版已启动');
-  console.log('   服务器:', serverUrl);
-  console.log('   互通版本: Web | Android | Desktop');
 });
 
 app.on('window-all-closed', () => {
