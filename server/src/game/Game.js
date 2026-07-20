@@ -758,6 +758,9 @@ export class Game {
   // ==================== 猎人白天开枪 ====================
 
   hunterDayShootTarget(targetId) {
+    // P0修复: 只能在DAY阶段开枪 + 猎人必须在世 + 未开过枪
+    if (this.phase !== PHASES.DAY) return false;
+    if (this.hunterDayShoot) return false; // 已开过枪
     const hunter = this.players.find(p => p.role === ROLES.HUNTER && p.alive);
     if (!hunter || !hunter.hasRifle || !hunter.rifleUsable) return false;
 
@@ -804,10 +807,27 @@ export class Game {
     // 保存游戏回放
     this._saveReplay(winnerTeam, reason);
 
+    // v2.0: 服务端自动更新战绩（替代客户端触发的不可信上报）
+    this._updatePlayerStats(winnerTeam);
+
     // 30 秒后自动返回大厅（保留房间）
     this._returnTimeout = setTimeout(() => {
       this.returnToLobby();
     }, 30000);
+  }
+
+  /** 服务端根据胜负自动更新每个玩家的战绩 */
+  _updatePlayerStats(winnerTeam) {
+    if (!this._gameManager?.userManager) return;
+    for (const p of this.players) {
+      if (p.isBot) continue;
+      const won = p.team === winnerTeam;
+      try {
+        this._gameManager.userManager.updateStats(p.name || p.id, won);
+      } catch (e) {
+        console.error(`[统计] 更新 ${p.name || p.id} 失败:`, e.message);
+      }
+    }
   }
 
   // 保存回放数据
