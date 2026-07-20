@@ -9,6 +9,7 @@ import { BotManager } from './BotManager.js';
 import { TraitSystem } from './TraitSystem.js';
 import { StoryManager } from './StoryManager.js';
 import { Character } from './Character.js';
+import { PositionSync } from './PositionSync.js';
 import {
   ROLES, ROLE_NAMES, TEAMS, ROLE_TEAM,
   PHASES, NIGHT_STEPS, NIGHT_STEPS_NIGHT1, NIGHT_STEPS_FULL,
@@ -72,9 +73,13 @@ export class Game {
     // ---- v2.0: 表层身份选择 ----
     this.traitSystem = new TraitSystem(this);
     this.storyManager = new StoryManager(this);
-    this.characterSelections = {};    // { playerId: characterId }
-    this.availableCharacters = null;  // 本轮可用的表层身份ID列表
-    this.CHARACTER_SELECT_TIMEOUT = 30000; // 30秒选人
+    this.characterSelections = {};
+    this.availableCharacters = null;
+    this.CHARACTER_SELECT_TIMEOUT = 30000;
+
+    // ---- 3D模式: 位置同步 ----
+    this.positionSync = new PositionSync(this);
+    this._positionSyncInterval = null;
 
     // 创建时间戳
     this._createdAt = Date.now();
@@ -361,6 +366,9 @@ export class Game {
     }
     this._broadcastState();
 
+    // 启动位置同步广播
+    this._startPositionSync();
+
     // 序幕后进入游戏
     setTimeout(() => {
       this.round = 1;
@@ -368,7 +376,22 @@ export class Game {
       if (this._io) {
         this._io.to(this.id).emit('game:started', { round: this.round });
       }
-    }, 8000); // 8秒序幕阅读时间
+    }, 8000);
+  }
+
+  _startPositionSync() {
+    if (this._positionSyncInterval) clearInterval(this._positionSyncInterval);
+    this._positionSyncInterval = setInterval(() => {
+      if (this.positionSync) this.positionSync.broadcastIfNeeded();
+    }, 100); // 10Hz
+  }
+
+  _stopPositionSync() {
+    if (this._positionSyncInterval) {
+      clearInterval(this._positionSyncInterval);
+      this._positionSyncInterval = null;
+    }
+  }
   }
 
   /** 根据表层身份推荐分配隐藏职业 */
@@ -861,6 +884,9 @@ export class Game {
       clearTimeout(this._returnTimeout);
       this._returnTimeout = null;
     }
+
+    // 停止位置同步
+    this._stopPositionSync();
 
     // 清理人机
     this._removeBots();

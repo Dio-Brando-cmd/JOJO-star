@@ -668,6 +668,14 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     });
   });
 
+  // ==================== 3D位置同步 ====================
+
+  socket.on('player:position', ({ x, y, z, rotY, isMoving, isSprinting }) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || !game.positionSync) return;
+    game.positionSync.updatePosition(socket.id, { x, y, z, rotY, isMoving, isSprinting });
+  });
+
   // ==================== WebRTC 语音信令 ====================
 
   // 加入语音频道
