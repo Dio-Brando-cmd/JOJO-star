@@ -108,6 +108,11 @@ export function useSocket() {
       setGameState(prev => prev ? { ...prev, voteResults: results } : prev);
     });
 
+    // v2.0: 序幕数据
+    socket.on('game:prologue', (prologue) => {
+      setGameState(prev => prev ? { ...prev, prologue } : prev);
+    });
+
     socket.on('game:over', (result) => {
       setGameState(prev => {
         if (!prev) return prev;

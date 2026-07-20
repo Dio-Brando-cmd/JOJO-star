@@ -2,7 +2,7 @@
 // 夜晚行动结算器 —— 按固定顺序处理所有夜间行动
 // ============================================================
 
-import { ROLES, NIGHT_STEPS } from './constants.js';
+import { ROLES, NIGHT_STEPS, VILLAGER_TYPES, TRAIT_TYPES } from './constants.js';
 
 export class NightResolver {
   constructor(game) {
@@ -143,6 +143,28 @@ export class NightResolver {
       hunter.canShootNextNight = hunter.observedTarget;
     }
 
+    // 新增：猎人陷阱射击
+    if (hunter.nightAbility?.useTrap && hunter.nightTarget) {
+      hunter.trapTarget = hunter.nightTarget;
+      this.privateLog.push({
+        type: 'hunter_trap',
+        player: hunter.id,
+        target: hunter.nightTarget,
+        msg: '猎人在目标屋子设下了陷阱',
+      });
+    }
+
+    // 新增：猎人复仇标记（投票出局时触发，在此处记录）
+    if (hunter.nightAbility?.markRevenge && hunter.nightTarget) {
+      hunter.revengeTarget = hunter.nightTarget;
+      this.privateLog.push({
+        type: 'hunter_revenge_mark',
+        player: hunter.id,
+        target: hunter.nightTarget,
+        msg: '猎人标记了复仇目标',
+      });
+    }
+
     // 处理武器腐蚀：带出门才会被腐蚀（在开枪之后判定，确保同一晚出门+开枪不会冲突）
     if (hunter.blunderbussUsable && hunter.nightAction === 'GO_OUT') {
       hunter.blunderbussUsable = false;
@@ -194,6 +216,20 @@ export class NightResolver {
     // 注意：变狼后的刀人在 resolveWerewolves 中统一处理（已变狼种狼算作狼人群）
     // 此处只设置标记，不重复写击杀逻辑
 
+    // 新增：假身份编织（变狼前可伪装成神职）
+    if (ability.fakeIdentity && !alpha.isTransformed && !alpha.hasUsedInfect) {
+      const fakeRole = ability.fakeIdentityRole;
+      if (fakeRole && [ROLES.SEER, ROLES.GUARD, ROLES.HUNTER].includes(fakeRole)) {
+        alpha.fakeIdentity = fakeRole;
+        this.privateLog.push({
+          type: 'alpha_fake_identity',
+          player: alpha.id,
+          fakeRole,
+          msg: `种狼编织了假身份：${fakeRole}`,
+        });
+      }
+    }
+
     // 更新种狼的所在屋子（不计入人数）
     if (alpha.nightAction === 'GO_OUT' && alpha.nightTarget) {
       alpha.currentHouse = alpha.nightTarget;
@@ -234,6 +270,48 @@ export class NightResolver {
         guard.currentHouse = guard.nightTarget;
       }
     }
+
+    // 新增：守卫筑垒（加固目标屋子）
+    if (guard.nightAbility?.fortify && guard.nightTarget) {
+      guard.fortifiedTarget = guard.nightTarget;
+      guard.currentHouse = guard.nightTarget;
+      guard.atHome = false;
+      this.privateLog.push({
+        type: 'guard_fortify',
+        player: guard.id,
+        target: guard.nightTarget,
+        msg: '守卫筑垒加固了目标屋子',
+      });
+    }
+
+    // 新增：守卫巡逻（不护具体目标，巡视全村）
+    if (guard.nightAbility?.patrol) {
+      guard.patrolled = true;
+      const wolfHouses = [];
+      for (const p of this.players) {
+        if (p.alive && p.isWolf() && p.nightAction === 'GO_OUT' && p.currentHouse !== p.id) {
+          wolfHouses.push(p.currentHouse);
+        }
+      }
+      this.privateLog.push({
+        type: 'guard_patrol',
+        player: guard.id,
+        wolfVisitedHouses: wolfHouses,
+        count: wolfHouses.length,
+        msg: `守卫巡逻：${wolfHouses.length > 0 ? `发现${wolfHouses.length}间屋子有狼人进入` : '未发现异常'}`,
+      });
+    }
+
+    // 新增：守卫舍身（标记替死目标）
+    if (guard.nightAbility?.sacrifice && guard.nightTarget) {
+      guard.sacrificeTarget = guard.nightTarget;
+      this.privateLog.push({
+        type: 'guard_sacrifice',
+        player: guard.id,
+        target: guard.nightTarget,
+        msg: '守卫立下舍身誓言：若目标死亡，愿替其死',
+      });
+    }
   }
 
   // ==========================================
@@ -258,6 +336,44 @@ export class NightResolver {
     for (const wolf of wolves) {
       if (wolf.nightAction === 'SLEEP') continue;
 
+      // 新增：狼人嚎叫召集
+      if (wolf.nightAction === 'HOWL') {
+        wolf.howled = true;
+        wolf.howlCooldown = 2; // 冷却2回合
+        this.privateLog.push({
+          type: 'wolf_howl',
+          player: wolf.id,
+          msg: '狼人发出嚎叫——同伴们听到了召唤',
+        });
+        // 通知所有未相认的狼人
+        for (const otherWolf of wolves) {
+          if (otherWolf.id !== wolf.id && !otherWolf.knownWolves.includes(wolf.id)) {
+            this.privateLog.push({
+              type: 'wolf_howl_heard',
+              player: otherWolf.id,
+              howler: wolf.id,
+              msg: '你听到了同伴的嚎叫——有人在召唤你',
+            });
+          }
+        }
+        continue; // 嚎叫的狼人今晚不刀人
+      }
+
+      // 新增：狼人伪装（计入屋子人数）
+      if (wolf.nightAction === 'DISGUISE') {
+        wolf.disguised = true;
+        wolf.atHome = false;
+        if (wolf.nightTarget) {
+          wolf.currentHouse = wolf.nightTarget;
+        }
+        this.privateLog.push({
+          type: 'wolf_disguise',
+          player: wolf.id,
+          msg: '狼人伪装成好人，混入人群中',
+        });
+        continue; // 伪装的狼人今晚不刀人
+      }
+
       // 狼人出门
       if (wolf.nightAction === 'GO_OUT') {
         wolf.atHome = false;
@@ -274,6 +390,25 @@ export class NightResolver {
               this.privateLog.push({ type: 'wolf_meet', wolves: [wolf.id, houseOwner.id] });
             }
           }
+        }
+      }
+
+      // 新增：嗅觉追踪（刀人时记录目标的去向）
+      if (wolf.nightAbility?.trackScent && wolf.nightTarget) {
+        const target = this.players.find(p => p.id === wolf.nightTarget && p.alive);
+        if (target && target.nightAction === 'GO_OUT' && target.currentHouse !== target.id) {
+          wolf.scentTrail.push({
+            target: wolf.nightTarget,
+            house: target.currentHouse,
+            round: this.game.round,
+          });
+          this.privateLog.push({
+            type: 'wolf_scent_track',
+            player: wolf.id,
+            target: wolf.nightTarget,
+            house: target.currentHouse,
+            msg: `嗅觉追踪：目标去了 ${target.currentHouse} 的屋子`,
+          });
         }
       }
 
@@ -351,11 +486,25 @@ export class NightResolver {
       // 判断逻辑：
       // - 普通狼人：是狼
       // - 种狼：变狼后是狼；使用感染后是狼；未变狼未感染 → 好人
+      // - 假身份：种狼有fakeIdentity时显示为该神职
       let isGood = true;
       if (target.role === ROLES.WEREWOLF) {
         isGood = false;
       } else if (target.role === ROLES.ALPHA_WOLF) {
-        isGood = !(target.isTransformed || target.hasUsedInfect);
+        const isWolf = target.isTransformed || target.hasUsedInfect;
+        if (!isWolf && target.fakeIdentity) {
+          // 假身份编织：查验结果显示为伪装的神职
+          seer.checkResult = `FAKE_${target.fakeIdentity}`;
+          this.privateLog.push({
+            type: 'seer_check_fake',
+            player: seer.id,
+            target: targetId,
+            fakeRole: target.fakeIdentity,
+            msg: `查验结果：${target.fakeIdentity}（但真相隐藏在更深处...）`,
+          });
+          return; // 特殊处理，不走正常逻辑
+        }
+        isGood = !isWolf;
       }
       // 被感染但尚未生效的不算狼人
 
@@ -372,6 +521,36 @@ export class NightResolver {
         result: seer.checkResult,
         reversed: !!seer.infectedByAlpha,
       });
+    }
+
+    // 新增：梦境碎片（额外模糊线索）
+    if (seer.nightAbility?.dreamFragment && seer.nightTarget) {
+      const fragments = [
+        '梦境中你看到有人影在目标屋外徘徊...',
+        '梦的碎片里，你听到目标屋内传来不寻常的声响...',
+        '你在梦中感受到一股不安——目标的命运与今晚紧密相连...',
+      ];
+      seer.dreamFragment = fragments[Math.floor(Math.random() * fragments.length)];
+      this.privateLog.push({
+        type: 'seer_dream',
+        player: seer.id,
+        fragment: seer.dreamFragment,
+      });
+    }
+
+    // 新增：灵视（查验已死的玩家）
+    if (seer.nightAbility?.spiritVision && seer.spiritVisionTarget) {
+      const deadTarget = this.players.find(p => p.id === seer.spiritVisionTarget && !p.alive);
+      if (deadTarget) {
+        seer.checkResult = `SPIRIT_${deadTarget.role}`;
+        this.privateLog.push({
+          type: 'seer_spirit_vision',
+          player: seer.id,
+          target: deadTarget.id,
+          role: deadTarget.role,
+          msg: `灵视：死者 ${deadTarget.name || deadTarget.id} 的真实身份是 ${deadTarget.role}`,
+        });
+      }
     }
   }
 
@@ -422,14 +601,32 @@ export class NightResolver {
     if (ability.potion) {
       const targetId = ability.potionTarget;
       const target = this.players.find(p => p.id === targetId);
-      // 检查 deathMarks（而非 !target.alive，因为死亡标记要到 RESOLUTION 步才应用）
       const isMarkedForDeath = this.deathMarks.has(targetId);
       if (target && isMarkedForDeath && !(target.role === ROLES.GUARD && target.heavyInjury)) {
-        // 救人（但不能救重伤的守卫）
         this.reviveFromDeath(targetId);
         this.log.push({ type: 'potion_save', target: targetId });
       }
       pw.hasPotion = false;
+    }
+
+    // 新增：毒雾陷阱（在目标屋子释放延迟毒雾）
+    if (ability.poisonFog) {
+      const fogTarget = ability.poisonFogTarget;
+      pw.poisonFogTarget = fogTarget;
+      pw.poisonFogActive = true;
+      this.privateLog.push({
+        type: 'poison_fog_set',
+        player: pw.id,
+        target: fogTarget,
+        msg: '毒巫在目标屋子释放了毒雾——下一晚进入的人将中毒',
+      });
+    }
+
+    // 新增：毒药材料管理（2材料→1烈性毒药，1材料→1普通毒药）
+    if (ability.lethalPoison) {
+      pw.poisonMaterials = Math.max(0, (pw.poisonMaterials || 2) - 2);
+    } else if (ability.singlePoison) {
+      pw.poisonMaterials = Math.max(0, (pw.poisonMaterials || 2) - 1);
     }
   }
 
@@ -487,6 +684,56 @@ export class NightResolver {
       }
       hw.hasPoison = false;
     }
+
+    // 新增：战场急救（去被攻击的屋子，有概率急救重伤者）
+    if (hw.nightAbility?.battlefieldAid && hw.nightTarget) {
+      const aidHouse = hw.currentHouse || hw.nightTarget;
+      for (const p of this.players) {
+        if (p.alive && p.heavyInjury && (p.currentHouse || p.id) === aidHouse) {
+          this.reviveFromDeath(p.id);
+          p.heavyInjury = false;
+          p.halfAlive = true;
+          this.privateLog.push({
+            type: 'battlefield_aid',
+            player: hw.id,
+            target: p.id,
+            msg: '药巫战场急救成功——目标存活但暂时无法行动',
+          });
+          break;
+        }
+      }
+    }
+
+    // 新增：药草园（留守家中种植，获得额外解药）
+    if (hw.nightAbility?.plantHerbGarden) {
+      hw.herbGardenPlanted = true;
+      hw.herbGardenReady = true;
+      this.privateLog.push({
+        type: 'herb_garden',
+        player: hw.id,
+        msg: '药巫在自己的药草园种下了种子——下一回合可收获',
+      });
+    }
+
+    // 新增：诊断（获知目标状态而不使用药）
+    if (hw.nightAbility?.diagnose && hw.nightTarget) {
+      const diagTarget = this.players.find(p => p.id === hw.nightTarget && p.alive);
+      if (diagTarget) {
+        hw.diagnoseResult = {
+          isMarkedForDeath: this.deathMarks.has(diagTarget.id),
+          heavyInjury: diagTarget.heavyInjury,
+          infectedByAlpha: diagTarget.infectedByAlpha,
+          willBecomeWolf: diagTarget.willBecomeWolf,
+        };
+        this.privateLog.push({
+          type: 'diagnose',
+          player: hw.id,
+          target: diagTarget.id,
+          result: hw.diagnoseResult,
+          msg: `诊断结果：${JSON.stringify(hw.diagnoseResult)}`,
+        });
+      }
+    }
   }
 
   // ==========================================
@@ -507,7 +754,99 @@ export class NightResolver {
         villager.atHome = false;
       }
 
-      // 村民偷听（基于目标屋内实际成员随机给线索）
+      // 老猎人村民：直觉 + 陷阱
+      if (villager.villagerType === VILLAGER_TYPES.OLD_HUNTER) {
+        if (villager.nightAction === 'TRAP_SET') {
+          villager.doorFortified = true;
+          this.privateLog.push({
+            type: 'old_hunter_trap',
+            player: villager.id,
+            msg: '老猎人在自家设下了陷阱',
+          });
+        }
+      }
+
+      // 旅行商人村民：双访问
+      if (villager.villagerType === VILLAGER_TYPES.MERCHANT) {
+        if (villager.nightAbility?.secondVisit && villager.nightAbility.secondTarget) {
+          // 第二个访问目标（不触发额外效果，仅收集信息）
+          this.privateLog.push({
+            type: 'merchant_double_visit',
+            player: villager.id,
+            firstTarget: villager.nightTarget,
+            secondTarget: villager.nightAbility.secondTarget,
+            msg: `商人访问了两个屋子`,
+          });
+        }
+        // 交易信息
+        if (villager.nightAction === 'TRADE_INFO' && villager.nightTarget) {
+          this.privateLog.push({
+            type: 'trade_info',
+            player: villager.id,
+            target: villager.nightTarget,
+            msg: '商人发起了信息交易',
+          });
+        }
+      }
+
+      // 草药师村民：草药
+      if (villager.villagerType === VILLAGER_TYPES.HERBALIST) {
+        if (villager.nightAction === 'HERBAL_REMEDY' && villager.nightTarget) {
+          villager.herbalRemedyUsed = true;
+          villager.herbalRemedyTarget = villager.nightTarget;
+          this.privateLog.push({
+            type: 'herbal_remedy',
+            player: villager.id,
+            target: villager.nightTarget,
+            msg: '草药师使用了草药——若目标今晚死亡，可推迟1回合',
+          });
+        }
+      }
+
+      // 守夜人村民：守夜
+      if (villager.villagerType === VILLAGER_TYPES.NIGHT_WATCHER) {
+        if (villager.nightAction === 'NIGHT_WATCH') {
+          // 获知今晚出门的总人数
+          const outCount = this.players.filter(p => p.alive && p.nightAction === 'GO_OUT').length;
+          villager.nightWatchAlert = { outCount, round: this.game.round };
+          this.privateLog.push({
+            type: 'night_watch',
+            player: villager.id,
+            outCount,
+            msg: `守夜人：今晚有 ${outCount} 人出门`,
+          });
+        }
+      }
+
+      // 铁匠村民：加固门锁
+      if (villager.villagerType === VILLAGER_TYPES.BLACKSMITH) {
+        if (villager.nightAction === 'FORTIFY_DOOR') {
+          villager.doorFortified = true;
+          this.privateLog.push({
+            type: 'blacksmith_fortify',
+            player: villager.id,
+            msg: '铁匠加固了自家门锁——可抵御一次狼人入侵',
+          });
+        }
+      }
+
+      // 织布女村民：偷听更精确
+      if (villager.villagerType === VILLAGER_TYPES.WEAVER) {
+        if (villager.nightAction === 'EAVESDROP' && villager.nightTarget) {
+          // 织网：排除干扰项（50%概率给出精确信息而非模糊线索）
+          const accurateResult = this._accurateEavesdrop(villager.nightTarget);
+          this.privateLog.push({
+            type: 'eavesdrop_accurate',
+            player: villager.id,
+            target: villager.nightTarget,
+            result: accurateResult,
+            msg: `精确偷听: ${accurateResult}`,
+          });
+          continue;
+        }
+      }
+
+      // 村民偷听（通用逻辑，非织布女）
       if (villager.nightAction === 'EAVESDROP' && villager.nightTarget) {
         const result = this._eavesdropResult(villager.nightTarget);
         this.privateLog.push({
@@ -519,6 +858,29 @@ export class NightResolver {
         });
       }
     }
+  }
+
+  // 织布女精确偷听（排除干扰项）
+  _accurateEavesdrop(targetHouseId) {
+    const peopleInHouse = this.players.filter(p => {
+      if (!p.alive) return false;
+      return (p.currentHouse || p.id) === targetHouseId;
+    });
+
+    const hasWolf = peopleInHouse.some(p => p.isWolf());
+    const hasGod = peopleInHouse.some(p => p.isGod());
+    const hasVillager = peopleInHouse.some(p => p.isVillager());
+
+    const clues = [];
+    if (hasWolf) clues.push(`你清楚地听到了狼的呼吸声——屋里有狼人`);
+    if (hasGod) clues.push(`你听到了法器碰撞的声音——屋里有神职`);
+    if (hasVillager) clues.push(`你听到了平常人的脚步声——屋里有村民`);
+    if (peopleInHouse.length === 0) clues.push('屋里空无一人，只有风声');
+    if (peopleInHouse.length >= 2) clues.push(`你能分辨出至少${peopleInHouse.length}个人`);
+
+    return clues.length > 0
+      ? clues.join('；')
+      : '什么也没听到...';
   }
 
   _eavesdropResult(targetHouseId) {
@@ -630,11 +992,122 @@ export class NightResolver {
 
         // 正常击杀
         this.markForDeath(targetId, 'wolf_kill');
+
+        // 新增：铁匠加固门锁——抵御一次狼人入侵
+        if (target.doorFortified && target.alive) {
+          target.doorFortified = false; // 门锁被破坏
+          this.reviveFromDeath(targetId);
+          this.privateLog.push({
+            type: 'blacksmith_door_blocked',
+            player: target.id,
+            msg: '铁匠的加固门锁挡住了狼人的攻击！但门锁已被破坏',
+          });
+        }
+
+        // 新增：老猎人陷阱——狼人进入时有20%概率被发现
+        if (target.villagerType === 'OLD_HUNTER' && target.doorFortified && Math.random() < 0.20) {
+          for (const wolfId of killers) {
+            if (!target.knownWolves) target.knownWolves = [];
+            target.knownWolves.push(wolfId);
+          }
+          this.privateLog.push({
+            type: 'old_hunter_detected',
+            player: target.id,
+            detectedWolves: killers,
+            msg: '老猎人的陷阱触发了——你发现了进入你家的狼人！',
+          });
+        }
+      }
+    }
+
+    // 新增：守卫舍身——替目标死亡
+    for (const [targetId, reason] of this.deathMarks) {
+      const guard = this.players.find(p =>
+        p.role === ROLES.GUARD && p.alive && p.sacrificeTarget === targetId
+      );
+      if (guard) {
+        this.reviveFromDeath(targetId);
+        this.markForDeath(guard.id, 'guard_sacrifice');
+        this.log.push({
+          type: 'guard_sacrifice_death',
+          guard: guard.id,
+          savedTarget: targetId,
+          msg: '守卫舍身替目标挡下了致命一击！',
+        });
+        this.privateLog.push({
+          type: 'guard_sacrifice',
+          player: guard.id,
+          target: targetId,
+          msg: '你履行了舍身誓言——目标活了下来',
+        });
+      }
+    }
+
+    // 新增：毒雾延迟结算——上一晚设下的毒雾本晚触发
+    for (const p of this.players) {
+      if (!p.alive) continue;
+      // 找到毒巫的毒雾
+      const poisonWitch = this.players.find(pw =>
+        pw.role === ROLES.POISON_WITCH && pw.poisonFogActive && pw.poisonFogTarget
+      );
+      if (poisonWitch && poisonWitch.poisonFogTarget) {
+        const peopleInFog = this.getPeopleInHouse(poisonWitch.poisonFogTarget);
+        for (const victim of peopleInFog) {
+          if (victim.id !== poisonWitch.id && !this.deathMarks.has(victim.id)) {
+            this.markForDeath(victim.id, 'poison_fog');
+            this.log.push({
+              type: 'poison_fog_triggered',
+              target: victim.id,
+              msg: '毒雾陷阱触发——进入者中毒身亡',
+            });
+          }
+        }
+        poisonWitch.poisonFogTarget = null;
+        poisonWitch.poisonFogActive = false;
       }
     }
 
     // --- 应用死亡标记 ---
     this.applyDeathMarks();
+
+    // 新增：草药师草药——推迟死亡1回合
+    for (const p of this.players) {
+      if (!p.alive && p.herbalRemedyUsed) continue; // 已经是死亡+已使用草药的情况
+      const herbalist = this.players.find(h =>
+        h.alive && h.villagerType === 'HERBALIST' &&
+        h.herbalRemedyTarget === p.id && h.herbalRemedyUsed
+      );
+      if (herbalist && !p.alive) {
+        p.alive = true; // 推迟死亡
+        p.delayedDeath = true; // 标记为延迟死亡（下一晚结算时若无人救则必死）
+        herbalist.herbalRemedyUsed = false;
+        herbalist.herbalRemedyTarget = null;
+        this.log.push({
+          type: 'herbal_delay',
+          player: p.id,
+          msg: '草药师的草药推迟了目标的死亡——但只有一回合',
+        });
+        this.privateLog.push({
+          type: 'herbal_delay',
+          player: herbalist.id,
+          target: p.id,
+          msg: '你的草药起效了——目标暂时活了下来',
+        });
+      }
+    }
+
+    // 新增：延迟死亡结算（上回合被草药推迟的，本回合若未被救则死亡）
+    for (const p of this.players) {
+      if (p.delayedDeath && p.alive && !this.deathMarks.has(p.id)) {
+        p.alive = false;
+        p.delayedDeath = false;
+        this.log.push({
+          type: 'delayed_death',
+          player: p.id,
+          msg: '草药的效果消失了——再也无法推迟的死亡',
+        });
+      }
+    }
 
     // --- 应用感染效果（延迟一晚上） ---
     for (const p of this.players) {

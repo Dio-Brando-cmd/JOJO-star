@@ -9,6 +9,7 @@ import DayPhase from './DayPhase';
 import VotePanel from './VotePanel';
 import DiscussionPhase from './DiscussionPhase';
 import ChatBox from './ChatBox';
+import CharacterSelect from './CharacterSelect';
 import RoleCard from './RoleCard';
 import RoleIntroModal from './RoleIntroModal';
 import { VoiceChatContainer } from './VoiceChat';
@@ -26,6 +27,10 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
   useEffect(() => {
     if (!gameState) return;
     switch (gameState.phase) {
+      case 'CHARACTER_SELECT':
+      case 'PROLOGUE':
+        playMusic('lobby');
+        break;
       case PHASES.NIGHT:
         playMusic('night');
         break;
@@ -58,7 +63,23 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
 
   return (
     <div className="screen game-screen">
-      {/* 顶部栏 */}
+      {/* v2.0: 选人阶段全屏覆盖 */}
+      {gameState.phase === 'CHARACTER_SELECT' && (
+        <CharacterSelect
+          gameState={gameState}
+          socket={socket}
+          onSelected={() => {}}
+        />
+      )}
+
+      {/* v2.0: 序幕阶段 */}
+      {gameState.phase === 'PROLOGUE' && (
+        <PrologueScreen prologue={gameState.prologue} />
+      )}
+
+      {/* 正常游戏UI（选人/序幕阶段隐藏） */}
+      {gameState.phase !== 'CHARACTER_SELECT' && gameState.phase !== 'PROLOGUE' && (
+      <>
       <header className="game-header">
         <div className="header-left">
           <span className="room-badge">房间: {gameState.id}</span>
@@ -182,6 +203,58 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
       )}
 
       <RoleIntroModal show={showRules} onClose={() => setShowRules(false)} />
+      </>
+      )}
+    </div>
+  );
+}
+
+// ==================== 阶段指示器 ====================
+
+// ==================== 序幕屏幕 ====================
+
+function PrologueScreen({ prologue }) {
+  if (!prologue) {
+    return (
+      <div className="prologue-screen">
+        <div className="prologue-content">
+          <h1>🌑 帷幕之地</h1>
+          <p className="prologue-subtitle">诸神已死。帷幕之外，混沌在呼吸。</p>
+          <p>正在准备你的故事...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="prologue-screen">
+      <div className="prologue-content">
+        <h1>🌑 {prologue.title || '帷幕之地'}</h1>
+        <p className="prologue-subtitle">{prologue.subtitle || ''}</p>
+        <div className="prologue-excerpt">
+          <p>{prologue.excerpt || ''}</p>
+        </div>
+
+        {prologue.playerNarratives?.map((pn, i) => (
+          pn.story && (
+            <div key={i} className="prologue-player-card">
+              <div className="prologue-char-name">
+                {pn.characterId || '未知'} — {pn.story.characterTitle || ''}
+              </div>
+              <p className="prologue-char-intro"
+                 dangerouslySetInnerHTML={{ __html: pn.story.intro || '' }} />
+              {pn.story.quote && (
+                <p className="prologue-char-quote">"{pn.story.quote}"</p>
+              )}
+            </div>
+          )
+        ))}
+
+        <div className="prologue-waiting">
+          <p>⚡ 即将进入游戏...</p>
+          <div className="prologue-progress-bar" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -191,8 +264,11 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
 function PhaseIndicator({ phase, nightStep }) {
   const phaseNames = {
     LOBBY: '等待中',
+    CHARACTER_SELECT: '🧬 选择身份',
+    PROLOGUE: '📖 序幕',
     NIGHT: '🌙 夜晚',
     DAY: '☀️ 白天',
+    DISCUSSION: '🗣️ 发言',
     VOTE: '🗳️ 投票',
     GAME_OVER: '游戏结束',
   };
