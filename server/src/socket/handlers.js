@@ -165,7 +165,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   });
 
   // 创建房间（可传入自定义角色配置、隐私设置）
-  socket.on('room:create', ({ playerName, roleConfig, isPrivate, password, maxPlayers }, callback) => {
+  socket.on('room:create', ({ playerName, roleConfig, isPrivate, password, maxPlayers, gameMode }, callback) => {
     try {
       // 速率限制
       if (!checkRateLimit(`create:${socket.id}`, 5)) {
@@ -190,6 +190,10 @@ export function registerHandlers(io, socket, gameManager, userManager) {
       // 最大人数（5-18）
       if (maxPlayers && typeof maxPlayers === 'number' && maxPlayers >= 5 && maxPlayers <= 18) {
         game.maxPlayers = maxPlayers;
+      }
+      // 游戏模式（2.11.0: 桌游 vs 3D追逃）
+      if (gameMode === 'THIRD_PERSON' || gameMode === 'BOARD_GAME') {
+        game.gameMode = gameMode;
       }
 
       // 存储房主的角色配置选择
@@ -674,6 +678,43 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     const game = gameManager.getGameByPlayer(socket.id);
     if (!game || !game.positionSync) return;
     game.positionSync.updatePosition(socket.id, { x, y, z, rotY, isMoving, isSprinting });
+  });
+
+  // ==================== 3D追逃模式专用事件 ====================
+
+  // 狼人攻击
+  socket.on('3d:attack', ({ targetId }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.gameMode !== 'THIRD_PERSON') {
+      callback?.({ success: false, error: 'NOT_3D_MODE' });
+      return;
+    }
+    const result = game.submit3DAttack(socket.id, targetId);
+    callback?.(result || { success: false });
+  });
+
+  // 藏匿
+  socket.on('3d:hide', ({ hideSpotId }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.gameMode !== 'THIRD_PERSON') return;
+    const ok = game.submit3DHide(socket.id, hideSpotId);
+    callback?.({ success: ok });
+  });
+
+  // 脱离藏匿
+  socket.on('3d:unhide', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) return;
+    const player = game.getPlayer(socket.id);
+    if (player) { player.isHidden = false; player._hideSpot = null; }
+  });
+
+  // 3D模式强制结束夜晚（管理员/房主）
+  socket.on('3d:endNight', () => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.gameMode !== 'THIRD_PERSON') return;
+    if (game.hostId !== socket.id) return;
+    game._end3DNight();
   });
 
   // ==================== WebRTC 语音信令 ====================

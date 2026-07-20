@@ -81,6 +81,9 @@ export class Game {
     this.positionSync = new PositionSync(this);
     this._positionSyncInterval = null;
 
+    // ---- 游戏模式 (2.11.0) ----
+    this.gameMode = 'BOARD_GAME';      // BOARD_GAME | THIRD_PERSON
+
     // 创建时间戳
     this._createdAt = Date.now();
 
@@ -480,13 +483,130 @@ export class Game {
       if (p.alive) p.resetNightState();
     }
 
-    // 获取夜晚步骤列表
+    if (this.gameMode === 'THIRD_PERSON') {
+      this._enter3DNight();
+    } else {
+      this._enterBoardGameNight();
+    }
+  }
+
+  /** 桌游模式: 回合制夜晚步骤 */
+  _enterBoardGameNight() {
     const steps = this.getNightSteps();
     this.nightStepIndex = 0;
     this.nightStep = steps[0];
 
     this.broadcastPhaseChange();
     this._startNightStepTimer();
+  }
+
+  /** 3D追逃模式: 自由移动夜晚 */
+  _enter3DNight() {
+    this.nightStep = 'FREE_ROAM';
+    this._clearPhaseTimeout();
+
+    // 设置120秒夜晚自由时间
+    this.timeLeft = 120;
+    this.broadcastPhaseChange();
+
+    if (this._io) {
+      this._io.to(this.id).emit('game:3dNightStart', {
+        timeLeft: this.timeLeft,
+        nightStep: 'FREE_ROAM',
+        players: this.players.filter(p => p.alive).map(p => p.toJSON()),
+      });
+    }
+
+    // 120秒后强制天亮
+    this._phaseTimeout = setTimeout(() => {
+      if (this.phase !== PHASES.NIGHT) return;
+      this._end3DNight();
+    }, 120000);
+
+    // 人机AI在3D模式下随机移动
+    for (const bot of this.getAliveBots?.() || []) {
+      if (bot.isWolf()) {
+        bot._3dAction = 'HUNT'; // AI狼人自动狩猎
+      } else {
+        bot._3dAction = Math.random() < 0.4 ? 'HIDE' : 'ROAM';
+      }
+    }
+  }
+
+  /** 3D模式夜晚结束 → 结算 */
+  _end3DNight() {
+    this._clearPhaseTimeout();
+    if (this.phase !== PHASES.NIGHT) return;
+
+    // 统计3D模式的击杀
+    const kills = [];
+    for (const p of this.players) {
+      if (!p.alive && p._killedBy) {
+        kills.push({ victim: p.id, killer: p._killedBy });
+      }
+    }
+
+    // 用NightResolver做标准结算
+    const resolver = new NightResolver(this);
+    resolver.resolve().then(() => {
+      this.nightLog = resolver.log;
+      this.privateLogs = resolver.privateLogs;
+
+      if (this.phase !== PHASES.GAME_OVER) {
+        this.enterDay();
+      }
+    });
+  }
+
+  /** 3D模式: 狼人攻击目标 */
+  submit3DAttack(wolfId, targetId) {
+    if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return null;
+
+    const wolf = this.getPlayer(wolfId);
+    const target = this.getPlayer(targetId);
+    if (!wolf || !target || !wolf.alive || !target.alive) return null;
+    if (!wolf.isWolf()) return null; // 只有狼人能攻击
+
+    // 检查是否在攻击冷却中
+    const now = Date.now();
+    if (wolf._lastAttackTime && now - wolf._lastAttackTime < 8000) {
+      return { success: false, reason: 'COOLDOWN' };
+    }
+
+    wolf._lastAttackTime = now;
+
+    // 检查目标是否有短火铳反击
+    if (target.role === 'HUNTER' && target.blunderbussUsable) {
+      wolf.alive = false;
+      wolf._killedBy = targetId;
+      target.blunderbussUsable = false;
+      return { success: true, result: 'COUNTERED', victim: wolfId, killer: targetId };
+    }
+
+    // 检查逃脱: 30%基础 + 特质加成
+    let escapeChance = 0.30;
+    if (target.characterId === 'ORIC') escapeChance += 0.15;
+    if (target.characterId === 'SKADI') escapeChance += 0.10;
+    if (target.isHidden) escapeChance += 0.25;
+
+    if (Math.random() < escapeChance) {
+      return { success: true, result: 'ESCAPED', target: targetId };
+    }
+
+    // 击杀
+    target.alive = false;
+    target._killedBy = wolfId;
+    return { success: true, result: 'KILLED', victim: targetId, killer: wolfId };
+  }
+
+  /** 3D模式: 玩家尝试藏匿 */
+  submit3DHide(playerId, hideSpotId) {
+    if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return false;
+    const player = this.getPlayer(playerId);
+    if (!player || !player.alive) return false;
+    player.isHidden = true;
+    player._hideSpot = hideSpotId;
+    return true;
   }
 
   getNightSteps() {
@@ -1006,6 +1126,7 @@ export class Game {
       id: this.id,
       hostId: this.hostId,
       phase: this.phase,
+      gameMode: this.gameMode,
       round: this.round,
       nightStep: this.nightStep,
       isPrivate: this.isPrivate,
