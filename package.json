@@ -1,6 +1,6 @@
 {
   "name": "werewolf-online",
-  "version": "1.5.4",
+  "version": "2.9.0",
   "description": "狼人杀在线联机版 - PC桌面多人联机游戏",
   "private": true,
   "main": "electron/main.js",

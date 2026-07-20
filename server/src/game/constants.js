@@ -635,3 +635,90 @@ export function getRecommendedCharactersForRole(role) {
     char => char.recommendedHiddenRoles.includes(role)
   );
 }
+
+// ---- 灵格系统（Spirit Grade） ----
+// 灵格是帷幕之地中衡量灵魂中诸神遗力显现程度的标尺
+// 由德鲁伊莫莉安和冥界侍僧卡赫特共同创立
+export const SPIRIT_GRADES = {
+  MORTAL: 'MORTAL',         // 凡人之魂
+  AWAKENED: 'AWAKENED',     // 觉醒之魂
+  HEROIC: 'HEROIC',         // 英灵之魂
+  DIVINE: 'DIVINE',         // 神遗之魂
+  LEGENDARY: 'LEGENDARY',   // 传说之魂
+};
+
+export const SPIRIT_GRADE_NAMES = {
+  MORTAL: '凡人之魂',
+  AWAKENED: '觉醒之魂',
+  HEROIC: '英灵之魂',
+  DIVINE: '神遗之魂',
+  LEGENDARY: '传说之魂',
+};
+
+export const SPIRIT_GRADE_ICONS = {
+  MORTAL: '🕯️',
+  AWAKENED: '🔥',
+  HEROIC: '⚡',
+  DIVINE: '✨',
+  LEGENDARY: '🌟',
+};
+
+export const SPIRIT_GRADE_THRESHOLDS = {
+  MORTAL:    { min: 0,    max: 999,  desc: '诸神的血脉在你体内沉寂。但每一个传说都始于凡人。' },
+  AWAKENED:  { min: 1000, max: 1999, desc: '古老的力量开始苏醒。你隐约能感受到帷幕的呼吸。' },
+  HEROIC:    { min: 2000, max: 3499, desc: '英灵的光辉在你身上显现。你已不再是普通的玩家。' },
+  DIVINE:    { min: 3500, max: 5499, desc: '诸神的遗力在你血脉中奔涌。你的一举一动都牵动帷幕。' },
+  LEGENDARY: { min: 5500, max: Infinity, desc: '传说之魂。你的名字将被刻在帷幕之地的石碑上。' },
+};
+
+// 灵格根据胜率、生存回合、贡献度综合计算
+export const SPIRIT_GRADE_WEIGHTS = {
+  WIN_RATE: 0.40,         // 胜率权重 40%
+  SURVIVAL_RATE: 0.25,    // 生存率权重 25%
+  CONTRIBUTION: 0.25,     // 贡献度权重 25%
+  GAMES_PLAYED: 0.10,     // 场次权重 10%
+};
+
+// 每局灵格变化量（基于表现）
+export const SPIRIT_GRADE_DELTA = {
+  WIN: 25,
+  LOSS: -15,
+  MVP_BONUS: 10,
+  SURVIVED_BONUS: 5,
+  DISCONNECT_PENALTY: -30,
+};
+
+// ---- 排位段位 ----
+export const RANKED_TIERS = {
+  BRONZE: 'BRONZE', SILVER: 'SILVER', GOLD: 'GOLD',
+  PLATINUM: 'PLATINUM', DIAMOND: 'DIAMOND', LEGEND: 'LEGEND',
+};
+
+export const RANKED_TIER_NAMES = {
+  BRONZE: '青铜', SILVER: '白银', GOLD: '黄金',
+  PLATINUM: '铂金', DIAMOND: '钻石', LEGEND: '传说',
+};
+
+export const RANKED_TIER_ICONS = {
+  BRONZE: '🥉', SILVER: '🥈', GOLD: '🥇',
+  PLATINUM: '💎', DIAMOND: '👑', LEGEND: '🏆',
+};
+
+// ---- 匹配类型 ----
+export const MATCH_TYPES = {
+  CUSTOM: 'CUSTOM', QUICK: 'QUICK', RANKED: 'RANKED',
+};
+
+// ---- 匹配参数 ----
+export const MATCHMAKING = {
+  CYCLE_MS: 5000,
+  ACCEPT_TIMEOUT_MS: 30000,
+  INITIAL_BRACKET_RADIUS: 200,
+  BRACKET_EXPANSION_RATE: 100,
+  MAX_BRACKET_RADIUS: 2000,
+  MIN_RANKED_PLAYERS: 6,
+  MIN_QUICK_PLAYERS: 4,
+  TARGET_PLAYERS: 12,
+  PLACEMENT_GAMES: 5,
+  DEMOTION_SHIELD_GAMES: 3,
+};
