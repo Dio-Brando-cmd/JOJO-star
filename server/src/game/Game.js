@@ -6,11 +6,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { Player } from './Player.js';
 import { NightResolver } from './NightResolver.js';
 import { BotManager } from './BotManager.js';
+import { TraitSystem } from './TraitSystem.js';
+import { StoryManager } from './StoryManager.js';
+import { Character } from './Character.js';
 import {
   ROLES, ROLE_NAMES, TEAMS, ROLE_TEAM,
   PHASES, NIGHT_STEPS, NIGHT_STEPS_NIGHT1, NIGHT_STEPS_FULL,
   NIGHT_ACTIONS,
-  getRoleConfig,
+  getRoleConfig, getVillagerName, CHARACTER_IDENTITIES,
 } from './constants.js';
 
 export class Game {
@@ -65,6 +68,13 @@ export class Game {
 
     // 自定义角色配置（房主可选）
     this.customRoleConfig = null;
+
+    // ---- v2.0: 表层身份选择 ----
+    this.traitSystem = new TraitSystem(this);
+    this.storyManager = new StoryManager(this);
+    this.characterSelections = {};    // { playerId: characterId }
+    this.availableCharacters = null;  // 本轮可用的表层身份ID列表
+    this.CHARACTER_SELECT_TIMEOUT = 30000; // 30秒选人
 
     // 创建时间戳
     this._createdAt = Date.now();
@@ -241,16 +251,204 @@ export class Game {
 
   // ==================== 阶段转换 ====================
 
+  // ---- v2.0: 开始游戏 → 先选表层身份 ----
   startGame() {
-    // 自动补足人机至 minBots 人
     if (this.enableBots) {
       this._autoFillBots();
     }
     if (this.players.length < this.minPlayers) return false;
-    this.assignRoles();
-    this.round = 1;
-    this.enterNight();
+
+    // 准备可用的表层身份池（数量=玩家数，随机抽取）
+    const allChars = Object.keys(CHARACTER_IDENTITIES);
+    this.shuffleArray(allChars);
+    this.availableCharacters = allChars.slice(0, this.players.length);
+    this.characterSelections = {};
+
+    // AI玩家自动随机选
+    for (const p of this.players) {
+      if (p.isBot) {
+        const pick = this.availableCharacters[Math.floor(Math.random() * this.availableCharacters.length)];
+        this.characterSelections[p.id] = pick;
+        this._applyCharacterToPlayer(p, pick);
+      }
+    }
+
+    // 进入选人阶段
+    this.phase = PHASES.CHARACTER_SELECT;
+    this._broadcastState();
+    this._startCharacterSelectTimer();
     return true;
+  }
+
+  /** 玩家选择表层身份 */
+  selectCharacter(playerId, characterId) {
+    if (this.phase !== PHASES.CHARACTER_SELECT) return { success: false, error: '不在选人阶段' };
+    if (!this.availableCharacters.includes(characterId)) {
+      return { success: false, error: '该身份不可用' };
+    }
+    // 检查是否已被别人选走
+    const taken = Object.values(this.characterSelections).includes(characterId);
+    if (taken && this.characterSelections[playerId] !== characterId) {
+      return { success: false, error: '该身份已被其他玩家选择' };
+    }
+
+    this.characterSelections[playerId] = characterId;
+    const player = this.getPlayer(playerId);
+    if (player) this._applyCharacterToPlayer(player, characterId);
+
+    this._broadcastState();
+
+    // 检查是否所有人都选完了
+    const allSelected = this.players.every(p => this.characterSelections[p.id]);
+    if (allSelected) {
+      this._finalizeCharacterSelection();
+    }
+    return { success: true };
+  }
+
+  /** 将表层身份应用到玩家 */
+  _applyCharacterToPlayer(player, characterId) {
+    const charDef = CHARACTER_IDENTITIES[characterId];
+    if (!charDef) return;
+    player.characterId = characterId;
+    player.characterTraits = charDef.externalTraits.map(t => ({
+      ...t,
+      active: true,
+      usedThisRound: false,
+    }));
+  }
+
+  /** 选人超时——未选者随机分配 */
+  _startCharacterSelectTimer() {
+    this._clearPhaseTimeout();
+    this.timeLeft = Math.round(this.CHARACTER_SELECT_TIMEOUT / 1000);
+    this._phaseTimeout = setTimeout(() => {
+      if (this.phase !== PHASES.CHARACTER_SELECT) return;
+      // 未选者随机分配剩余身份
+      const taken = new Set(Object.values(this.characterSelections));
+      const remaining = this.availableCharacters.filter(c => !taken.has(c));
+      for (const p of this.players) {
+        if (!this.characterSelections[p.id] && remaining.length > 0) {
+          const pick = remaining.shift();
+          this.characterSelections[p.id] = pick;
+          this._applyCharacterToPlayer(p, pick);
+        }
+      }
+      this._finalizeCharacterSelection();
+    }, this.CHARACTER_SELECT_TIMEOUT);
+  }
+
+  /** 选人完成 → 根据表层身份分配隐藏职业 */
+  _finalizeCharacterSelection() {
+    this._clearPhaseTimeout();
+
+    // 分配隐藏职业：基于表层身份的推荐职业，加入随机因素
+    this._assignRolesByCharacter();
+
+    // 告知玩家各自的隐藏身份（仅自己可见）
+    if (this._io) {
+      for (const p of this.players) {
+        const privateState = this.getPrivateState(p.id);
+        this._io.to(p.id).emit('game:privateState', privateState);
+      }
+    }
+
+    // 进入序幕阶段
+    this.phase = PHASES.PROLOGUE;
+    if (this._io) {
+      const prologue = this.storyManager.generatePrologue();
+      this._io.to(this.id).emit('game:prologue', prologue);
+    }
+    this._broadcastState();
+
+    // 序幕后进入游戏
+    setTimeout(() => {
+      this.round = 1;
+      this.enterNight();
+      if (this._io) {
+        this._io.to(this.id).emit('game:started', { round: this.round });
+      }
+    }, 8000); // 8秒序幕阅读时间
+  }
+
+  /** 根据表层身份推荐分配隐藏职业 */
+  _assignRolesByCharacter() {
+    const count = this.players.length;
+    const config = this.customRoleConfig && this.customRoleConfig.length === count
+      ? [...this.customRoleConfig]
+      : getRoleConfig(count);
+
+    // 打乱隐藏职业池
+    const shuffled = [...config];
+    this.shuffleArray(shuffled);
+
+    // 为每个玩家打分匹配：优先给表层身份推荐其匹配的隐藏职业
+    const assignments = [];
+    const usedRoles = new Set();
+
+    for (const player of this.players) {
+      const charDef = CHARACTER_IDENTITIES[player.characterId];
+      const recommended = charDef?.recommendedHiddenRoles || [];
+
+      // 在剩余职业中找推荐匹配
+      let bestRole = null;
+      for (const rec of recommended) {
+        if (!usedRoles.has(rec) && shuffled.includes(rec)) {
+          bestRole = rec;
+          break;
+        }
+      }
+
+      // 无推荐匹配则随机分配
+      if (!bestRole) {
+        for (const role of shuffled) {
+          if (!usedRoles.has(role)) {
+            bestRole = role;
+            break;
+          }
+        }
+      }
+
+      if (bestRole) {
+        usedRoles.add(bestRole);
+        assignments.push({ player, role: bestRole });
+      }
+    }
+
+    // 应用分配
+    let villagerIdx = 1;
+    for (const { player, role } of assignments) {
+      player.role = role;
+      player.team = ROLE_TEAM[role];
+
+      // 村民编号 + 名字
+      if (role === ROLES.VILLAGER) {
+        player.villagerIndex = villagerIdx;
+        const nameData = getVillagerName(villagerIdx);
+        player.villagerName = nameData.name;
+        player.villagerTitle = nameData.title;
+        player.villagerType = nameData.villagerType;
+        villagerIdx++;
+      }
+
+      // 初始化角色特有状态
+      if (role === ROLES.HUNTER) {
+        player.canAct = false;
+        player.hasRifle = true;
+        player.hasBlunderbuss = true;
+        player.rifleUsable = true;
+        player.blunderbussUsable = true;
+      }
+      if (role === ROLES.HEAL_WITCH || role === ROLES.POISON_WITCH) {
+        player.hasPotion = true;
+        player.hasPoison = true;
+      }
+
+      this.storyManager.recordNarrativeEvent(player.id, 'role_assigned', {
+        characterId: player.characterId,
+        role,
+      });
+    }
   }
 
   // 自动补足人机
@@ -773,6 +971,12 @@ export class Game {
     }
   }
 
+  _broadcastState() {
+    if (this._io) {
+      this._io.to(this.id).emit('game:state', this.getPublicState());
+    }
+  }
+
   setIO(io) {
     this._io = io;
   }
@@ -788,24 +992,30 @@ export class Game {
       nightStep: this.nightStep,
       isPrivate: this.isPrivate,
       maxPlayers: this.maxPlayers,
+      // v2.0: 选人阶段信息
+      characterSelect: this.phase === PHASES.CHARACTER_SELECT ? {
+        availableCharacters: this.availableCharacters,
+        selections: this.characterSelections,
+        timeLeft: this.timeLeft,
+      } : null,
       players: this.players.map(p => ({
         id: p.id,
         name: p.name,
         alive: p.alive,
         isBot: p.isBot,
-        // 游戏结束或玩家死亡时公开角色身份
         role: (this.phase === PHASES.GAME_OVER || !p.alive) ? p.role : undefined,
         team: this.phase === PHASES.GAME_OVER ? p.team : undefined,
         heavyInjury: p.heavyInjury,
         isGuarding: p.isGuarding,
         villagerIndex: p.villagerIndex,
+        // v2.0: 表层身份（选人完成后公开）
+        characterId: this.phase !== PHASES.LOBBY ? p.characterId : undefined,
       })),
       votes: this.phase === PHASES.VOTE ? this.votes : {},
       voteResults: this.voteResults,
       nightLog: this.nightLog,
       dayLog: this.dayLog,
       hunterDayShoot: this.hunterDayShoot,
-      // 讨论阶段
       discussionOrder: this.phase === PHASES.DISCUSSION ? this.discussionOrder : [],
       currentSpeakerId: this.phase === PHASES.DISCUSSION ? this.currentSpeakerId : null,
       discussionTimeLeft: this.phase === PHASES.DISCUSSION ? this.discussionTimeLeft : 0,

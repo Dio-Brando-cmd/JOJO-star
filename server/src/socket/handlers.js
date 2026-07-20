@@ -434,6 +434,17 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 
   // ==================== 游戏操作 ====================
 
+  // v2.0: 选择表层身份
+  socket.on('character:select', ({ characterId } = {}, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game) {
+      callback?.({ success: false, error: '你不在任何房间中' });
+      return;
+    }
+    const result = game.selectCharacter(socket.id, characterId);
+    callback?.(result);
+  });
+
   // 开始游戏（仅房主）—— 支持自定义角色配置
   socket.on('game:start', ({ roleConfig } = {}, callback) => {
     const game = gameManager.getGameByPlayer(socket.id);
