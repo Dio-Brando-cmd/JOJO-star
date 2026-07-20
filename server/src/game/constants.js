@@ -292,13 +292,23 @@ export const TRAIT_TYPES = {
 // ---- 表层身份定义（第二步使用） ----
 // 神话来源标记
 export const MYTH_ORIGINS = {
-  NORSE: 'NORSE',           // 北欧神话
-  CELTIC: 'CELTIC',         // 凯尔特神话
-  GREEK: 'GREEK',           // 希腊神话
-  EGYPTIAN: 'EGYPTIAN',     // 埃及神话
-  ROMAN: 'ROMAN',           // 罗马神话
-  EASTERN: 'EASTERN',       // 东方传说
-  FOLK: 'FOLK',            // 各国民间故事
+  NORSE: '铁森林边陲',
+  CELTIC: '黑森林深处',
+  GREEK: '古战场废墟',
+  EGYPTIAN: '沙海之畔',
+  ROMAN: '旧帝国遗址',
+  EASTERN: '雾隐禅寺',
+  FOLK: '帷幕之地',
+  // 新增原始出处
+  WILD: '铁森林荒野',
+  MOUNTAIN: '永冬山脉',
+  LAB: '草药师行会故地',
+  ASH: '灰烬高地',
+  VEIL: '帷幕裂隙',
+  MINE: '矿脉山脉',
+  BONE: '骨灰平原',
+  PLAINS: '平原驿站',
+  TOWER: '观测塔废墟',
 };
 
 // 表层身份定义（第二步完整实现）
@@ -592,6 +602,63 @@ export const CHARACTER_IDENTITIES = {
       },
     ],
     recommendedHiddenRoles: ['GUARD', 'VILLAGER'],
+  },
+
+  // ---- 新增: 5个原创角色 ----
+  YSERA: {
+    id: 'YSERA', name: '伊瑟尔', title: '暗影织网者',
+    origin: MYTH_ORIGINS.VEIL, gender: 'female',
+    story: '她曾是帷幕之地最出色的情报贩子。没有人见过她的真面目——她每次出现都以不同的面孔示人。有人说她曾在帷幕裂隙中看到了不该看的东西，从此隐入暗处。',
+    externalTraits: [
+      { name: '千面', type: TRAIT_TYPES.ACTIVE, effect: '讨论中可模仿他人语气发言，混淆视听', icon: '🎭' },
+      { name: '情报网', type: TRAIT_TYPES.PASSIVE, effect: '夜晚可获知一名随机出门玩家的去向', icon: '🕸️' },
+      { name: '暗影恐惧', type: TRAIT_TYPES.WEAKNESS, effect: '被直接目光注视(查验)时，下一回合无法使用能力', icon: '👁️' },
+    ],
+    recommendedHiddenRoles: ['SEER', 'VILLAGER', 'HEAL_WITCH'],
+  },
+  GOREN: {
+    id: 'GOREN', name: '格伦', title: '流浪铁匠',
+    origin: MYTH_ORIGINS.MINE, gender: 'male',
+    story: '帷幕之地最好的铁匠。他打造过猎人的枪管、守卫的盾牌、女巫的药瓶架。狼人肆虐后他把铁砧搬到了暮色村。"如果我的铁能救一个人，这把锤子就没白抡。"',
+    externalTraits: [
+      { name: '铁匠之力', type: TRAIT_TYPES.PASSIVE, effect: '加固自家门锁(抵御一次狼人)。被投出局时可带走一名投票者', icon: '🔨' },
+      { name: '自制装备', type: TRAIT_TYPES.ACTIVE, effect: '可打造一件临时护甲给他人(持续1晚)', icon: '⚒️' },
+      { name: '笨重', type: TRAIT_TYPES.WEAKNESS, effect: '移动速度-10%，潜行等级-2', icon: '🏋️' },
+    ],
+    recommendedHiddenRoles: ['GUARD', 'HUNTER', 'VILLAGER'],
+  },
+  AILIN: {
+    id: 'AILIN', name: '艾琳', title: '守墓人',
+    origin: MYTH_ORIGINS.BONE, gender: 'female',
+    story: '在骨灰平原守了二十年墓。她见过每一种死亡方式。死神没有教会她恐惧——教会了她平静。每晚坐在墓地边缘，等待新的死者入土。"我不是在等死亡——我是在等真相。"',
+    externalTraits: [
+      { name: '死亡感知', type: TRAIT_TYPES.PASSIVE, effect: '可感知濒死(被死亡标记)的玩家', icon: '🪦' },
+      { name: '安魂仪式', type: TRAIT_TYPES.ACTIVE, effect: '可获知已死亡玩家的真实身份(限1次/局)', icon: '⚰️' },
+      { name: '死亡亲和', type: TRAIT_TYPES.WEAKNESS, effect: '被投票出局时不能发遗言', icon: '💀' },
+    ],
+    recommendedHiddenRoles: ['SEER', 'POISON_WITCH', 'GUARD'],
+  },
+  ORIC: {
+    id: 'ORIC', name: '奥里克', title: '疾风信使',
+    origin: MYTH_ORIGINS.PLAINS, gender: 'male',
+    story: '帷幕之地最快的跑者。在大瘟疫期间用双腿跑出了整个防疫网。现在他的速度成了对抗狼人最宝贵的资源——不管是传递信息、逃离危险、还是追捕狼人。',
+    externalTraits: [
+      { name: '疾风步', type: TRAIT_TYPES.PASSIVE, effect: '移动速度+20%，夜间可访问2个屋子', icon: '💨' },
+      { name: '急件传递', type: TRAIT_TYPES.ACTIVE, effect: '可向一名玩家传递匿名加密消息(限1次/局)', icon: '📨' },
+      { name: '耐力有限', type: TRAIT_TYPES.WEAKNESS, effect: '冲刺体力消耗+30%', icon: '🫁' },
+    ],
+    recommendedHiddenRoles: ['VILLAGER', 'HUNTER', 'GUARD'],
+  },
+  NELIA: {
+    id: 'NELIA', name: '奈莉亚', title: '帷幕学者',
+    origin: MYTH_ORIGINS.TOWER, gender: 'female',
+    story: '在观测塔研究了三十年帷幕。她是唯一能"阅读"帷幕低语的人。她知道帷幕之外有什么——也知道帷幕正在变薄。来暮色村不是为了玩游戏——是为了找到最后的答案。',
+    externalTraits: [
+      { name: '帷幕低语', type: TRAIT_TYPES.PASSIVE, effect: '查验类能力准确率+25%，但每次使用帷幕低语都会向狼人泄露一条模糊信息', icon: '🌌' },
+      { name: '观测', type: TRAIT_TYPES.ACTIVE, effect: '可获知当前回合帷幕的"情绪"(随机事件预告)', icon: '🔭' },
+      { name: '帷幕反噬', type: TRAIT_TYPES.WEAKNESS, effect: '使用能力后下一回合无法使用任何能力', icon: '⚡' },
+    ],
+    recommendedHiddenRoles: ['SEER', 'POISON_WITCH', 'HEAL_WITCH'],
   },
 };
 
