@@ -776,6 +776,43 @@ export const MATCH_TYPES = {
   CUSTOM: 'CUSTOM', QUICK: 'QUICK', RANKED: 'RANKED',
 };
 
+// ---- 游戏模式 (2.11.0) ----
+export const GAME_MODES = {
+  BOARD_GAME: 'BOARD_GAME',         // 经典桌游模式: 回合制夜晚/投票/发言
+  THIRD_PERSON: 'THIRD_PERSON',     // 3D追逃模式: 自由移动/追逐/动作判定
+};
+
+export const GAME_MODE_NAMES = {
+  BOARD_GAME: '经典桌游',
+  THIRD_PERSON: '3D追逃',
+};
+
+export const GAME_MODE_DESCRIPTIONS = {
+  BOARD_GAME: '回合制策略博弈——夜晚按顺序行动、白天讨论投票。经典狼人杀桌游体验。',
+  THIRD_PERSON: '3D非对称竞技——夜晚自由移动、追逐击杀、藏匿逃脱。类似黎明杀机的沉浸式体验。',
+};
+
+// 3D模式专用参数
+export const THIRD_PERSON_CONFIG = {
+  NIGHT_WINDOW_SECONDS: 120,         // 夜晚总时长(秒)
+  MOVE_SPEED_WALK: 3.0,              // 走路速度
+  MOVE_SPEED_SPRINT: 6.0,            // 冲刺速度
+  MOVE_SPEED_CROUCH: 1.5,            // 蹲伏速度
+  STAMINA_MAX: 100,                  // 体力上限
+  STAMINA_DRAIN_SPRINT: 20,          // 冲刺每秒消耗
+  STAMINA_REGEN: 15,                 // 体力每秒恢复
+  ATTACK_RANGE: 2.0,                 // 狼人攻击距离(米)
+  ATTACK_COOLDOWN_SECONDS: 8,        // 狼人攻击冷却
+  HIDE_SPOT_CHECK_RADIUS: 2.0,       // 藏匿点检测半径
+  QTE_ESCAPE_WINDOW_MS: 500,         // QTE逃脱时间窗口
+  QTE_ESCAPE_BASE_CHANCE: 0.30,      // 基础逃脱概率
+  KILL_ANIMATION_SECONDS: 3,         // 击杀动画时长
+  WOLF_NIGHT_VISION_RANGE: 40,       // 狼人夜视距离(米)
+  HUMAN_NIGHT_VISION_RANGE: 15,      // 人类夜视距离(米)
+  FOG_DENSITY: 0.02,                 // 雾浓度
+  MOONLIGHT_INTENSITY: 0.6,          // 月光强度
+};
+
 // ---- 匹配参数 ----
 export const MATCHMAKING = {
   CYCLE_MS: 5000,

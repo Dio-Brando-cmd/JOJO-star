@@ -58,7 +58,7 @@ export function createServer(options = {}) {
     res.json({
       success: true,
       online: true,
-      version: process.env.APP_VERSION || '2.9.0',
+      version: process.env.APP_VERSION || '2.11.0',
       rooms: gameManager.games.size,
       players: Array.from(gameManager.playerRooms.keys()).length,
       timestamp: Date.now(),
@@ -68,7 +68,7 @@ export function createServer(options = {}) {
   // REST API: 版本信息
   app.get('/api/version', (req, res) => {
     res.json({
-      version: process.env.APP_VERSION || '2.9.0',
+      version: process.env.APP_VERSION || '2.11.0',
       downloadUrl: '/download/狼人杀_Setup.exe',
       apkDownloadUrl: '/download/werewolf.apk',
       releaseDate: '2026-07-20',
