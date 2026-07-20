@@ -149,6 +149,20 @@ export class GameManager {
       return this.leaveRoom(playerId);
     }
 
+    // v2.0: 选人阶段断线 → 自动随机分配身份，防止流程卡死
+    if (game.phase === 'CHARACTER_SELECT') {
+      const player = game.getPlayer(playerId);
+      if (player && !game.characterSelections[playerId]) {
+        const taken = new Set(Object.values(game.characterSelections));
+        const remaining = (game.availableCharacters || []).filter(c => !taken.has(c));
+        if (remaining.length > 0) {
+          const pick = remaining[Math.floor(Math.random() * remaining.length)];
+          game.characterSelections[playerId] = pick;
+          game._applyCharacterToPlayer(player, pick);
+        }
+      }
+    }
+
     // 游戏中：标记离线，不删除
     const player = game.getPlayer(playerId);
     if (player) {
@@ -254,6 +268,41 @@ export class GameManager {
     // 更新 host（如果断线的是房主）
     if (game.hostId === oldId) {
       game.hostId = newSocketId;
+    }
+
+    // v2.0: 迁移 characterSelections
+    if (game.characterSelections && game.characterSelections[oldId]) {
+      game.characterSelections[newSocketId] = game.characterSelections[oldId];
+      delete game.characterSelections[oldId];
+    }
+
+    // v2.0: 迁移 characterSelect 阶段相关引用
+    // votes 迁移（如果还在投票阶段）
+    if (game.votes && game.votes[oldId] !== undefined) {
+      game.votes[newSocketId] = game.votes[oldId];
+      delete game.votes[oldId];
+    }
+    // discussionOrder 迁移
+    if (game.discussionOrder) {
+      const discIdx = game.discussionOrder.indexOf(oldId);
+      if (discIdx >= 0) game.discussionOrder[discIdx] = newSocketId;
+    }
+    if (game.currentSpeakerId === oldId) {
+      game.currentSpeakerId = newSocketId;
+    }
+    // 其他玩家的 sacrificeTarget / revengeTarget / trapTarget
+    for (const p of game.players) {
+      if (p.sacrificeTarget === oldId) p.sacrificeTarget = newSocketId;
+      if (p.revengeTarget === oldId) p.revengeTarget = newSocketId;
+      if (p.trapTarget === oldId) p.trapTarget = newSocketId;
+      if (p.herbalRemedyTarget === oldId) p.herbalRemedyTarget = newSocketId;
+      if (p.diagnoseTarget === oldId) p.diagnoseTarget = newSocketId;
+      if (p.fortifiedTarget === oldId) p.fortifiedTarget = newSocketId;
+      // 同狼开眼列表
+      if (p.wolvesOpenEyesTogether && p.wolvesOpenEyesTogether.includes(oldId)) {
+        const weIdx = p.wolvesOpenEyesTogether.indexOf(oldId);
+        p.wolvesOpenEyesTogether[weIdx] = newSocketId;
+      }
     }
 
     return { game, player, oldId };

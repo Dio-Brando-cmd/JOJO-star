@@ -255,17 +255,23 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   // 返回大厅（游戏中退出）
   socket.on('room:backToLobby', () => {
     const game = gameManager.getGameByPlayer(socket.id);
-    if (game) {
-      game.removePlayer(socket.id);
-      gameManager.playerRooms.delete(socket.id);
-      socket.leave(game.id);
-      if (game.players.length === 0) {
-        gameManager.games.delete(game.id);
-        gameManager.broadcastLobbyUpdate();
-      } else {
-        game.setIO(io);
-        io.to(game.id).emit('game:state', game.getLobbyState());
-      }
+    if (!game) return;
+
+    // v2.0: 游戏中只允许房主在大厅阶段返回（非房主或游戏已开始则拒绝）
+    if (game.phase !== PHASES.LOBBY && game.hostId !== socket.id) {
+      console.log(`[安全] 非房主 ${socket.id} 试图在游戏中途返回大厅，已拒绝`);
+      return;
+    }
+
+    game.removePlayer(socket.id);
+    gameManager.playerRooms.delete(socket.id);
+    socket.leave(game.id);
+    if (game.players.length === 0) {
+      gameManager.games.delete(game.id);
+      gameManager.broadcastLobbyUpdate();
+    } else {
+      game.setIO(io);
+      io.to(game.id).emit('game:state', game.getLobbyState());
     }
   });
 
@@ -502,22 +508,16 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     if (!game || game.phase !== PHASES.NIGHT) return;
 
     const player = game.getPlayer(socket.id);
-    if (!player || !player.alive) return;
+    if (!player || !player.alive || player.halfAlive) return; // v2.0: halfAlive不能行动
 
     const currentStep = game.nightStep;
     if (!currentStep || game._advancingNightStep) return;
 
-    // 白名单校验：action 合法性
-    const validActions = [NIGHT_ACTIONS.SLEEP, NIGHT_ACTIONS.GO_OUT];
-    if (player.role === ROLES.VILLAGER) validActions.push(NIGHT_ACTIONS.EAVESDROP);
-    if (!player.isVillager()) validActions.push(NIGHT_ACTIONS.USE_ABILITY);
-    if (!validActions.includes(action)) return;
+    // === v2.0: 按角色+步骤白名单校验 ===
+    if (!_validateNightAction(player, currentStep, action, target, ability, game)) return;
 
     // 目标校验：target 必须是房间内存活玩家或 null
     if (target && !game.players.some(p => p.alive && p.id === target)) return;
-
-    // 能力校验：只有非村民可以使用能力
-    if (ability && player.isVillager()) return;
 
     game.submitNightAction(socket.id, action, target, ability);
 
@@ -586,7 +586,9 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     if (!game || game.phase !== PHASES.DAY) return;
 
     const player = game.getPlayer(socket.id);
-    if (!player || player.role !== ROLES.HUNTER) return;
+    // P0修复: 必须存活 + 必须是猎人 + 必须尚未开过枪
+    if (!player || !player.alive || player.role !== ROLES.HUNTER) return;
+    if (game.hunterDayShoot) return; // 已经开过枪，拒绝第二次
 
     game.hunterDayShootTarget(targetId);
     game.setIO(io);
@@ -803,4 +805,97 @@ function validateRoleConfig(roleConfig, maxPlayers) {
 
 // ==================== 辅助函数 ====================
 
+/**
+ * v2.0: 夜晚行动按角色+步骤白名单校验
+ * 防止客户端伪造不属于自己角色/步骤的行动
+ */
+function _validateNightAction(player, currentStep, action, target, ability, game) {
+  // 基础校验
+  if (!action || !currentStep) return false;
+  if (player.halfAlive) return false; // 半条命状态不能行动
 
+  // 检查当前步骤是否是该玩家的步骤
+  const isParticipant = game._getPlayersForStep(currentStep).some(p => p.id === player.id);
+  if (!isParticipant) return false;
+
+  // 按步骤+角色校验合法行动
+  const stepActionMap = {
+    HUNTER: {
+      roles: ['HUNTER'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
+      allowedAbilities: ['useRifle', 'rifleTarget', 'hasRifle', 'hasBlunderbuss', 'observeTarget', 'useTrap', 'trapTarget', 'markRevenge'],
+    },
+    ALPHA_WOLF: {
+      roles: ['ALPHA_WOLF'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
+      allowedAbilities: ['transform', 'infect', 'kill', 'killTarget', 'fakeIdentity', 'fakeIdentityRole'],
+    },
+    GUARD: {
+      roles: ['GUARD'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'PATROL', 'FORTIFY', 'SACRIFICE'],
+      allowedAbilities: ['guard', 'fortify', 'patrol', 'sacrifice'],
+    },
+    WEREWOLF: {
+      roles: ['WEREWOLF', 'ALPHA_WOLF'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'HOWL', 'DISGUISE'],
+      allowedAbilities: ['kill', 'trackScent', 'howl', 'disguise'],
+    },
+    SEER: {
+      roles: ['SEER'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
+      allowedAbilities: ['check', 'dreamFragment', 'spiritVision', 'spiritVisionTarget'],
+    },
+    POISON_WITCH: {
+      roles: ['POISON_WITCH'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
+      allowedAbilities: ['lethalPoison', 'lethalPoisonTarget', 'potion', 'potionTarget', 'poisonFog', 'poisonFogTarget', 'singlePoison'],
+    },
+    HEAL_WITCH: {
+      roles: ['HEAL_WITCH'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'BATTLEFIELD_AID', 'DIAGNOSE'],
+      allowedAbilities: ['heal', 'healTarget', 'poison', 'poisonTarget', 'battlefieldAid', 'plantHerbGarden', 'diagnose'],
+    },
+    VILLAGER: {
+      roles: ['VILLAGER'],
+      actions: ['SLEEP', 'GO_OUT', 'EAVESDROP', 'TRAP_SET', 'NIGHT_WATCH', 'FORTIFY_DOOR', 'HERBAL_REMEDY', 'TRADE_INFO'],
+      allowedAbilities: ['secondVisit', 'secondTarget'],
+    },
+  };
+
+  const stepRules = stepActionMap[currentStep];
+  if (!stepRules) return true; // RESOLUTION等无规则步骤放行
+
+  // 角色检查
+  if (!stepRules.roles.includes(player.role)) return false;
+
+  // 行动类型检查
+  if (!stepRules.actions.includes(action)) return false;
+
+  // 能力白名单检查
+  if (ability && stepRules.allowedAbilities) {
+    const abilityKeys = Object.keys(ability).filter(k => ability[k] !== null && ability[k] !== false);
+    for (const key of abilityKeys) {
+      if (!stepRules.allowedAbilities.includes(key)) {
+        console.log(`[安全] 非法ability key: ${key} from ${player.role} in step ${currentStep}`);
+        return false;
+      }
+    }
+  }
+
+  // 特殊限制：狼人嚎叫和伪装不能同时刀人
+  if ((action === 'HOWL' || action === 'DISGUISE') && ability?.kill) return false;
+
+  // 特殊限制：毒巫药水不能自己用自己（毒巫不能自救）
+  if (action === 'USE_ABILITY' && ability?.potion && ability?.potionTarget === player.id) return false;
+
+  // 特殊限制：村民的某些行动需要特定villagerType
+  if (player.role === 'VILLAGER') {
+    if (action === 'TRAP_SET' && player.villagerType !== 'OLD_HUNTER') return false;
+    if (action === 'NIGHT_WATCH' && player.villagerType !== 'NIGHT_WATCHER') return false;
+    if (action === 'FORTIFY_DOOR' && player.villagerType !== 'BLACKSMITH') return false;
+    if (action === 'HERBAL_REMEDY' && player.villagerType !== 'HERBALIST') return false;
+    if (action === 'TRADE_INFO' && player.villagerType !== 'MERCHANT') return false;
+  }
+
+  return true;
+}
