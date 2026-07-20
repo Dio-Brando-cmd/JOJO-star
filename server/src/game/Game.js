@@ -394,48 +394,20 @@ export class Game {
   }
   }
 
-  /** 根据表层身份推荐分配隐藏职业 */
+  /** v2.9: 完全随机分配隐藏职业——任何表层身份都可能匹配任何职业 */
   _assignRolesByCharacter() {
     const count = this.players.length;
     const config = this.customRoleConfig && this.customRoleConfig.length === count
       ? [...this.customRoleConfig]
       : getRoleConfig(count);
 
-    // 打乱隐藏职业池
+    // 随机打乱后直接分配，不做任何推荐匹配
     const shuffled = [...config];
     this.shuffleArray(shuffled);
 
-    // 为每个玩家打分匹配：优先给表层身份推荐其匹配的隐藏职业
     const assignments = [];
-    const usedRoles = new Set();
-
-    for (const player of this.players) {
-      const charDef = CHARACTER_IDENTITIES[player.characterId];
-      const recommended = charDef?.recommendedHiddenRoles || [];
-
-      // 在剩余职业中找推荐匹配
-      let bestRole = null;
-      for (const rec of recommended) {
-        if (!usedRoles.has(rec) && shuffled.includes(rec)) {
-          bestRole = rec;
-          break;
-        }
-      }
-
-      // 无推荐匹配则随机分配
-      if (!bestRole) {
-        for (const role of shuffled) {
-          if (!usedRoles.has(role)) {
-            bestRole = role;
-            break;
-          }
-        }
-      }
-
-      if (bestRole) {
-        usedRoles.add(bestRole);
-        assignments.push({ player, role: bestRole });
-      }
+    for (let i = 0; i < this.players.length; i++) {
+      assignments.push({ player: this.players[i], role: shuffled[i] });
     }
 
     // 应用分配
