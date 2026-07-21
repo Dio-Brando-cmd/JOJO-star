@@ -121,9 +121,17 @@ def make_body(c):
 
     # ══ 下肢 (0→0.5hu踝→2hu膝→4hu骨盆) ══
     for side,sx in [('l',-1),('r',1)]:
-        C(f"{side}_foot",sx*hw_abs*0.22,0.06,hu*0.12,hu*0.12,hu*0.38,hu*0.1,skin)
-        for ti,tx in enumerate([-0.03,-0.015,0,0.015,0.03]):
-            S(f"{side}_toe{ti}",sx*hw_abs*0.22+tx,hu*0.38,0.01,0.008,skin)
+        # 脚跟
+        S(f"{side}_heel",sx*hw_abs*0.2,-hu*0.08,hu*0.08,hu*0.06,skin)
+        # 足弓
+        C(f"{side}_arch",sx*hw_abs*0.2,0.02,hu*0.14,hu*0.1,hu*0.25,hu*0.06,skin)
+        # 前脚掌
+        C(f"{side}_ball",sx*hw_abs*0.2,0.06,hu*0.20,hu*0.12,hu*0.22,hu*0.04,skin)
+        # 5根脚趾 (渐小: 大趾→小趾)
+        toe_sizes=[(0.04,0.028),(0.03,0.024),(0.025,0.020),(0.02,0.016),(0.015,0.012)]
+        for ti,(tl,tw) in enumerate(toe_sizes):
+            tx_offset=-0.04+ti*0.02
+            Cy(f"{side}_toe{ti}",sx*hw_abs*0.2+tx_offset,hu*0.35,hu*0.24,tw*0.5,tl,skin)
         S(f"{side}_ankle",sx*hw_abs*0.2,0,hu*0.5,hu*0.08,skin)
         Cy(f"{side}_shin",sx*hw_abs*0.2,-0.02,hu*1.25,ct*0.5,hu*1.8,skin)
         S(f"{side}_calf",sx*hw_abs*0.2,-0.04,hu*1.3,ct*0.45,skin)
@@ -164,13 +172,29 @@ def make_body(c):
         S(f"{side}_elbow",sx*sw_abs*0.57,-0.01,hu*5.2,hu*0.1,skin)
         Cy(f"{side}_forearm",sx*sw_abs*0.58,-0.03,hu*4.6,ft*0.5,hu*1.4,skin)
         S(f"{side}_wrist",sx*sw_abs*0.59,-0.02,hu*4.0,hu*0.07,skin)
-        C(f"{side}_palm",sx*sw_abs*0.6,-0.03,hu*3.85,hu*0.08,hu*0.06,hu*0.05,skin)
-        for fi,fx in enumerate([-0.03,-0.015,0,0.015,0.03]):
-            for seg in range(2):
-                Cy(f"{side}_f{fi}_{seg}",sx*sw_abs*0.6+fx,-hu*0.04,hu*(3.78+seg*0.06),0.008,hu*0.07,skin)
-            if fi==0:
-                Cy(f"{side}_thumb",sx*sw_abs*0.58,-hu*0.06,hu*3.85,0.01,hu*0.06,skin)
-                bpy.context.active_object.rotation_euler.z=sx*0.5
+        # 手掌 — 梯形(掌根窄掌前宽)
+        C(f"{side}_palm",sx*sw_abs*0.6,-0.03,hu*3.85,hu*0.07,hu*0.06,hu*0.06,skin)
+        C(f"{side}_palm_front",sx*sw_abs*0.6,-0.03,hu*3.90,hu*0.09,hu*0.05,hu*0.03,skin)
+        # 五指 — 3节指骨 食指最长
+        finger_lens=[(0.06,0.05,0.04),(0.07,0.055,0.045),(0.065,0.05,0.04),(0.06,0.045,0.035),(0.04,0.03,0.02)]
+        finger_xs=[-0.035,-0.018,0,0.018,0.035]
+        for fi,(fx,(l1,l2,l3)) in enumerate(zip(finger_xs,finger_lens)):
+            fbx,fby,fbz=sx*sw_abs*0.6+fx,-hu*0.03,hu*3.92
+            # 近节
+            Cy(f"{side}_f{fi}_p",fbx,fby,fbz+l1/2,hu*0.014,l1,skin)
+            # 中节
+            Cy(f"{side}_f{fi}_m",fbx,fby-0.004,fbz+l1+l2/2,hu*0.011,l2,skin)
+            # 远节
+            Cy(f"{side}_f{fi}_d",fbx,fby-0.006,fbz+l1+l2+l3/2,hu*0.008,l3,skin)
+            # 指关节凸起
+            for jz in (fbz+l1-0.005,fbz+l1+l2-0.005):
+                S(f"{side}_kn{fi}_{jz:.2f}",fbx,fby-0.008,jz,hu*0.012,skin)
+        # 拇指 — 2节，从掌侧伸出
+        C(f"{side}_thumb_palm",sx*sw_abs*0.56,-hu*0.06,hu*3.86,hu*0.03,hu*0.03,hu*0.025,skin)
+        Cy(f"{side}_thumb_p",sx*sw_abs*0.54,-hu*0.07,hu*3.88+0.025,hu*0.013,0.04,skin)
+        bpy.context.active_object.rotation_euler.x=-sx*0.3
+        Cy(f"{side}_thumb_d",sx*sw_abs*0.53,-hu*0.08,hu*3.88+0.06,hu*0.01,0.035,skin)
+        bpy.context.active_object.rotation_euler.x=-sx*0.3
 
     # ══ 颈部 (6.8hu→7.15hu) ══
     Cy("neck",0,-0.02,hu*7.0,nw_abs*0.5,hu*0.4,skin)
@@ -183,49 +207,118 @@ def make_body(c):
     C("jaw",0,-head_r*0.05,head_cy-head_r*0.35,head_r*0.65,head_r*0.4,head_r*0.3,skin)
     S("chin",0,-head_r*0.3,head_cy-head_r*0.55,head_r*0.14,skin)
 
-    # 眼睛
+    # ══ 眼睛 ══
     for sx in(-1,1):
         ex=sx*head_r*0.35; ey=-head_r*0.6; ez=head_cy+head_r*0.15
-        S(f"eye_s_{sx}",ex,ey,ez,head_r*0.12,skin); bpy.context.active_object.scale=(1,1,0.55)
-        S(f"eye_b_{sx}",ex,ey-0.01,ez,head_r*0.1,ew)
-        S(f"eye_i_{sx}",ex,ey-0.02,ez,head_r*0.05,ei)
-        S(f"eye_p_{sx}",ex,ey-0.025,ez,head_r*0.02,ep)
-        C(f"brow_{sx}",sx*head_r*0.35,-head_r*0.55,head_cy+head_r*0.25,head_r*0.1,0.008,0.008,
+        # 眼窝
+        S(f"eye_s_{sx}",ex,ey,ez,head_r*0.13,skin); bpy.context.active_object.scale=(1,1,0.5)
+        # 眼球 (白)
+        S(f"eye_b_{sx}",ex,ey-0.008,ez,head_r*0.1,ew)
+        # 虹膜
+        S(f"eye_i_{sx}",ex,ey-0.018,ez+0.005,head_r*0.05,ei)
+        # 瞳孔
+        S(f"eye_p_{sx}",ex,ey-0.022,ez+0.007,head_r*0.018,ep)
+        # 上眼睑 (覆盖眼球上缘)
+        Cy(f"eye_lid_u{sx}",ex,ey-0.005,ez+head_r*0.04,head_r*0.1,0.005,skin)
+        bpy.context.active_object.rotation_euler.x=math.pi/2.2
+        # 下眼睑
+        Cy(f"eye_lid_l{sx}",ex,ey-0.005,ez-head_r*0.04,head_r*0.1,0.004,skin)
+        bpy.context.active_object.rotation_euler.x=-math.pi/2.2
+        # 泪腺 (内眼角)
+        S(f"tear_{sx}",ex+sx*head_r*0.08,ey-0.005,ez,head_r*0.015,skin)
+        # 眉毛
+        C(f"brow_{sx}",sx*head_r*0.35,-head_r*0.54,head_cy+head_r*0.28,head_r*0.11,0.006,0.007,
           mkmat(f"{c['id']}_brow",*c['hair_color'],rough=0.5))
 
-    # 鼻子
-    ny=-head_r*0.5; nz=head_cy-head_r*0.05
-    C("nose_br",0,ny,nz+head_r*0.1,head_r*0.06,head_r*0.05,head_r*0.12,skin)
-    S("nose_tip",0,ny,nz-head_r*0.04,head_r*0.06,skin)
-    for sx in(-1,1): S(f"nose_w{sx}",sx*head_r*0.05,ny,nz-head_r*0.06,head_r*0.035,skin)
+    # ══ 鼻子 ══
+    ny=-head_r*0.48; nz=head_cy-head_r*0.08
+    # 鼻根 (眉心)
+    S("nose_root",0,-head_r*0.55,head_cy+head_r*0.2,head_r*0.04,skin)
+    # 鼻梁
+    C("nose_br",0,ny,nz+head_r*0.12,head_r*0.055,head_r*0.045,head_r*0.13,skin)
+    # 鼻软骨 (鼻梁下半)
+    C("nose_cart",0,ny,nz+head_r*0.02,head_r*0.065,head_r*0.05,head_r*0.06,skin)
+    # 鼻尖
+    S("nose_tip",0,ny,nz-head_r*0.06,head_r*0.07,skin)
+    # 鼻翼 (左右)
+    for sx in(-1,1): S(f"nose_w{sx}",sx*head_r*0.055,ny,nz-head_r*0.08,head_r*0.04,skin)
+    # 鼻孔
+    for sx in(-1,1): S(f"nostril{sx}",sx*head_r*0.03,ny+0.005,nz-head_r*0.1,head_r*0.015,lip)
 
-    # 嘴
-    my=-head_r*0.45; mz=head_cy-head_r*0.35
-    C("upper_lip",0,my,mz+head_r*0.03,head_r*0.18,0.008,head_r*0.02,lip)
-    C("lower_lip",0,my-0.008,mz-head_r*0.02,head_r*0.16,0.01,head_r*0.025,lip)
-    for sx in(-1,1): S(f"mouth_c{sx}",sx*head_r*0.16,my,mz,0.006,skin)
+    # ══ 嘴 ══
+    my=-head_r*0.43; mz=head_cy-head_r*0.38
+    # 人中
+    C("philtrum",0,my-0.02,mz+head_r*0.06,head_r*0.03,0.005,head_r*0.04,skin)
+    # 上唇
+    C("upper_lip",0,my,mz+head_r*0.03,head_r*0.2,0.008,head_r*0.02,lip)
+    # 下唇
+    C("lower_lip",0,my-0.006,mz-head_r*0.03,head_r*0.18,0.01,head_r*0.028,lip)
+    # 唇沟 (上下唇之间)
+    Cy("lip_line",0,my,mz,head_r*0.18,0.003,skin); bpy.context.active_object.rotation_euler.x=math.pi/2
+    # 嘴角
+    for sx in(-1,1): S(f"mouth_c{sx}",sx*head_r*0.18,my,mz,0.006,skin)
+    # 颧骨
+    for sx in(-1,1): S(f"cheek_{sx}",sx*head_r*0.5,-head_r*0.4,head_cy+head_r*0.05,head_r*0.08,skin)
+    bpy.context.active_object.scale=(1,0.4,0.6)
 
-    # 耳
+    # ══ 耳朵 ══
     for sx in(-1,1):
-        ex=sx*head_r*0.95; ez=head_cy+head_r*0.05
-        Cy(f"ear_{sx}",ex,0,ez,head_r*0.08,0.015,skin); bpy.context.active_object.rotation_euler.x=math.pi/2
-        S(f"earlobe_{sx}",ex,-head_r*0.02,ez-head_r*0.08,head_r*0.03,skin)
+        ex=sx*head_r*0.95; ez=head_cy+head_r*0.02
+        # 耳轮 (外缘)
+        Cy(f"ear_helix_{sx}",ex,0.005,ez,head_r*0.09,0.012,skin); bpy.context.active_object.rotation_euler.x=math.pi/2
+        # 对耳轮 (内缘)
+        Cy(f"ear_anti_{sx}",ex*0.92,0.002,ez,head_r*0.06,0.01,skin); bpy.context.active_object.rotation_euler.x=math.pi/2
+        # 耳垂
+        S(f"earlobe_{sx}",ex,-head_r*0.02,ez-head_r*0.09,head_r*0.04,skin)
+        # 耳屏
+        S(f"tragus_{sx}",ex*0.8,-head_r*0.01,ez,head_r*0.015,skin)
 
-    # 头发
+    # ══ 头发 ══
     if c.get('hair') not in ('helmet','hood'):
         hc=mkmat(f"{c['id']}_hair_geo",*c['hair_color'],rough=0.5)
-        S("hair_top",0,0.01,head_cy+head_r*0.65,head_r*0.5,hc); bpy.context.active_object.scale=(1,1,0.45)
-        S("hair_back",0,0.03,head_cy-head_r*0.15,head_r*0.4,hc); bpy.context.active_object.scale=(1,0.65,0.75)
+        is_long=c.get('hair')=='long'
+        # 前发 (刘海)
+        C("hair_bangs",0,-head_r*0.45,head_cy+head_r*0.3,head_r*0.45,0.008,head_r*0.12,hc)
+        # 顶发
+        S("hair_top",0,0.01,head_cy+head_r*0.55,head_r*0.5,hc); bpy.context.active_object.scale=(1,1,0.4)
+        # 后发
+        S("hair_back",0,0.04,head_cy-head_r*0.2,head_r*0.45,hc); bpy.context.active_object.scale=(1,0.6,0.7)
+        # 侧发 ×2层
         for sx in(-1,1):
-            S(f"hair_s{sx}",sx*head_r*0.65,0.02,head_cy,head_r*0.18,hc); bpy.context.active_object.scale=(0.45,1,1)
+            S(f"hair_s1_{sx}",sx*head_r*0.6,0.02,head_cy+head_r*0.1,head_r*0.2,hc); bpy.context.active_object.scale=(0.4,1,0.8)
+            S(f"hair_s2_{sx}",sx*head_r*0.55,0.01,head_cy-head_r*0.1,head_r*0.16,hc); bpy.context.active_object.scale=(0.4,0.8,0.8)
+        # 长发拖尾
+        if is_long:
+            Cy("hair_tail",0,0.06,head_cy-head_r*0.6,head_r*0.3,head_r*0.8,hc)
+            bpy.context.active_object.rotation_euler.x=-0.15
+        # 发旋
+        Cy("hair_whorl",0,0,head_cy+head_r*0.75,head_r*0.1,0.01,hc)
 
-    # 胡须
+    # ══ 睫毛 ══
+    lash_color=mkmat(f"{c['id']}_lash",0.04,0.03,0.02,rough=0.5)
+    for sx in(-1,1):
+        ex=sx*head_r*0.35; ez=head_cy+head_r*0.15
+        for li in range(5):
+            lx=ex+sx*random.uniform(-0.04,0.04)
+            lz=ez+head_r*0.04+random.uniform(0,0.02)
+            Cy(f"lash_{sx}_{li}",lx,-head_r*0.57,lz,0.003,head_r*0.03,lash_color)
+            bpy.context.active_object.rotation_euler.x=0.3
+
+    # ══ 胡须 ══
     if c.get('extra')=='beard':
         bc=mkmat(f"{c['id']}_beard",*c['hair_color'],rough=0.55)
-        C("beard",0,-head_r*0.4,head_cy-head_r*0.45,head_r*0.35,0.008,head_r*0.22,bc)
+        # 下颌须
+        C("beard_jaw",0,-head_r*0.38,head_cy-head_r*0.45,head_r*0.35,0.006,head_r*0.22,bc)
+        # 下唇须
+        C("beard_soul",0,-head_r*0.42,head_cy-head_r*0.32,head_r*0.08,0.004,head_r*0.06,bc)
+        # 八字胡 (左右+中间)
         for sx in(-1,1):
-            Cy(f"moustache_{sx}",sx*head_r*0.08,my-0.01,mz+head_r*0.05,0.008,head_r*0.1,bc)
-            bpy.context.active_object.rotation_euler.z=sx*0.3
+            Cy(f"moustache_{sx}",sx*head_r*0.1,-head_r*0.44,head_cy-head_r*0.30,0.006,head_r*0.13,bc)
+            bpy.context.active_object.rotation_euler.z=sx*0.25
+        # 络腮胡
+        for sx in(-1,1):
+            Cy(f"sideburn_{sx}",sx*head_r*0.55,0,head_cy-head_r*0.15,head_r*0.04,head_r*0.2,bc)
+            bpy.context.active_object.rotation_euler.z=sx*0.15
 
     # ══ 体型差异化缩放 ══
     _apply_body_shape(c,hu,sw_abs,hw_abs,cw_abs,ww_abs,nw_abs)
