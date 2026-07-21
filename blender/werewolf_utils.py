@@ -168,7 +168,7 @@ def make_body(char_def):
     p.scale = (1.3, 1.0 if gender=='female' else 0.75, 0.85)
 
     # 腹肌 — 6块 (muscular/heavy才有)
-    if build in ('muscular', 'heavy'):
+    if char_def.get('shape','').startswith(('muscular','heavy')):
         for row in range(3):
             for col in range(2):
                 ax = (col-0.5)*tr*0.6; az = h*0.56 + row*h*0.03
