@@ -683,8 +683,18 @@ for char in CHARACTERS:
 print(f"\n{'='*60}")
 clear()
 for i, char in enumerate(CHARACTERS):
-    obj = generate_character(char)
-    obj.location.x = (i - 4.5) * 2.2
+    # 记录已有的对象
+    before = set(bpy.context.scene.objects)
+    generate_character(char)
+    # 找出新创建的所有对象（整个角色的部件）
+    after = set(bpy.context.scene.objects)
+    new_objs = after - before
+    # 整体移动角色
+    offset_x = (i - 4.5) * 2.8
+    for o in new_objs:
+        o.location.x += offset_x
+    print(f"     ↳ {char['name']} → x={offset_x:.0f} ({len(new_objs)} 部件)")
+
 select_all()
 all_glb = os.path.join(OUTPUT_DIR, "werewolf_all_characters.glb")
 safe_gltf(all_glb)
