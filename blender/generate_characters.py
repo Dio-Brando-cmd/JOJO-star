@@ -25,6 +25,13 @@ import bpy
 import math
 import os
 
+# ====== Blender 版本检查 ======
+blender_version = tuple(bpy.app.version)
+print(f"Blender 版本: {'.'.join(map(str, blender_version))}")
+if blender_version < (4, 0, 0):
+    print("⚠️  警告: 此脚本针对 Blender 4.0+ 设计，旧版本可能无法正常运行")
+print(f"脚本兼容: 4.0 ~ 5.x\n")
+
 # ====== 配置 ======
 OUTPUT_DIR = os.path.join(os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.path.expanduser("~"), "werewolf_models")
 
@@ -59,13 +66,17 @@ def clear_scene():
 
 
 def create_material(name, color):
-    """创建材质"""
+    """创建材质 — 兼容 Blender 4.x 和 5.x"""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs['Base Color'].default_value = color
     bsdf.inputs['Roughness'].default_value = 0.7
-    bsdf.inputs['Specular IOR Level'].default_value = 0.1
+    # Specular IOR Level 在 Blender 5.x 中被移除，用安全方式设置
+    for socket_name in ['Specular IOR Level', 'Specular Weight', 'Specular']:
+        if socket_name in bsdf.inputs:
+            bsdf.inputs[socket_name].default_value = 0.1
+            break
     return mat
 
 

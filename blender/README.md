@@ -4,8 +4,9 @@
 
 ## 环境要求
 
-- **Blender 4.0+** (下载: https://www.blender.org/download/)
+- **Blender 4.0 ~ 5.x** (含 5.2 LTS，下载: https://www.blender.org/download/)
 - 无需额外插件，使用 Blender 内置 `bpy` API
+- 已测试兼容 4.3、4.4、5.0、5.2 版本
 
 ## 快速开始
 

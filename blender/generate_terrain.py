@@ -14,6 +14,13 @@ import math
 import random
 import os
 
+# ====== Blender 版本检查 ======
+blender_version = tuple(bpy.app.version)
+print(f"Blender 版本: {'.'.join(map(str, blender_version))}")
+if blender_version < (4, 0, 0):
+    print("⚠️  警告: 此脚本针对 Blender 4.0+ 设计，旧版本可能无法正常运行")
+print(f"脚本兼容: 4.0 ~ 5.x\n")
+
 OUTPUT_DIR = os.path.join(
     os.path.dirname(bpy.data.filepath) if bpy.data.filepath
     else os.path.expanduser("~"), "werewolf_models"
@@ -32,11 +39,18 @@ def clear_scene():
 
 
 def mat(name, r, g, b, a=1.0, rough=0.8):
+    """创建材质 — 兼容 Blender 4.x 和 5.x"""
     m = bpy.data.materials.new(name=name)
     m.use_nodes = True
     bsdf = m.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs['Base Color'].default_value = (r, g, b, a)
-    bsdf.inputs['Roughness'].default_value = rough
+    try:
+        bsdf.inputs['Base Color'].default_value = (r, g, b, a)
+    except KeyError:
+        bsdf.inputs['Base Color'].default_value = (r, g, b, 1.0)
+    try:
+        bsdf.inputs['Roughness'].default_value = rough
+    except KeyError:
+        pass
     return m
 
 
