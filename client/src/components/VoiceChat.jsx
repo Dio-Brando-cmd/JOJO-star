@@ -31,7 +31,7 @@ export default function VoiceChat({ voiceChat, players, myId }) {
       const micGranted = await requestMicPermission();
       if (!micGranted) {
         setPermissionPhase('denied');
-        setPermissionError(voiceChat.error || '麦克风权限被拒绝');
+        setPermissionError('麦克风权限被拒绝。请检查：1.浏览器是否HTTPS/localhost 2.系统麦克风是否插入 3.浏览器权限设置');
         return;
       }
 
