@@ -5,7 +5,7 @@ _utils_dir = os.path.dirname(_this_dir)
 exec(open(os.path.join(_utils_dir, 'werewolf_utils.py'), encoding='utf-8').read())
 
 generate({
-    'id':'Hector','name':'赫克托','height':1.88,'build':'muscular','gender':'male',
+    'id':'Hector','name':'赫克托','height':1.88,'shape':'muscular_male','gender':'male',
     'skin':(0.60,0.52,0.42),'hair_color':(0.10,0.08,0.06),
     'origin':'Greek','clothing':'armor','weapon':'spear','hair':'helmet','extra':'shield',
 })
