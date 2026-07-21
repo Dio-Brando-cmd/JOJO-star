@@ -12,7 +12,7 @@ import os
 
 # ====== 版本 ======
 bv = tuple(bpy.app.version)
-print(f"Blender {'.'.join(map(str, bv)))}")
+print(f"Blender {'.'.join(map(str, bv))}")
 
 # ====== 兼容层 ======
 
