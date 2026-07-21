@@ -363,8 +363,20 @@ def _apply_body_shape(char_def):
 
 
 def _apply_muscle(char_def, tr, lr):
-    mf = {'lean':(1.00,0.95,0.90,0.92,0.85),'average':(1.10,1.05,1.00,1.00,0.95),
-          'muscular':(1.30,1.20,1.15,1.10,1.00),'heavy':(1.40,1.35,1.25,1.20,1.15)}[char_def['build']]
+    shape = char_def.get('shape','slender_male')
+    # 根据体型签名判断肌肉级别
+    if shape.startswith('slender') or shape.startswith('petite'):
+        mf = (1.00,0.95,0.90,0.92,0.85)
+    elif shape.startswith('athletic'):
+        mf = (1.10,1.05,1.00,1.00,0.95)
+    elif shape.startswith('compact'):
+        mf = (1.25,1.15,1.10,1.05,0.98)
+    elif shape.startswith('muscular'):
+        mf = (1.30,1.20,1.15,1.10,1.00)
+    elif shape.startswith('heavy'):
+        mf = (1.40,1.35,1.25,1.20,1.15)
+    else:
+        mf = (1.00,0.95,0.90,0.92,0.85)
     for obj in bpy.context.scene.objects:
         n = obj.name.lower()
         if 'chest' in n or 'torso' in n or 'ribcage' in n:
@@ -379,7 +391,7 @@ def _apply_muscle(char_def, tr, lr):
         if 'pelvis' in n: obj.scale.x *= mf[4]; obj.scale.y *= mf[4]
         if 'calf' in n: obj.scale = tuple(s*mf[3]*0.8 for s in obj.scale)
         if char_def['gender']=='female' and 'pelvis' in n: obj.scale.y *= 1.12
-        if char_def['origin']=='Norse' and char_def['build'] in ('muscular','heavy') and 'shoulder' in n:
+        if char_def['origin']=='Norse' and char_def.get('shape','').startswith(('muscular','heavy')) and 'shoulder' in n:
             obj.scale = tuple(s*1.12 for s in obj.scale)
 
 
@@ -516,7 +528,7 @@ def add_skin_details(char_def):
                 Cy(f"{side}_knuckle{fi}_{seg}", sx*0.24-0.04+fi*0.02, -0.1, 0.46+seg*0.022, 0.012, 0.003, wrinkle_mat)
 
     # ── 血管 (muscular/heavy) ──
-    if char_def['build'] in ('muscular', 'heavy'):
+    if char_def.get('shape','').startswith(('muscular','heavy','compact')):
         vein_mat = mkmat(f"{char_def['id']}_vein", 0.15, 0.22, 0.28, rough=0.45)
         for side, sx in [('l',-1),('r',1)]:
             # 前臂血管
@@ -579,7 +591,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def generate(char_def):
     c = char_def
-    print(f"\n  🎭 {c['id']} — {c['name']} | {c['height']}m | {c['build']} | {c['origin']}")
+    print(f"\n  🎭 {c['id']} — {c['name']} | {c['height']}m | {c.get('shape','?')} | {c['origin']}")
     clear()
     make_body(c);                    print("     ↳ 身体(120+部件)")
     add_skin_details(c);             print("     ↳ 皮肤(指甲/皱纹/血管/肚脐)")
