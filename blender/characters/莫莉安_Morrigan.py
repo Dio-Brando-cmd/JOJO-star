@@ -1,7 +1,8 @@
 """莫莉安 Morrigan — 最后的德鲁伊 | 1.67m 黑发披风"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from werewolf_utils import *
+import bpy, os
+_this_dir = os.path.dirname(bpy.context.space_data.text.filepath)
+_utils_dir = os.path.dirname(_this_dir)
+exec(open(os.path.join(_utils_dir, 'werewolf_utils.py'), encoding='utf-8').read())
 
 generate({
     'id':'Morrigan','name':'莫莉安','height':1.67,'build':'lean','gender':'female',

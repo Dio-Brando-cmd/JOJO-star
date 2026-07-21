@@ -1,7 +1,8 @@
 """赫克托 Hector — 特洛伊之盾 | 1.88m 希腊重装"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from werewolf_utils import *
+import bpy, os
+_this_dir = os.path.dirname(bpy.context.space_data.text.filepath)
+_utils_dir = os.path.dirname(_this_dir)
+exec(open(os.path.join(_utils_dir, 'werewolf_utils.py'), encoding='utf-8').read())
 
 generate({
     'id':'Hector','name':'赫克托','height':1.88,'build':'muscular','gender':'male',

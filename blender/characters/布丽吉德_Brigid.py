@@ -1,7 +1,8 @@
 """布丽吉德 Brigid — 圣火侍女 | 1.62m 红发凯尔特"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from werewolf_utils import *
+import bpy, os
+_this_dir = os.path.dirname(bpy.context.space_data.text.filepath)
+_utils_dir = os.path.dirname(_this_dir)
+exec(open(os.path.join(_utils_dir, 'werewolf_utils.py'), encoding='utf-8').read())
 
 generate({
     'id':'Brigid','name':'布丽吉德','height':1.62,'build':'lean','gender':'female',
