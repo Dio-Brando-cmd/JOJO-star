@@ -231,7 +231,7 @@ export function useVoiceChat(socket, playerId, gameState) {
       await pc.setLocalDescription(offer);
       socket.emit('voice:offer', { targetId: peerId, offer: pc.localDescription });
     } catch (err) {
-      console.error('创建Offer失败:', err);
+      setError('语音连接失败：'+err.message); console.error('创建Offer失败:', err);
     }
   }, [socket, createPeerConnection]);
 
@@ -250,7 +250,7 @@ export function useVoiceChat(socket, playerId, gameState) {
       await pc.setLocalDescription(answer);
       socket.emit('voice:answer', { targetId: peerId, answer: pc.localDescription });
     } catch (err) {
-      console.error('处理Offer失败:', err);
+      setError('语音应答失败：'+err.message); console.error('处理Offer失败:', err);
     }
   }, [socket, createPeerConnection]);
 
@@ -261,7 +261,7 @@ export function useVoiceChat(socket, playerId, gameState) {
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(answer));
     } catch (err) {
-      console.error('处理Answer失败:', err);
+      setError('语音协商失败：'+err.message); console.error('处理Answer失败:', err);
     }
   }, []);
 

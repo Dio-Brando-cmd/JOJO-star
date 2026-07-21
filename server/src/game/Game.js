@@ -9,6 +9,7 @@ import { BotManager } from './BotManager.js';
 import { TraitSystem } from './TraitSystem.js';
 import { StoryManager } from './StoryManager.js';
 import { Character } from './Character.js';
+import { matchCharacterToRole } from './Character.js';
 import { PositionSync } from './PositionSync.js';
 import {
   ROLES, ROLE_NAMES, TEAMS, ROLE_TEAM,
@@ -396,20 +397,42 @@ export class Game {
     }
   }
 
-  /** v2.9: 完全随机分配隐藏职业——任何表层身份都可能匹配任何职业 */
+  /** v2.12: 角色选择影响职业 — 优先匹配recommendedHiddenRoles，保留随机性 */
   _assignRolesByCharacter() {
     const count = this.players.length;
     const config = this.customRoleConfig && this.customRoleConfig.length === count
       ? [...this.customRoleConfig]
       : getRoleConfig(count);
 
-    // 随机打乱后直接分配，不做任何推荐匹配
-    const shuffled = [...config];
-    this.shuffleArray(shuffled);
-
+    const roles = [...config];
+    const players = [...this.players];
     const assignments = [];
-    for (let i = 0; i < this.players.length; i++) {
-      assignments.push({ player: this.players[i], role: shuffled[i] });
+    const usedRoles = new Set();
+
+    // Pass 1: 优先匹配 — 为每个角色找推荐该角色的玩家
+    const roleList = [...roles];
+    this.shuffleArray(roleList);
+    for (const role of roleList) {
+      if (usedRoles.has(role)) continue;
+      // 找推荐此角色的未分配玩家
+      const candidates = players.filter(p =>
+        !assignments.some(a => a.player === p) &&
+        CHARACTER_IDENTITIES[p.characterId]?.recommendedHiddenRoles?.includes(role)
+      );
+      if (candidates.length > 0) {
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        assignments.push({ player: pick, role });
+        usedRoles.add(role);
+      }
+    }
+
+    // Pass 2: 剩余角色随机分配给剩余玩家
+    const remainingRoles = roles.filter(r => !usedRoles.has(r));
+    const remainingPlayers = players.filter(p => !assignments.some(a => a.player === p));
+    this.shuffleArray(remainingRoles);
+
+    for (let i = 0; i < remainingPlayers.length; i++) {
+      assignments.push({ player: remainingPlayers[i], role: remainingRoles[i] || remainingRoles[0] });
     }
 
     // 应用分配
@@ -418,7 +441,6 @@ export class Game {
       player.role = role;
       player.team = ROLE_TEAM[role];
 
-      // 村民编号 + 名字
       if (role === ROLES.VILLAGER) {
         player.villagerIndex = villagerIdx;
         const nameData = getVillagerName(villagerIdx);
@@ -428,22 +450,16 @@ export class Game {
         villagerIdx++;
       }
 
-      // 初始化角色特有状态
       if (role === ROLES.HUNTER) {
-        player.canAct = false;
-        player.hasRifle = true;
-        player.hasBlunderbuss = true;
-        player.rifleUsable = true;
-        player.blunderbussUsable = true;
+        player.canAct = false; player.hasRifle = true; player.hasBlunderbuss = true;
+        player.rifleUsable = true; player.blunderbussUsable = true;
       }
       if (role === ROLES.HEAL_WITCH || role === ROLES.POISON_WITCH) {
-        player.hasPotion = true;
-        player.hasPoison = true;
+        player.hasPotion = true; player.hasPoison = true;
       }
 
       this.storyManager.recordNarrativeEvent(player.id, 'role_assigned', {
-        characterId: player.characterId,
-        role,
+        characterId: player.characterId, role,
       });
     }
   }
@@ -1096,7 +1112,7 @@ export class Game {
       winner: this.gameResult.winner,
       reason: this.gameResult.reason,
       players: this.players.map(p => ({
-        id: p.id, name: p.name, role: p.role, alive: p.alive,
+        id: p.id, name: p.name, role: p.role, team: p.team, alive: p.alive,
       })),
     });
   }
