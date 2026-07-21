@@ -30,8 +30,12 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # ====== 工具函数 ======
 
 def clear_scene():
+    """清空场景 — 兼容 Blender 4.x 和 5.x"""
     bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete(use_confirm=False)
+    try:
+        bpy.ops.object.delete(use_confirm=False)
+    except TypeError:
+        bpy.ops.object.delete()
     for block in bpy.data.meshes:
         bpy.data.meshes.remove(block)
     for block in bpy.data.materials:

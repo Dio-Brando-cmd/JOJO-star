@@ -55,9 +55,13 @@ ROLE_NAMES_CN = {
 
 
 def clear_scene():
-    """清空场景"""
+    """清空场景 — 兼容 Blender 4.x 和 5.x"""
     bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete(use_confirm=False)
+    # Blender 5.x 移除了 use_confirm 参数
+    try:
+        bpy.ops.object.delete(use_confirm=False)
+    except TypeError:
+        bpy.ops.object.delete()
     # 清理孤立数据
     for block in bpy.data.meshes:
         bpy.data.meshes.remove(block)
