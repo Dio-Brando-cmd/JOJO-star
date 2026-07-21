@@ -21,6 +21,7 @@ const REMOTE_BASE = '/opt/werewolf-server';
 const SERVER_SRC = join(__dirname, 'server', 'src');
 const CLIENT_DIST = join(__dirname, 'client', 'dist');
 const SERVER_PKG = join(__dirname, 'server', 'package.json');
+const DOWNLOAD_DIR = join(__dirname, 'download');
 
 const PASSWORD = process.argv[2];
 
@@ -71,9 +72,17 @@ async function deploy() {
     localPath: SERVER_PKG,
     remotePath: join(REMOTE_BASE, 'package.json').replace(/\\/g, '/'),
   };
-  const allFiles = [...serverFiles, ...clientFiles, pkgFile];
+  // 下载目录（仅同步 .exe .apk 大文件，跳过已有的同名同大小文件以加速）
+  const downloadFiles = existsSync(DOWNLOAD_DIR)
+    ? collectFiles(DOWNLOAD_DIR).map(f => ({
+        ...f,
+        remotePath: join(REMOTE_BASE, 'download', relative(DOWNLOAD_DIR, f.localPath)).replace(/\\/g, '/'),
+      }))
+    : [];
+  const allFiles = [...serverFiles, ...clientFiles, pkgFile, ...downloadFiles];
   console.log(`   服务器文件: ${serverFiles.length} 个`);
   console.log(`   客户端文件: ${clientFiles.length} 个`);
+  console.log(`   下载文件: ${downloadFiles.length} 个`);
   console.log(`   总计: ${allFiles.length} 个文件\n`);
 
   // 2. 连接
@@ -161,7 +170,7 @@ async function deploy() {
   console.log(c.yellow('[4/4] 重启服务器...'));
 
   const restartResult = await new Promise((resolve) => {
-    const restartCmd = 'cd /opt/werewolf-server && npm install --production 2>&1 && (USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 restart werewolf-server 2>&1 || USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 start src/index.js --name werewolf-server 2>&1)';
+    const restartCmd = 'cd /opt/werewolf-server && npm install --production 2>&1 && (USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 restart werewolf-server 2>&1 || USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 start index.js --name werewolf-server 2>&1)';
     conn.exec(restartCmd, (err, stream) => {
       if (err) { resolve({ error: err.message }); return; }
       let output = '';

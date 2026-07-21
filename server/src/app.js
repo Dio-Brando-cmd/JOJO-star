@@ -65,6 +65,28 @@ export function createServer(options = {}) {
     });
   });
 
+  // REST API: 用户反馈（联系我们表单）
+  app.post('/api/feedback', (req, res) => {
+    try {
+      const { name, email, subject, message, timestamp } = req.body;
+      if (!name || !message) {
+        return res.status(400).json({ success: false, error: '昵称和留言内容为必填项' });
+      }
+      // 写入服务器日志
+      console.log(`[反馈] 来自: ${name}, 邮箱: ${email || '无'}, 主题: ${subject || '无'}`);
+      console.log(`[反馈] 内容: ${message}`);
+      // 追加写入 feedback.txt 文件
+      const feedbackDir = path.join(__dirname, 'data');
+      if (!fs.existsSync(feedbackDir)) fs.mkdirSync(feedbackDir, { recursive: true });
+      const logLine = `[${new Date(timestamp).toISOString()}] 昵称: ${name} | 邮箱: ${email || '无'} | 主题: ${subject || '无'}\n内容: ${message}\n---\n`;
+      fs.appendFileSync(path.join(feedbackDir, 'feedback.txt'), logLine, 'utf8');
+      res.json({ success: true, message: '感谢你的反馈！我们会尽快查看。' });
+    } catch (e) {
+      console.error('[反馈] 保存失败:', e.message);
+      res.status(500).json({ success: false, error: '服务器内部错误' });
+    }
+  });
+
   // REST API: 版本信息
   app.get('/api/version', (req, res) => {
     res.json({

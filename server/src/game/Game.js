@@ -395,7 +395,6 @@ export class Game {
       this._positionSyncInterval = null;
     }
   }
-  }
 
   /** v2.9: 完全随机分配隐藏职业——任何表层身份都可能匹配任何职业 */
   _assignRolesByCharacter() {

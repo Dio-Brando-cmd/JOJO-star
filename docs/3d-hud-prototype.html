@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>帷幕之地 · 3D追逃模式 HUD 原型</title>
+<style>
+/* ============================================================
+   帷幕之地 — 3D HUD 原型
+   暗黑北欧童话风格
+   ============================================================ */
+
+:root {
+  --bg-deep: #0a0a0f;
+  --bg-panel: rgba(10, 10, 20, 0.85);
+  --text-primary: #d4c5a9;
+  --text-dim: #8a7e6b;
+  --accent-gold: #c9a44b;
+  --accent-red: #8b2020;
+  --accent-blue: #4a7d9b;
+  --border-subtle: rgba(180, 150, 100, 0.2);
+  --border-active: rgba(200, 160, 60, 0.5);
+
+  /* Role colors */
+  --wolf-red: #B71C1C;
+  --wolf-eye: #ff3d00;
+  --human-blue: #42A5F5;
+  --hiding-green: #4caf50;
+  --stamina-gold: #ffb300;
+  --danger-flash: #ff1744;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg-deep);
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+/* ============================================================
+   场景容器
+   ============================================================ */
+#scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a15 70%);
+}
+
+/* 星空背景 */
+#stars {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 70% 25%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 85% 40%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 15% 60%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 40% 50%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 80% 55%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 30% 80%, rgba(255,255,255,0.35), transparent);
+}
+
+/* 血月 */
+#moon {
+  position: absolute;
+  top: 8%;
+  right: 15%;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #ff4444 0%, #8b0000 60%, transparent 100%);
+  box-shadow: 0 0 60px rgba(200,30,30,0.4), 0 0 120px rgba(150,20,20,0.2);
+  animation: moonPulse 4s ease-in-out infinite;
+}
+@keyframes moonPulse {
+  0%, 100% { box-shadow: 0 0 60px rgba(200,30,30,0.4), 0 0 120px rgba(150,20,20,0.2); }
+  50% { box-shadow: 0 0 80px rgba(200,30,30,0.6), 0 0 160px rgba(150,20,20,0.35); }
+}
+
+/* 雾层 */
+#fog {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(60,60,80,0.3) 0%, transparent 100%);
+  animation: fogDrift 20s ease-in-out infinite;
+}
+@keyframes fogDrift {
+  0%, 100% { transform: translateX(0); opacity: 0.8; }
+  50% { transform: translateX(3%); opacity: 0.6; }
+}
+
+/* 村庄地面 */
+#village-ground {
+  position: absolute;
+  bottom: 25%;
+  left: 10%; right: 10%;
+  height: 40%;
+  background:
+    radial-gradient(ellipse 40% 60% at 50% 60%, #1a1a0a 0%, transparent 70%),
+    linear-gradient(to bottom, rgba(20,20,10,0.1) 0%, rgba(15,15,8,0.5) 100%);
+  border-radius: 40% 40% 0 0;
+}
+
+/* 房屋 */
+.house {
+  position: absolute;
+  bottom: 48%;
+  width: 36px;
+  height: 28px;
+  background: linear-gradient(180deg, #3e2f1c 0%, #2a1f12 100%);
+  border: 1px solid rgba(180,150,100,0.15);
+  border-radius: 2px;
+}
+.house::before {
+  content: '';
+  position: absolute;
+  top: -12px; left: -3px;
+  width: 42px; height: 14px;
+  background: linear-gradient(180deg, #5a3a2a 0%, #3e2518 100%);
+  clip-path: polygon(10% 100%, 50% 0%, 90% 100%);
+}
+.house::after {
+  content: '';
+  position: absolute;
+  top: 6px; left: 12px;
+  width: 4px; height: 5px;
+  background: rgba(255,200,100,0.3);
+  box-shadow: 10px 0 rgba(255,200,100,0.15);
+}
+.house.highlighted {
+  border-color: var(--wolf-red);
+  box-shadow: 0 0 12px rgba(255,30,30,0.5);
+  animation: houseHighlight 1.5s ease-in-out infinite;
+}
+@keyframes houseHighlight {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,30,30,0.5); }
+  50% { box-shadow: 0 0 24px rgba(255,30,30,0.8); }
+}
+.house.hiding-spot {
+  border-color: var(--hiding-green);
+  box-shadow: 0 0 8px rgba(76,175,80,0.5);
+}
+
+/* 地标 */
+.landmark {
+  position: absolute;
+  border-radius: 50%;
+}
+#village-tree {
+  bottom: 50%; left: 50%;
+  width: 20px; height: 20px;
+  background: rgba(40,80,40,0.6);
+  box-shadow: 0 0 15px rgba(40,100,40,0.3);
+  transform: translate(-50%, -50%);
+}
+#village-well {
+  bottom: 55%; left: 42%;
+  width: 8px; height: 8px;
+  background: rgba(60,60,80,0.5);
+}
+
+/* ============================================================
+   夜视叠加层
+   ============================================================ */
+#night-vision-overlay {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  transition: all 0.8s ease;
+}
+#night-vision-overlay.wolf {
+  background:
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(200,0,0,0.15) 0%, rgba(100,0,0,0.3) 60%, rgba(40,0,0,0.5) 100%);
+}
+#night-vision-overlay.wolf::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,0,0,0.02) 2px, rgba(255,0,0,0.02) 3px);
+  animation: scanlines 0.1s linear infinite;
+}
+@keyframes scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(3px); }
+}
+#night-vision-overlay.human {
+  background:
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(30,60,120,0.05) 0%, rgba(10,20,50,0.3) 70%, rgba(5,5,15,0.6) 100%);
+}
+
+/* 视野锥 */
+#vision-cone {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(ellipse at bottom, rgba(66,165,245,0.08) 0%, rgba(66,165,245,0.03) 40%, transparent 70%);
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+#vision-cone.wolf-vision {
+  background: radial-gradient(ellipse at bottom, rgba(255,60,0,0.10) 0%, rgba(255,30,0,0.04) 40%, transparent 70%);
+}
+
+/* ============================================================
+   目标高亮指示器（狼人视角）
+   ============================================================ */
+.target-indicator {
+  position: absolute;
+  width: 40px; height: 40px;
+  border: 2px solid var(--wolf-red);
+  border-radius: 50%;
+  animation: targetPulse 1s ease-in-out infinite;
+  pointer-events: none;
+}
+.target-indicator::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px; height: 4px;
+  background: var(--wolf-red);
+  border-radius: 50%;
+}
+@keyframes targetPulse {
+  0%, 100% { border-color: rgba(255,30,30,0.6); box-shadow: 0 0 8px rgba(255,0,0,0.3); }
+  50% { border-color: rgba(255,30,30,1); box-shadow: 0 0 20px rgba(255,0,0,0.6); }
+}
+
+/* ============================================================
+   底部 HUD 面板
+   ============================================================ */
+#hud-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 100px;
+  background: linear-gradient(to top, rgba(10,10,20,0.95) 0%, rgba(10,10,20,0.7) 80%, transparent 100%);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 20px 12px;
+  gap: 16px;
+}
+
+/* 体力条 */
+.stamina-bar {
+  flex: 0 0 180px;
+  display: flex; flex-direction: column;
+  gap: 4px;
+}
+.stamina-label {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.stamina-label span:last-child {
+  color: var(--stamina-gold);
+  font-weight: bold;
+}
+.stamina-track {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.stamina-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6d00, var(--stamina-gold));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+.stamina-fill.draining {
+  animation: staminaDrain 0.5s ease-out;
+}
+@keyframes staminaDrain {
+  0% { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
+}
+.stamina-fill.low {
+  background: linear-gradient(90deg, #d32f2f, #ff6d00);
+}
+
+/* 隐匿等级 */
+.stealth-indicator {
+  flex: 0 0 100px;
+  display: flex; align-items: center;
+  gap: 8px;
+}
+.stealth-icon {
+  width: 24px; height: 24px;
+  background: rgba(100,180,255,0.2);
+  border: 1px solid rgba(100,180,255,0.4);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.stealth-dots {
+  display: flex; gap: 3px;
+}
+.stealth-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.3s;
+}
+.stealth-dot.active {
+  background: var(--accent-blue);
+  box-shadow: 0 0 6px rgba(74,125,155,0.6);
+}
+
+/* 能力槽 */
+.ability-slots {
+  flex: 0 0 auto;
+  display: flex; gap: 6px;
+}
+.ability-slot {
+  width: 48px; height: 48px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ability-slot:hover {
+  border-color: var(--border-active);
+  box-shadow: 0 0 10px rgba(200,160,60,0.3);
+}
+.ability-slot.on-cooldown {
+  filter: grayscale(0.6) brightness(0.6);
+}
+.ability-slot .cooldown-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.6);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: bold;
+  color: var(--text-primary);
+}
+.ability-key {
+  position: absolute; top: 2px; right: 4px;
+  font-size: 8px; color: var(--text-dim);
+}
+
+/* 小地图 */
+.minimap {
+  flex: 0 0 120px;
+  height: 80px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.minimap-label {
+  position: absolute; top: 2px; left: 6px;
+  font-size: 8px; color: var(--text-dim);
+  letter-spacing: 1px;
+}
+.minimap-dot {
+  position: absolute;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+}
+.minimap-dot.self {
+  width: 6px; height: 6px;
+  background: var(--accent-gold);
+  box-shadow: 0 0 4px var(--accent-gold);
+  bottom: 30%; left: 45%;
+}
+.minimap-dot.wolf-dot {
+  background: var(--wolf-red);
+  box-shadow: 0 0 3px var(--wolf-red);
+}
+.minimap-dot.human-dot {
+  background: var(--accent-blue);
+}
+.minimap-landmark {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: rgba(255,255,255,0.3);
+}
+
+/* ============================================================
+   攻击冷却指示器（狼人）
+   ============================================================ */
+#attack-indicator {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex; align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#attack-indicator.visible {
+  opacity: 1;
+}
+.attack-ring {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,50,50,0.4);
+  position: relative;
+}
+.attack-ring .cd-arc {
+  position: absolute; inset: -3px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--wolf-red);
+  animation: cdSpin 8s linear infinite;
+}
+@keyframes cdSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.attack-ring .cd-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: bold;
+  color: var(--wolf-red);
+  text-shadow: 0 0 8px rgba(255,0,0,0.5);
+}
+.attack-label {
+  font-size: 11px; color: var(--wolf-red);
+  text-transform: uppercase; letter-spacing: 2px;
+  text-shadow: 0 0 6px rgba(255,0,0,0.4);
+}
+
+/* ============================================================
+   QTE 提示（人类）
+   ============================================================ */
+#qte-prompt {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px; height: 200px;
+  display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+#qte-prompt.active {
+  display: flex;
+}
+.qte-ring-outer {
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,200,50,0.3);
+  position: relative;
+  animation: qteShrink 0.5s ease-out forwards;
+}
+@keyframes qteShrink {
+  0% { width: 150px; height: 150px; border-color: rgba(255,200,50,0.3); }
+  100% { width: 80px; height: 80px; border-color: rgba(255,50,50,0.7); }
+}
+.qte-ring-inner {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 4px solid rgba(255,200,50,0.6);
+  border-top-color: #ffaa00;
+  animation: qteSpin 0.8s linear infinite;
+}
+@keyframes qteSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.qte-text {
+  font-size: 14px; font-weight: bold;
+  color: #ffcc00;
+  text-shadow: 0 0 12px rgba(255,200,0,0.6);
+  letter-spacing: 2px;
+  animation: qteBlink 0.3s ease-in-out infinite;
+}
+@keyframes qteBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.qte-key {
+  font-size: 11px; color: var(--text-dim);
+  background: rgba(0,0,0,0.6);
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* ============================================================
+   藏匿点提示（人类）
+   ============================================================ */
+.hiding-hint {
+  position: absolute;
+  width: 24px; height: 24px;
+  border: 1px dashed rgba(76,175,80,0.5);
+  border-radius: 4px;
+  animation: hidingHint 2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hidingHint {
+  0%, 100% { border-color: rgba(76,175,80,0.3); box-shadow: 0 0 4px rgba(76,175,80,0.1); }
+  50% { border-color: rgba(76,175,80,0.7); box-shadow: 0 0 12px rgba(76,175,80,0.3); }
+}
+
+/* ============================================================
+   心跳效果
+   ============================================================ */
+.heartbeat {
+  position: absolute;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.heartbeat.active {
+  opacity: 1;
+  animation: heartBeat 0.6s ease-in-out infinite;
+}
+@keyframes heartBeat {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  15% { transform: translateX(-50%) scale(1.3); }
+  30% { transform: translateX(-50%) scale(1); }
+  45% { transform: translateX(-50%) scale(1.2); }
+  60% { transform: translateX(-50%) scale(1); }
+}
+
+/* ============================================================
+   顶部信息栏
+   ============================================================ */
+#hud-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50px;
+  background: linear-gradient(to bottom, rgba(10,10,20,0.8) 0%, transparent 100%);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+}
+.phase-indicator {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex; align-items: center;
+  gap: 8px;
+}
+.phase-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  animation: phaseBlink 2s ease-in-out infinite;
+}
+.phase-dot.night { background: var(--accent-blue); }
+.phase-dot.danger { background: var(--wolf-red); }
+@keyframes phaseBlink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.timer {
+  font-size: 18px; font-weight: bold;
+  color: var(--text-primary);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.timer.urgent {
+  color: var(--wolf-red);
+  animation: timerUrgent 0.5s ease-in-out infinite;
+}
+@keyframes timerUrgent {
+  0%, 100% { color: var(--wolf-red); }
+  50% { color: #ff6b6b; }
+}
+.alive-count {
+  font-size: 11px; color: var(--text-dim);
+  display: flex; align-items: center;
+  gap: 4px;
+}
+
+/* ============================================================
+   玩家标签
+   ============================================================ */
+.player-label {
+  position: absolute;
+  font-size: 9px;
+  color: var(--text-dim);
+  text-shadow: 0 0 4px rgba(0,0,0,0.8);
+  pointer-events: none;
+  text-align: center;
+  transform: translateX(-50%);
+}
+.player-label.wolf-label {
+  color: var(--wolf-red);
+}
+
+/* ============================================================
+   视角切换按钮
+   ============================================================ */
+#perspective-toggle {
+  position: absolute;
+  top: 60px; right: 20px;
+  display: flex; gap: 4px;
+  z-index: 100;
+}
+.perspective-btn {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-family: inherit;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.3s;
+}
+.perspective-btn:first-child { border-radius: 4px 0 0 4px; }
+.perspective-btn:last-child { border-radius: 0 4px 4px 0; }
+.perspective-btn.active {
+  border-color: var(--border-active);
+  color: var(--text-primary);
+  background: rgba(200,160,60,0.15);
+}
+.perspective-btn.wolf-btn.active {
+  border-color: var(--wolf-red);
+  color: var(--wolf-red);
+  background: rgba(180,30,30,0.2);
+  box-shadow: 0 0 12px rgba(255,0,0,0.2);
+}
+.perspective-btn.human-btn.active {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background: rgba(74,125,155,0.15);
+}
+
+/* ============================================================
+   角色选择弹窗
+   ============================================================ */
+#char-select {
+  position: absolute;
+  bottom: 50%; right: 20px;
+  transform: translateY(50%);
+  display: flex; flex-direction: column;
+  gap: 4px;
+  z-index: 90;
+}
+.char-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex; align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.char-btn:hover {
+  border-color: rgba(255,255,255,0.4);
+  transform: scale(1.1);
+}
+.char-btn .tooltip {
+  display: none;
+  position: absolute;
+  right: 44px;
+  white-space: nowrap;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-primary);
+}
+.char-btn:hover .tooltip { display: block; }
+
+/* ============================================================
+   提示信息弹窗
+   ============================================================ */
+#info-toast {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-active);
+  border-radius: 8px;
+  padding: 14px 24px;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 80;
+}
+#info-toast.show {
+  opacity: 1;
+}
+
+/* ============================================================
+   屏幕闪红（受伤）
+   ============================================================ */
+#damage-flash {
+  position: absolute; inset: 0;
+  background: rgba(200,0,0,0.3);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 50;
+}
+#damage-flash.hit {
+  opacity: 1;
+  animation: flashFade 0.5s ease-out forwards;
+}
+@keyframes flashFade {
+  0% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width: 768px) {
+  #hud-bottom { height: 80px; padding: 0 8px 8px; gap: 8px; }
+  .stamina-bar { flex: 0 0 100px; }
+  .stealth-indicator { flex: 0 0 60px; }
+  .ability-slots { gap: 3px; }
+  .ability-slot { width: 36px; height: 36px; font-size: 16px; }
+  .minimap { flex: 0 0 80px; height: 56px; }
+  #char-select { right: 4px; }
+  .char-btn { width: 28px; height: 28px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div id="scene">
+
+  <!-- 星空 -->
+  <div id="stars"></div>
+
+  <!-- 血月 -->
+  <div id="moon"></div>
+
+  <!-- 雾 -->
+  <div id="fog"></div>
+
+  <!-- 夜视叠加 -->
+  <div id="night-vision-overlay" class="human"></div>
+
+  <!-- 视野锥 -->
+  <div id="vision-cone"></div>
+
+  <!-- 村庄地面 -->
+  <div id="village-ground"></div>
+
+  <!-- 地标 -->
+  <div id="village-tree" class="landmark"></div>
+  <div id="village-well" class="landmark"></div>
+
+  <!-- 房屋（12栋环形） -->
+  <div id="houses-container"></div>
+
+  <!-- 藏匿点提示 -->
+  <div id="hiding-hints"></div>
+
+  <!-- 目标指示器 -->
+  <div id="target-indicators"></div>
+
+  <!-- 心跳 -->
+  <div id="heartbeat-icon" class="heartbeat">💓</div>
+
+  <!-- QTE -->
+  <div id="qte-prompt">
+    <div class="qte-ring-outer">
+      <div class="qte-ring-inner"></div>
+    </div>
+    <div class="qte-text">按 SPACE 逃脱!</div>
+    <div class="qte-key">SPACE</div>
+  </div>
+
+  <!-- 受伤闪红 -->
+  <div id="damage-flash"></div>
+
+  <!-- 信息弹窗 -->
+  <div id="info-toast"></div>
+
+  <!-- 顶部 HUD -->
+  <div id="hud-top">
+    <div class="phase-indicator">
+      <div class="phase-dot night"></div>
+      <span id="phase-text">深夜 · 第3夜</span>
+    </div>
+    <div class="alive-count">
+      <span>🐺 2</span>
+      <span style="margin:0 4px;">|</span>
+      <span>👤 5</span>
+    </div>
+    <div class="timer" id="timer-display">01:47</div>
+  </div>
+
+  <!-- 攻击冷却（狼人） -->
+  <div id="attack-indicator">
+    <div class="attack-label">攻击就绪</div>
+    <div class="attack-ring">
+      <div class="cd-arc"></div>
+      <div class="cd-text">🖱️</div>
+    </div>
+  </div>
+
+  <!-- 底部 HUD -->
+  <div id="hud-bottom">
+    <div class="stamina-bar">
+      <div class="stamina-label">
+        <span>体力</span>
+        <span id="stamina-value">78</span>
+      </div>
+      <div class="stamina-track">
+        <div class="stamina-fill" id="stamina-fill" style="width:78%"></div>
+      </div>
+    </div>
+    <div class="stealth-indicator">
+      <div class="stealth-icon">👟</div>
+      <div class="stealth-dots" id="stealth-dots">
+        <div class="stealth-dot active"></div>
+        <div class="stealth-dot active"></div>
+        <div class="stealth-dot active"></div>
+        <div class="stealth-dot"></div>
+        <div class="stealth-dot"></div>
+        <div class="stealth-dot"></div>
+        <div class="stealth-dot"></div>
+        <div class="stealth-dot"></div>
+        <div class="stealth-dot"></div>
+        <div class="stealth-dot"></div>
+      </div>
+    </div>
+    <div class="ability-slots" id="ability-slots">
+      <div class="ability-slot">
+        <span>🔪</span>
+        <span class="ability-key">Q</span>
+      </div>
+      <div class="ability-slot on-cooldown">
+        <span>🐺</span>
+        <span class="ability-key">E</span>
+        <div class="cooldown-overlay">6s</div>
+      </div>
+      <div class="ability-slot">
+        <span>👃</span>
+        <span class="ability-key">R</span>
+      </div>
+      <div class="ability-slot">
+        <span>🏃</span>
+        <span class="ability-key">Shift</span>
+      </div>
+    </div>
+    <div class="minimap" id="minimap">
+      <div class="minimap-label">暮色村</div>
+    </div>
+  </div>
+
+  <!-- 视角切换 -->
+  <div id="perspective-toggle">
+    <button class="perspective-btn human-btn active" onclick="switchPerspective('human')">🧑 人类视角</button>
+    <button class="perspective-btn wolf-btn" onclick="switchPerspective('wolf')">🐺 狼人视角</button>
+  </div>
+
+  <!-- 角色快速切换 -->
+  <div id="char-select"></div>
+
+</div>
+
+<script>
+// ============================================================
+// 帷幕之地 · 3D HUD 交互脚本
+// ============================================================
+
+const CHARACTERS = [
+  { id:'SIGURD', name:'西格德', emoji:'🔫', color:'#5D4037', role:'HUNTER' },
+  { id:'FREYJA', name:'芙蕾雅', emoji:'🧪', color:'#388E3C', role:'POISON_WITCH' },
+  { id:'MORRIGAN', name:'莫莉安', emoji:'🌿', color:'#33691E', role:'HEAL_WITCH' },
+  { id:'ANUBIS', name:'卡赫特', emoji:'👁️', color:'#FFD54F', role:'SEER' },
+  { id:'HECTOR', name:'赫克托', emoji:'🛡️', color:'#BF8040', role:'GUARD' },
+  { id:'ROMULUS', name:'罗慕路斯', emoji:'🐺', color:'#424242', role:'WEREWOLF' },
+  { id:'FENRIR', name:'哈尔瓦德', emoji:'⛓️', color:'#B71C1C', role:'ALPHA_WOLF' },
+  { id:'SKADI', name:'斯卡蒂', emoji:'🏹', color:'#ECEFF1', role:'HUNTER' },
+  { id:'HAIKU', name:'虚舟', emoji:'📝', color:'#9E9E9E', role:'VILLAGER' },
+  { id:'BRIGID', name:'布丽吉德', emoji:'🔥', color:'#FF5722', role:'GUARD' },
+  { id:'YSERA', name:'伊瑟尔', emoji:'🎭', color:'#37474F', role:'SEER' },
+  { id:'GOREN', name:'格伦', emoji:'🔨', color:'#FF6F00', role:'VILLAGER' },
+  { id:'AILIN', name:'艾琳', emoji:'🪦', color:'#263238', role:'VILLAGER' },
+  { id:'ORIC', name:'奥里克', emoji:'💨', color:'#1B5E20', role:'VILLAGER' },
+  { id:'NELIA', name:'奈莉亚', emoji:'🔭', color:'#7C4DFF', role:'SEER' },
+];
+
+// 房屋布局（模拟12栋环）
+const HOUSE_POSITIONS = [];
+for (let i = 0; i < 12; i++) {
+  const angle = (i / 12) * Math.PI * 2 - Math.PI / 2;
+  const cx = 50 + Math.cos(angle) * 30;
+  const cy = 52 + Math.sin(angle) * 22;
+  HOUSE_POSITIONS.push({ left: cx + '%', bottom: cy + '%', name: ['猎人屋','守卫屋','种狼屋','狼人屋','预言家屋','毒巫屋','药巫屋','村民屋1','村民屋2','村民屋3','村民屋4','村民屋5'][i] });
+}
+
+// 初始化
+let currentPerspective = 'human';
+let currentChar = CHARACTERS[0];
+let stamina = 78;
+let isDraining = false;
+let gameTime = 107;
+let timerInterval;
+
+// 生成房屋
+const container = document.getElementById('houses-container');
+HOUSE_POSITIONS.forEach((pos, i) => {
+  const house = document.createElement('div');
+  house.className = 'house';
+  house.style.left = pos.left;
+  house.style.bottom = pos.bottom;
+  house.title = pos.name;
+  house.id = 'house-' + i;
+  container.appendChild(house);
+
+  // 标签
+  const label = document.createElement('div');
+  label.className = 'player-label';
+  label.style.left = pos.left;
+  label.style.bottom = (parseFloat(pos.bottom) + 5) + '%';
+  label.textContent = pos.name;
+  container.appendChild(label);
+});
+
+// 生成藏匿点
+const hidingHints = document.getElementById('hiding-hints');
+[2, 5, 8].forEach(i => {
+  const pos = HOUSE_POSITIONS[i];
+  const hint = document.createElement('div');
+  hint.className = 'hiding-hint';
+  hint.style.left = (parseFloat(pos.left) - 1) + '%';
+  hint.style.bottom = (parseFloat(pos.bottom) + 2) + '%';
+  hint.style.display = 'none';
+  hint.id = 'hint-' + i;
+  hidingHints.appendChild(hint);
+});
+
+// 目标指示器
+const targetDiv = document.getElementById('target-indicators');
+[0, 6, 9].forEach(i => {
+  const pos = HOUSE_POSITIONS[i];
+  const indicator = document.createElement('div');
+  indicator.className = 'target-indicator';
+  indicator.style.left = (parseFloat(pos.left) - 2) + '%';
+  indicator.style.bottom = (parseFloat(pos.bottom) - 2) + '%';
+  indicator.id = 'target-' + i;
+  targetDiv.appendChild(indicator);
+});
+
+// 小地图
+const minimap = document.getElementById('minimap');
+for (let i = 0; i < 12; i++) {
+  const pos = HOUSE_POSITIONS[i];
+  const dot = document.createElement('div');
+  dot.className = 'minimap-landmark';
+  dot.style.bottom = (parseFloat(pos.bottom) * 0.6 + 10) + '%';
+  dot.style.left = (parseFloat(pos.left) * 0.7 + 5) + '%';
+  minimap.appendChild(dot);
+}
+// 小地图上的狼人标记
+[[20,35],[65,40],[35,25]].forEach(([l,b]) => {
+  const d = document.createElement('div');
+  d.className = 'minimap-dot wolf-dot';
+  d.style.left = l + '%'; d.style.bottom = b + '%';
+  minimap.appendChild(d);
+});
+// 人类标记
+[[40,30],[55,20],[25,40],[50,15],[30,35]].forEach(([l,b]) => {
+  const d = document.createElement('div');
+  d.className = 'minimap-dot human-dot';
+  d.style.left = l + '%'; d.style.bottom = b + '%';
+  minimap.appendChild(d);
+});
+// 自己
+const selfDot = document.createElement('div');
+selfDot.className = 'minimap-dot self';
+minimap.appendChild(selfDot);
+
+// 角色选择按钮
+const charSelect = document.getElementById('char-select');
+CHARACTERS.forEach((char, idx) => {
+  const btn = document.createElement('button');
+  btn.className = 'char-btn';
+  btn.innerHTML = char.emoji + '<span class="tooltip">'+char.name+'</span>';
+  btn.style.background = char.color;
+  btn.onclick = () => selectCharacter(idx);
+  if (idx === 0) btn.style.borderColor = 'rgba(255,255,255,0.6)';
+  charSelect.appendChild(btn);
+});
+
+// ============================================================
+// 核心函数
+// ============================================================
+
+function switchPerspective(mode) {
+  currentPerspective = mode;
+
+  const overlay = document.getElementById('night-vision-overlay');
+  const visionCone = document.getElementById('vision-cone');
+  const qte = document.getElementById('qte-prompt');
+  const attack = document.getElementById('attack-indicator');
+  const heartbeat = document.getElementById('heartbeat-icon');
+
+  // 按钮
+  document.querySelectorAll('.perspective-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.' + mode + '-btn').classList.add('active');
+
+  // 夜视
+  overlay.className = mode;
+
+  // 视野锥
+  visionCone.className = mode === 'wolf' ? 'wolf-vision' : '';
+
+  // 目标指示器
+  document.querySelectorAll('.target-indicator').forEach(t => {
+    t.style.display = mode === 'wolf' ? 'block' : 'none';
+  });
+
+  // 藏匿点
+  document.querySelectorAll('.hiding-hint').forEach(h => {
+    h.style.display = mode === 'human' ? 'block' : 'none';
+  });
+
+  // QTE vs 攻击指示器
+  if (mode === 'human') {
+    qte.classList.add('active');
+    attack.classList.remove('visible');
+    heartbeat.classList.add('active');
+  } else {
+    qte.classList.remove('active');
+    attack.classList.add('visible');
+    heartbeat.classList.remove('active');
+  }
+
+  // 能力槽更新
+  updateAbilitySlots(mode);
+
+  // 房屋高亮
+  document.querySelectorAll('.house').forEach(h => {
+    h.classList.remove('highlighted', 'hiding-spot');
+  });
+  if (mode === 'wolf') {
+    document.querySelectorAll('.house').forEach((h, i) => {
+      if (i % 3 === 0) h.classList.add('highlighted');
+    });
+  } else {
+    document.querySelectorAll('.house').forEach((h, i) => {
+      if ([2, 5, 8].includes(i)) h.classList.add('hiding-spot');
+    });
+  }
+
+  toast(mode === 'wolf' ? '🐺 夜视模式 — 追踪猎物' : '👤 生存模式 — 找到藏匿点');
+}
+
+function selectCharacter(idx) {
+  currentChar = CHARACTERS[idx];
+  document.querySelectorAll('.char-btn').forEach((b, i) => {
+    b.style.borderColor = i === idx ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.1)';
+  });
+  document.getElementById('stamina-fill').style.background =
+    'linear-gradient(90deg, ' + currentChar.color + ', var(--stamina-gold))';
+
+  const wolfRoles = ['WEREWOLF', 'ALPHA_WOLF'];
+  if (wolfRoles.includes(currentChar.role)) {
+    switchPerspective('wolf');
+  } else {
+    switchPerspective('human');
+  }
+
+  toast('选择角色: ' + currentChar.emoji + ' ' + currentChar.name + ' — ' + currentChar.role);
+}
+
+function updateAbilitySlots(mode) {
+  const slots = document.querySelectorAll('.ability-slot');
+  if (mode === 'wolf') {
+    // 狼人：刀人/嚎叫/嗅觉/冲刺
+    const wolfAbilities = [
+      { emoji:'🔪', key:'LMB', cd:false, cdSec:0 },
+      { emoji:'🐺', key:'E', cd:true, cdSec:6 },
+      { emoji:'👃', key:'R', cd:false, cdSec:0 },
+      { emoji:'🏃', key:'Shift', cd:false, cdSec:0 },
+    ];
+    slots.forEach((slot, i) => {
+      if (i < wolfAbilities.length) {
+        const ab = wolfAbilities[i];
+        slot.innerHTML = '<span>' + ab.emoji + '</span><span class="ability-key">' + ab.key + '</span>';
+        slot.classList.toggle('on-cooldown', ab.cd);
+        if (ab.cd) {
+          slot.innerHTML += '<div class="cooldown-overlay" id="cd-overlay">' + ab.cdSec + 's</div>';
+        }
+      }
+    });
+  } else {
+    // 人类：藏匿/道具/偷听/冲刺
+    const humanAbilities = [
+      { emoji:'🙈', key:'Q', cd:false, cdSec:0 },
+      { emoji:'🧪', key:'E', cd:false, cdSec:0 },
+      { emoji:'👂', key:'R', cd:false, cdSec:0 },
+      { emoji:'🏃', key:'Shift', cd:false, cdSec:0 },
+    ];
+    slots.forEach((slot, i) => {
+      if (i < humanAbilities.length) {
+        const ab = humanAbilities[i];
+        slot.innerHTML = '<span>' + ab.emoji + '</span><span class="ability-key">' + ab.key + '</span>';
+        slot.classList.remove('on-cooldown');
+        const existingCd = slot.querySelector('.cooldown-overlay');
+        if (existingCd) existingCd.remove();
+      }
+    });
+  }
+}
+
+function toast(msg) {
+  const el = document.getElementById('info-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ============================================================
+// 模拟游戏状态更新
+// ============================================================
+
+// 倒计时
+function updateTimer() {
+  gameTime--;
+  if (gameTime <= 0) { gameTime = 120; }
+  const m = Math.floor(gameTime / 60);
+  const s = gameTime % 60;
+  const display = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const el = document.getElementById('timer-display');
+  el.textContent = display;
+  if (gameTime < 30) {
+    el.classList.add('urgent');
+  } else {
+    el.classList.remove('urgent');
+  }
+}
+timerInterval = setInterval(updateTimer, 1000);
+
+// 体力消耗模拟
+function simulateStamina() {
+  if (Math.random() > 0.5) {
+    stamina -= Math.floor(Math.random() * 5) + 1;
+    if (stamina < 0) stamina = 0;
+    isDraining = true;
+  } else if (stamina < 100) {
+    stamina += Math.floor(Math.random() * 3) + 1;
+    if (stamina > 100) stamina = 100;
+    isDraining = false;
+  }
+
+  const fill = document.getElementById('stamina-fill');
+  fill.style.width = stamina + '%';
+  fill.classList.toggle('draining', isDraining);
+  fill.classList.toggle('low', stamina < 30);
+
+  document.getElementById('stamina-value').textContent = stamina;
+
+  // 隐匿等级更新
+  const stealthDots = document.querySelectorAll('.stealth-dot');
+  const stealthLevel = Math.floor(stamina / 15);
+  stealthDots.forEach((dot, i) => {
+    dot.classList.toggle('active', i < stealthLevel);
+  });
+
+  // 体力低时心跳
+  const heartbeat = document.getElementById('heartbeat-icon');
+  if (stamina < 30 && currentPerspective === 'human') {
+    heartbeat.classList.add('active');
+  } else if (stamina >= 30) {
+    heartbeat.classList.remove('active');
+  }
+
+  // 随机受伤闪红
+  if (Math.random() < 0.08 && currentPerspective === 'human') {
+    const flash = document.getElementById('damage-flash');
+    flash.classList.add('hit');
+    setTimeout(() => flash.classList.remove('hit'), 500);
+    toast('⚠️ 附近有狼人气息...');
+  }
+}
+setInterval(simulateStamina, 1500);
+
+// 冷却倒计时模拟
+let wolfCd = 6;
+setInterval(() => {
+  if (currentPerspective === 'wolf') {
+    wolfCd--;
+    if (wolfCd <= 0) wolfCd = 8;
+    const cdOverlay = document.getElementById('cd-overlay');
+    if (cdOverlay) cdOverlay.textContent = wolfCd + 's';
+    const slot = document.querySelectorAll('.ability-slot')[1];
+    if (slot) {
+      slot.classList.toggle('on-cooldown', wolfCd > 0);
+    }
+  }
+}, 1000);
+
+// 初始状态
+toast('帷幕之地 · 3D追逃模式 HUD原型');
+updateAbilitySlots('human');
+
+// 键盘交互
+document.addEventListener('keydown', (e) => {
+  if (e.key === '1') switchPerspective('human');
+  if (e.key === '2') switchPerspective('wolf');
+  if (e.key === ' ' || e.code === 'Space') {
+    e.preventDefault();
+    const qte = document.getElementById('qte-prompt');
+    if (qte.classList.contains('active')) {
+      qte.classList.remove('active');
+      toast('✅ 逃脱成功!');
+      document.getElementById('heartbeat-icon').classList.remove('active');
+      setTimeout(() => {
+        if (currentPerspective === 'human' && stamina < 30) {
+          document.getElementById('heartbeat-icon').classList.add('active');
+        }
+      }, 3000);
+    }
+  }
+  if (e.key === 'ArrowLeft') {
+    const idx = CHARACTERS.indexOf(currentChar);
+    selectCharacter((idx - 1 + CHARACTERS.length) % CHARACTERS.length);
+  }
+  if (e.key === 'ArrowRight') {
+    const idx = CHARACTERS.indexOf(currentChar);
+    selectCharacter((idx + 1) % CHARACTERS.length);
+  }
+});
+
+console.log('🐺 帷幕之地 · 3D HUD原型已就绪');
+console.log('  按 1/2 切换人类/狼人视角');
+console.log('  按 SPACE 触发QTE逃脱');
+console.log('  按 ← → 切换角色');
+console.log('  点击右侧圆形按钮切换角色');
+</script>
+</body>
+</html>

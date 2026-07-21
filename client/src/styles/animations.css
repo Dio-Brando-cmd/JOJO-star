@@ -1,0 +1,255 @@
+/* === 动画 — Keyframes / 过渡 / 特效 === */
+
+/* ==================== 动画效果 ==================== */
+
+/* 页面淡入 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 上滑淡入 */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 左滑淡入 */
+@keyframes fadeSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 弹窗滑入 */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 弹窗淡出 */
+@keyframes modalSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+}
+
+/* 脉冲 */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* 轻微浮动 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* 闪烁 */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 死亡效果 */
+@keyframes deathFade {
+  0% { opacity: 1; transform: scale(1); filter: none; }
+  50% { opacity: 0.5; transform: scale(0.95); filter: grayscale(0.5); }
+  100% { opacity: 0.4; transform: scale(0.92); filter: grayscale(1); }
+}
+
+/* 打字光标闪烁 */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 入场应用 */
+.screen {
+  animation: fadeIn 0.4s ease;
+}
+
+.login-card {
+  animation: fadeSlideIn 0.5s ease;
+}
+
+.lobby-card {
+  animation: fadeSlideIn 0.4s ease;
+}
+
+.lobby-room-card:nth-child(1) { animation-delay: 0s; }
+.lobby-room-card:nth-child(2) { animation-delay: 0.05s; }
+.lobby-room-card:nth-child(3) { animation-delay: 0.1s; }
+.lobby-room-card:nth-child(4) { animation-delay: 0.15s; }
+.lobby-room-card:nth-child(5) { animation-delay: 0.2s; }
+
+.gameover-card {
+  animation: fadeSlideIn 0.5s ease;
+}
+
+.gameover-banner {
+  animation: pulse 2s infinite;
+}
+
+/* 玩家标签入场 */
+.player-tag {
+  animation: fadeSlideInLeft 0.3s ease;
+}
+
+/* 玩家死亡渐隐 */
+.player-item.dead {
+  animation: deathFade 0.6s ease forwards;
+}
+
+/* 角色卡悬浮 */
+.role-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.role-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+
+/* 行动卡片悬浮 */
+.action-card {
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.action-card:active {
+  transform: scale(0.95);
+}
+
+/* 目标按钮入场 */
+.target-btn {
+  animation: fadeSlideIn 0.25s ease;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.target-btn:active {
+  transform: scale(0.93);
+}
+
+/* 投票按钮入场 */
+.vote-btn {
+  animation: fadeSlideIn 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.vote-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.vote-btn:active {
+  transform: scale(0.93);
+}
+
+/* 夜晚过渡 */
+.night-panel {
+  animation: fadeIn 0.5s ease;
+}
+
+/* 白天过渡 */
+.day-panel {
+  animation: fadeIn 0.5s ease;
+}
+
+/* 死亡公告 */
+.death-announcement {
+  animation: fadeSlideIn 0.4s ease;
+}
+.peace-announcement {
+  animation: fadeSlideIn 0.4s ease;
+}
+
+/* 身份揭晓项 */
+.reveal-item {
+  animation: fadeSlideIn 0.4s ease;
+  transition: transform 0.2s ease;
+}
+.reveal-item:hover {
+  transform: scale(1.05);
+}
+
+/* 游戏logo浮动 */
+.game-logo {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 聊天消息入场 */
+.chat-msg {
+  animation: fadeSlideIn 0.2s ease;
+}
+
+/* 按钮波纹效果 */
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.btn:active {
+  transform: scale(0.96);
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn:active::after {
+  opacity: 1;
+}
+
+/* 人数badge动画 */
+.room-privacy-badge.players {
+  animation: pulse 2s infinite;
+}
+
+/* 阶段指示器 */
+.phase-indicator .phase-name {
+  animation: fadeIn 0.3s ease;
+}
+
+/* 夜晚步骤名称 */
+.night-step-name {
+  animation: fadeSlideIn 0.3s ease;
+}
+
+/* 设置齿轮旋转 */
+.settings-btn:hover {
+  animation: spin 1s linear;
+}
+
+/* 加载闪屏 */
+.loading {
+  animation: fadeIn 0.5s ease, pulse 1.5s infinite;
+}
+
+/* 游戏结束banner */
+.gameover-banner.won {
+  animation: fadeSlideIn 0.6s ease, pulse 2s 0.6s infinite;
+}
+.gameover-banner.lost {
+  animation: fadeSlideIn 0.6s ease;
+}
