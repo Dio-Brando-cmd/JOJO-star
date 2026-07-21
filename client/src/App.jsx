@@ -11,6 +11,7 @@ import { useVoiceChat } from './hooks/useVoiceChat';
 import LandingPage from './components/LandingPage';
 import ContactPage from './components/ContactPage';
 import DownloadPage from './components/DownloadPage';
+import StatsPanel from './components/StatsPanel';
 import ParticleBackground from './components/effects/ParticleBackground';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
@@ -198,6 +199,15 @@ export default function App() {
       <>
         <ParticleBackground type="embers" density={0.5} />
         <ContactPage onNavigate={handleNavigate} />
+      </>
+    );
+  }
+
+  if (page === 'stats') {
+    return (
+      <>
+        <ParticleBackground type="embers" density={0.5} />
+        <StatsPanel socket={socket} auth={auth} onBack={() => setPage('home')} />
       </>
     );
   }
