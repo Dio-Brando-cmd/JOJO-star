@@ -96,10 +96,36 @@ def clear_scene():
 def create_material(name, color):
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    tree = mat.node_tree
+    tree.nodes.clear()
+    bsdf = None
+    for bsdf_type in ('ShaderNodeBsdfPrincipled', 'ShaderNodeBsdfPrincipledv2'):
+        try:
+            bsdf = tree.nodes.new(bsdf_type)
+            break
+        except RuntimeError:
+            continue
+    if bsdf is None:
+        raise RuntimeError("无法创建 Principled BSDF 节点 — 不支持的 Blender 版本")
+    bsdf.location = (0, 0)
+    out = None
+    for out_type in ('ShaderNodeOutputMaterial', 'ShaderNodeOutput'):
+        try:
+            out = tree.nodes.new(out_type)
+            break
+        except RuntimeError:
+            continue
+    if out is None:
+        raise RuntimeError("无法创建 Output 节点 — 不支持的 Blender 版本")
+    out.location = (300, 0)
+    try:
+        tree.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+    except KeyError:
+        shader_out = next((o for o in bsdf.outputs if o.type == 'SHADER'), bsdf.outputs[0])
+        surface_in = next((i for i in out.inputs if i.type == 'SHADER'), out.inputs[0])
+        tree.links.new(shader_out, surface_in)
     mat_socket(bsdf, 'Base Color', color)
     mat_socket(bsdf, 'Roughness', 0.7)
-    # 不再尝试设置 Specular — 4.x/5.x 不兼容，使用默认值即可
     return mat
 
 
