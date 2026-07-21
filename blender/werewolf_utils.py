@@ -228,12 +228,24 @@ def add_hair(char_def):
     # 粒子系统
     head_obj.modifiers.new(name="Hair", type='PARTICLE_SYSTEM')
     ps = head_obj.particle_systems[0].settings
-    ps.type = 'HAIR'; ps.count = cnt; ps.hair_length = length
-    ps.hair_step = 3; ps.vertex_group_density = "Scalp"
-    ps.use_hair_bspline = True
-    hm = mkmat(f"{char_def['id']}_hair_particle", *hc, rough=0.45)
-    head_obj.data.materials.append(hm)
-    ps.material = len(head_obj.data.materials) - 1
+    try: ps.type = 'HAIR'
+    except: pass
+    ps.count = cnt
+    try: ps.hair_length = length
+    except: pass
+    try: ps.hair_step = 3
+    except: pass
+    # vertex_group_density 在 Blender 5.x 中已改名/移除，用安全方式设置
+    for attr in ('vertex_group_density', 'vertex_group_length', 'vertex_group'):
+        try: setattr(ps, attr, "Scalp"); break
+        except: pass
+    try: ps.use_hair_bspline = True
+    except: pass
+    try:
+        hm = mkmat(f"{char_def['id']}_hair_particle", *hc, rough=0.45)
+        head_obj.data.materials.append(hm)
+        ps.material = len(head_obj.data.materials) - 1
+    except: pass
 
 
 # ====== 细分 ======
