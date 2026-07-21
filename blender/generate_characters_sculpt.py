@@ -14,9 +14,37 @@ print("  10个表层身份 | 雕刻就绪")
 print("="*60)
 
 # ====== 兼容层 ======
+CTX = None  # 全局 VIEW_3D 上下文
+
+def find_ctx():
+    """扫描所有窗口找 VIEW_3D"""
+    global CTX
+    for w in bpy.context.window_manager.windows:
+        for a in w.screen.areas:
+            if a.type == 'VIEW_3D':
+                for r in a.regions:
+                    if r.type == 'WINDOW':
+                        CTX = {'window':w,'screen':w.screen,'area':a,'region':r,'scene':bpy.context.scene}
+                        return CTX
+    return None
+
+find_ctx()
+if not CTX:
+    print("⚠ 未找到 3D 视图，尝试切换到 Layout 工作区再运行")
+    print("  (Blender 顶部 → Layout → 再切回 Scripting → Run)")
+
+def op(fn):
+    """用 3D 上下文执行操作"""
+    if CTX:
+        with bpy.context.temp_override(**CTX):
+            return fn()
+    return fn()
+
 def safe_del():
-    try: bpy.ops.object.delete(use_confirm=False)
-    except TypeError: bpy.ops.object.delete()
+    try: op(lambda: bpy.ops.object.delete(use_confirm=False))
+    except TypeError:
+        try: op(lambda: bpy.ops.object.delete())
+        except: pass
 def safe_rm(b):
     try: bpy.data.meshes.remove(b)
     except: pass
@@ -24,12 +52,14 @@ def safe_rm_mat(b):
     try: bpy.data.materials.remove(b)
     except: pass
 def safe_gltf(path):
-    kw=dict(filepath=path,use_selection=True)
-    for k in ('export_format','export_format_option'):
-        try: bpy.ops.export_scene.gltf(**kw,**{k:'GLB'}); return
-        except: pass
-    try: bpy.ops.export_scene.gltf(**kw)
-    except Exception as e: print(f"     export: {e}")
+    def do():
+        kw=dict(filepath=path,use_selection=True)
+        for k in ('export_format','export_format_option'):
+            try: bpy.ops.export_scene.gltf(**kw,**{k:'GLB'}); return
+            except: pass
+        try: bpy.ops.export_scene.gltf(**kw)
+        except Exception as e: print(f"     export: {e}")
+    op(do)
 
 def mkmat(name,r,g,b,a=1.0,rough=0.75):
     m=bpy.data.materials.new(name=name); m.use_nodes=True; t=m.node_tree; t.nodes.clear()
@@ -54,35 +84,59 @@ def mkmat(name,r,g,b,a=1.0,rough=0.75):
 
 # ====== 快捷几何 ======
 def C(name,x,y,z,sx,sy,sz,m):
-    bpy.ops.mesh.primitive_cube_add(size=1,location=(x,y,z))
+    op(lambda: bpy.ops.mesh.primitive_cube_add(size=1,location=(x,y,z)))
     o=bpy.context.active_object; o.name=name; o.scale=(sx,sy,sz); o.data.materials.append(m); return o
 def Cy(name,x,y,z,r,d,m):
-    bpy.ops.mesh.primitive_cylinder_add(radius=r,depth=d,location=(x,y,z))
+    op(lambda: bpy.ops.mesh.primitive_cylinder_add(radius=r,depth=d,location=(x,y,z)))
     o=bpy.context.active_object; o.name=name; o.data.materials.append(m); return o
 def S(name,x,y,z,r,m):
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=r,location=(x,y,z))
+    op(lambda: bpy.ops.mesh.primitive_uv_sphere_add(radius=r,location=(x,y,z)))
     o=bpy.context.active_object; o.name=name; o.data.materials.append(m); return o
 def Cn(name,x,y,z,r1,r2,d,m):
-    bpy.ops.mesh.primitive_cone_add(radius1=r1,radius2=r2,depth=d,location=(x,y,z))
+    op(lambda: bpy.ops.mesh.primitive_cone_add(radius1=r1,radius2=r2,depth=d,location=(x,y,z)))
     o=bpy.context.active_object; o.name=name; o.data.materials.append(m); return o
 def Ic(name,x,y,z,r,d,m):
     """ICO球体 — 拓扑更均匀，适合雕刻"""
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=r,subdivisions=3,location=(x,y,z))
+    op(lambda: bpy.ops.mesh.primitive_ico_sphere_add(radius=r,subdivisions=3,location=(x,y,z)))
     o=bpy.context.active_object; o.name=name; o.data.materials.append(m); return o
 
 def clear():
-    bpy.ops.object.select_all(action='SELECT'); safe_del()
+    """清理场景 — 纯数据层，不依赖操作符上下文"""
+    # 直接删对象
+    for obj in list(bpy.context.scene.objects):
+        try: bpy.data.objects.remove(obj)
+        except: pass
+    # 清理孤立数据
     for x in list(bpy.data.meshes): safe_rm(x)
     for x in list(bpy.data.materials): safe_rm_mat(x)
+    for x in list(bpy.data.images):
+        try: bpy.data.images.remove(x)
+        except: pass
 
 def select_all(): bpy.ops.object.select_all(action='SELECT')
 def deselect_all(): bpy.ops.object.select_all(action='DESELECT')
 
+def override_ctx():
+    """获取 VIEW_3D 上下文覆盖"""
+    for w in bpy.context.window_manager.windows:
+        for a in w.screen.areas:
+            if a.type == 'VIEW_3D':
+                for r in a.regions:
+                    if r.type == 'WINDOW':
+                        return {'window':w,'screen':w.screen,'area':a,'region':r,'scene':bpy.context.scene}
+    return None
+
 def join_all():
-    select_all()
-    if len(bpy.context.selected_objects) > 1:
-        bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
-        bpy.ops.object.join()
+    ctx = override_ctx()
+    if ctx and len(bpy.context.selected_objects) > 1:
+        try:
+            with bpy.context.temp_override(**ctx):
+                bpy.ops.object.select_all(action='SELECT')
+                if len(bpy.context.selected_objects) > 1:
+                    bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
+                    bpy.ops.object.join()
+        except Exception as e:
+            print(f"     join warning: {e}")
 
 def add_multires(obj, levels=3):
     """添加 Multiresolution 修改器用于雕刻"""
@@ -91,16 +145,16 @@ def add_multires(obj, levels=3):
     # 先细分基础网格
     mod = obj.modifiers[-1]
     # 用 subdivide 替代 multires 的初始细分
-    bpy.ops.object.mode_set(mode='EDIT')
+    op(lambda: bpy.ops.object.mode_set(mode='EDIT'))
     bpy.ops.mesh.select_all(action='SELECT')
     for _ in range(levels):
         bpy.ops.mesh.subdivide(number_cuts=1)
-    bpy.ops.object.mode_set(mode='OBJECT')
+    op(lambda: bpy.ops.object.mode_set(mode='OBJECT'))
     # 移除 Multires 不太可控，改用 Subdivision Surface + 手动雕刻
     # 实际上 Blender 5.x Multires API 有变化，改用更稳定的方案
     bpy.ops.object.modifier_remove(modifier=mod.name)
     # 添加 Subdivision Surface
-    bpy.ops.object.modifier_add(type='SUBSURF')
+    op(lambda: bpy.ops.object.modifier_add(type='SUBSURF'))
     obj.modifiers[-1].levels = levels
     obj.modifiers[-1].render_levels = levels + 1
 
@@ -178,14 +232,14 @@ def make_skin_body(height, build):
 
     # Skin Modifier
     bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.modifier_add(type='SKIN')
+    op(lambda: bpy.ops.object.modifier_add(type='SKIN'))
     # 设置皮肤半径
     skin = obj.modifiers[-1]
     # 对每个顶点设置半径
-    bpy.ops.object.mode_set(mode='EDIT')
+    op(lambda: bpy.ops.object.mode_set(mode='EDIT'))
     bpy.ops.mesh.select_all(action='SELECT')
     # 这个操作比较复杂，改为手动设置
-    bpy.ops.object.mode_set(mode='OBJECT')
+    op(lambda: bpy.ops.object.mode_set(mode='OBJECT'))
 
     # 逐个顶点设定 skin radius
     radii = []
@@ -209,12 +263,12 @@ def make_skin_body(height, build):
         pass
 
     # 添加 Subdivision Surface 平滑
-    bpy.ops.object.modifier_add(type='SUBSURF')
+    op(lambda: bpy.ops.object.modifier_add(type='SUBSURF'))
     obj.modifiers[-1].levels = 2
     obj.modifiers[-1].render_levels = 3
 
     # Apply modifiers (转成可编辑网格)
-    bpy.ops.object.mode_set(mode='OBJECT')
+    op(lambda: bpy.ops.object.mode_set(mode='OBJECT'))
     # 先不apply — 保留修改器供后续雕刻
 
     return obj
@@ -601,7 +655,7 @@ def generate_character(char_def):
     char_obj.name = c['id']
 
     # 7. 添加 Subdivision Surface 用于雕刻
-    bpy.ops.object.modifier_add(type='SUBSURF')
+    op(lambda: bpy.ops.object.modifier_add(type='SUBSURF'))
     char_obj.modifiers[-1].levels = 2
     char_obj.modifiers[-1].render_levels = 3
 
