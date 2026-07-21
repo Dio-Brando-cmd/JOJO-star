@@ -16,7 +16,7 @@ import { VoiceChatContainer } from './VoiceChat';
 import AudioControls from './AudioControls';
 import { PHASES } from '../utils/constants';
 
-export default function GameBoard({ socket, playerName, audio, voiceChat, onOpenSettings }) {
+export default function GameBoard({ socket, playerName, audio, voiceChat, bgm, onOpenSettings }) {
   const { gameState, privateState } = socket;
   const { playSFX, playMusic } = audio;
   const [showRules, setShowRules] = useState(false);
@@ -89,7 +89,7 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, onOpen
           <PhaseIndicator phase={gameState.phase} nightStep={gameState.nightStep} />
         </div>
         <div className="header-right">
-          <AudioControls audio={audio} />
+          <AudioControls audio={audio} bgm={bgm} />
           <span className="player-badge">{playerName}</span>
           <span className={`status-badge ${isAlive ? 'alive' : 'dead'}`}>
             {isAlive ? '存活' : '已出局'}

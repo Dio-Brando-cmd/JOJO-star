@@ -21,7 +21,8 @@ export default function SettingsPanel({
   onLeaveRoom,
   onExitGame,
   isInGame,
-  bgm,  // BGM 系统
+  bgm,       // BGM MP3 系统
+  audio,     // Web Audio 程序化音乐系统
   enableBots,
   botCount,
   onSetBotCount,
@@ -99,13 +100,29 @@ export default function SettingsPanel({
           {/* BGM 音乐设置 */}
           {bgm && (
             <div className="settings-section">
-              <h4>🎵 背景音乐 (BGM)</h4>
+              <h4>🎵 全部音乐</h4>
               <label className="settings-toggle">
-                <span>启用BGM（真实音乐）</span>
+                <span>启用背景音乐</span>
                 <input
                   type="checkbox"
                   checked={bgm.bgmEnabled}
-                  onChange={bgm.toggleBGM}
+                  onChange={() => {
+                    bgm.toggleBGM();
+                    // 同步控制程序化音乐
+                    if (bgm.bgmEnabled) {
+                      // 正在关闭BGM → 也停掉程序化音乐
+                      if (audio) {
+                        audio.setMusicEnabled(false);
+                        audio.stopMusic();
+                      }
+                    } else {
+                      // 正在开启BGM → 确保程序化音乐也关闭（用BGM替代）
+                      if (audio) {
+                        audio.setMusicEnabled(false);
+                        audio.stopMusic();
+                      }
+                    }
+                  }}
                 />
               </label>
               {bgm.bgmEnabled && (
@@ -140,7 +157,9 @@ export default function SettingsPanel({
                 </>
               )}
               <p className="settings-hint">
-                BGM关闭时将使用程序化合成的背景音乐
+                {bgm.bgmEnabled
+                  ? '正在播放真实音乐 (MP3)'
+                  : '已关闭所有背景音乐（含BGM和程序化音乐）'}
               </p>
             </div>
           )}
