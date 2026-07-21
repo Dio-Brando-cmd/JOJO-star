@@ -304,6 +304,7 @@ export default function App() {
         playerName={showName ? displayName : '***'}
         audio={audio}
         voiceChat={voiceChat}
+        bgm={bgm}
         onOpenSettings={() => setShowSettings(true)}
         auth={auth}
       />
@@ -329,6 +330,7 @@ export default function App() {
         }}
         isInGame={true}
         bgm={bgm}
+        audio={audio}
         user={auth.user}
         onCheckUpdate={handleCheckUpdate}
         enableBots={socket.gameState?.enableBots}

@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 
-export default function AudioControls({ audio }) {
+export default function AudioControls({ audio, bgm }) {
   const [showSliders, setShowSliders] = useState(false);
   const {
     musicEnabled, setMusicEnabled,
@@ -18,14 +18,18 @@ export default function AudioControls({ audio }) {
     if (musicEnabled) {
       stopMusic();
     }
-    setMusicEnabled(!musicEnabled);
-    // 重新开启时恢复播放
-    if (musicEnabled) {
-      // 正在关闭，不恢复
-    } else {
-      // 正在开启，延迟恢复让状态先生效
-      setTimeout(() => audio.resumeMusic?.(), 50);
+    // 同步控制 BGM MP3 系统
+    if (bgm) {
+      if (musicEnabled) {
+        // 正在关闭程序化音乐 → 确保BGM也不播放
+        bgm.stop();
+        bgm.setBgmEnabled(false);
+      } else {
+        // 正在开启 → 恢复BGM
+        bgm.setBgmEnabled(true);
+      }
     }
+    setMusicEnabled(!musicEnabled);
   };
 
   return (
