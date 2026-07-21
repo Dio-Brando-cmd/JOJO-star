@@ -95,7 +95,7 @@ def S(name,x,y,z,r,m):
 def Cn(name,x,y,z,r1,r2,d,m):
     op(lambda: bpy.ops.mesh.primitive_cone_add(radius1=r1,radius2=r2,depth=d,location=(x,y,z)))
     o=bpy.context.active_object; o.name=name; o.data.materials.append(m); return o
-def Ic(name,x,y,z,r,d,m):
+def Ic(name,x,y,z,r,m):
     """ICO球体 — 拓扑更均匀，适合雕刻"""
     op(lambda: bpy.ops.mesh.primitive_ico_sphere_add(radius=r,subdivisions=3,location=(x,y,z)))
     o=bpy.context.active_object; o.name=name; o.data.materials.append(m); return o
@@ -289,7 +289,7 @@ def make_body_parts(name, height, build, skin_color):
     parts = []
 
     # 骨盆 — 横向椭球
-    p = S("pelvis", 0, 0, h*0.48, tr*1.3)
+    p = S("pelvis", 0, 0, h*0.48, tr*1.3, skin_color)
     p.scale = (1.3, 0.8, 0.9)
     parts.append(p)
 
