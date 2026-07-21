@@ -8,6 +8,10 @@ import { useAudio } from './hooks/useAudio';
 import { useBGM } from './hooks/useBGM';
 import { useAuth } from './hooks/useAuth';
 import { useVoiceChat } from './hooks/useVoiceChat';
+import LandingPage from './components/LandingPage';
+import ContactPage from './components/ContactPage';
+import DownloadPage from './components/DownloadPage';
+import ParticleBackground from './components/effects/ParticleBackground';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
 import GameOver from './components/GameOver';
@@ -37,6 +41,8 @@ export default function App() {
   // 因为 useAuth 内的 useCallback 闭包捕获了首次渲染时的 socketRef 对象引用）
   useEffect(() => { auth.socketRef.current = socket.socket; }, [socket.socket]);
 
+  // 官网页面路由: 'home' | 'download' | 'contact' | 'play'
+  const [page, setPage] = useState('home');
   const [playerName, setPlayerName] = useState('');
   const [joined, setJoined] = useState(false);
   const [showName, setShowName] = useState(() => {
@@ -45,6 +51,30 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
+
+  const handleNavigate = useCallback((target) => {
+    setPage(target);
+  }, []);
+
+  // 粒子背景类型映射
+  const getParticleType = useCallback(() => {
+    if (page !== 'play') {
+      const pageMap = { home: 'fireflies', download: 'embers', contact: 'embers' };
+      return pageMap[page] || 'fireflies';
+    }
+    // 游戏中根据阶段切换
+    const phase = socket.gameState?.phase;
+    const phaseMap = {
+      LOBBY: 'embers', NIGHT: 'night', DAY: 'day',
+      VOTE: 'blood', DISCUSSION: 'day', GAME_OVER: 'ashFall',
+      CHARACTER_SELECT: 'fireflies', PROLOGUE: 'fireflies',
+    };
+    // 结算时判断胜负
+    if (phase === 'GAME_OVER' && socket.privateState?.myTeam && socket.gameState?.gameResult?.winner) {
+      return socket.privateState.myTeam === socket.gameState.gameResult.winner ? 'goldRain' : 'ashFall';
+    }
+    return phaseMap[phase] || 'embers';
+  }, [page, socket.gameState?.phase, socket.privateState?.myTeam, socket.gameState?.gameResult?.winner]);
 
   // 自动检查版本更新
   useEffect(() => {
@@ -152,10 +182,43 @@ export default function App() {
     localStorage.setItem('werewolf_show_name', String(next));
   }, [showName]);
 
+  // ==================== 官网页面路由 ====================
+
+  if (page === 'download') {
+    return (
+      <>
+        <ParticleBackground type="embers" density={0.6} />
+        <DownloadPage onNavigate={handleNavigate} />
+      </>
+    );
+  }
+
+  if (page === 'contact') {
+    return (
+      <>
+        <ParticleBackground type="embers" density={0.5} />
+        <ContactPage onNavigate={handleNavigate} />
+      </>
+    );
+  }
+
+  if (page === 'home') {
+    return (
+      <>
+        <ParticleBackground type="fireflies" density={0.8} />
+        <LandingPage onNavigate={handleNavigate} />
+      </>
+    );
+  }
+
+  // ==================== 游戏流程（page === 'play'） ====================
+
   // 未登录 → 登录/注册界面
   if (!auth.user && !playerName) {
     return (
-      <LoginScreen
+      <>
+        <ParticleBackground type={getParticleType()} density={0.6} />
+        <LoginScreen
         auth={auth}
         socketConnected={socket.connected}
         onQuickPlay={(name) => {
@@ -164,7 +227,9 @@ export default function App() {
         }}
         onCheckUpdate={handleCheckUpdate}
         updateInfo={updateInfo}
+        onNavigate={handleNavigate}
       />
+      </>
     );
   }
 
@@ -175,6 +240,7 @@ export default function App() {
   if (!socket.gameState || socket.gameState.phase === 'LOBBY') {
     return (
       <>
+        <ParticleBackground type={getParticleType()} density={0.6} />
         <Lobby
           socket={socket}
           playerName={displayName}
@@ -202,7 +268,9 @@ export default function App() {
   // 游戏结束 → 结算界面
   if (socket.gameState?.phase === 'GAME_OVER') {
     return (
-      <GameOver
+      <>
+        <ParticleBackground type={getParticleType()} density={0.7} />
+        <GameOver
         gameState={socket.gameState}
         privateState={socket.privateState}
         playerName={displayName}
@@ -213,12 +281,14 @@ export default function App() {
           audio.playMusic('lobby');
         }}
       />
+      </>
     );
   }
 
   // 游戏中 → 游戏主界面
   return (
     <>
+      <ParticleBackground type={getParticleType()} density={0.7} />
       <GameBoard
         socket={socket}
         playerName={showName ? displayName : '***'}
@@ -268,7 +338,7 @@ export default function App() {
 
 // ==================== 登录/注册界面 ====================
 
-function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, updateInfo }) {
+function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, updateInfo, onNavigate }) {
   const [tab, setTab] = useState('login'); // 'login' | 'register' | 'quick'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -408,6 +478,9 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
         <p className="login-footer">
           注册账号可记录战绩 | 快速游戏无需注册
         </p>
+        <button className="btn btn-text btn-back-home" onClick={() => onNavigate && onNavigate('home')}>
+          ← 返回首页
+        </button>
       </div>
     </div>
   );

@@ -1,0 +1,153 @@
+/* ============================================================
+   狼人杀 设计 Token 系统
+   西式恐怖 + 中式恐怖融合 — 宏大·神秘·恐怖
+   ============================================================ */
+
+:root {
+  /* ====== 调色板 ====== */
+
+  /* 背景色阶 — 深渊 → 墨色 */
+  --color-abyss: #080812;
+  --color-void: #0a0a16;
+  --color-night: #0d0d1f;
+  --color-shadow: #141428;
+  --color-ink: #1a1a30;
+  --color-dusk: #1e1e38;
+
+  /* 血色系 — 西式哥特 + 中式朱砂 */
+  --color-blood: #6b0808;
+  --color-cinnabar: #a31525;
+  --color-crimson: #c41e3a;
+  --color-rose: #e94560;
+  --color-wine: #4a0a1a;
+
+  /* 金色系 — 中式古金 */
+  --color-gold: #b8935a;
+  --color-gold-light: #c9a96e;
+  --color-amber: #d4a840;
+  --color-lantern: #e07030;
+  --color-parchment: #d4c5b2;
+
+  /* 雾色系 */
+  --color-mist: #6a7a95;
+  --color-mist-light: #8a9bb5;
+  --color-silver: #a0b0c4;
+  --color-fog: rgba(138, 155, 181, 0.12);
+
+  /* 玉色系 — 中式 */
+  --color-jade: #1a5c40;
+  --color-jade-light: #2d8a6e;
+  --color-verdigris: #3a8a78;
+  --color-emerald: #27ae60;
+
+  /* 功能色 */
+  --color-wolf: #8b0c0c;
+  --color-village: #1a4a6e;
+  --color-seer: #5a2d82;
+  --color-witch-poison: #2d6a1e;
+  --color-witch-heal: #1a8a4a;
+  --color-hunter: #b8551e;
+  --color-guard: #1a5a8a;
+
+  /* ====== 排版 ====== */
+  --font-display: 'Cinzel', 'Noto Serif SC', 'KaiTi', serif;
+  --font-body: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --font-chinese: 'Noto Serif SC', 'KaiTi', 'STKaiti', serif;
+
+  /* 字号比例 1.25 (Major Third) */
+  --text-2xs: 0.625rem;   /* 10px */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 2rem;       /* 32px */
+  --text-4xl: 2.5rem;     /* 40px */
+  --text-5xl: 3.5rem;     /* 56px */
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.12em;
+
+  /* ====== 间距 (4px 基准) ====== */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* ====== 圆角 ====== */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ====== 阴影 ====== */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+
+  /* 发光阴影 */
+  --glow-blood: 0 0 20px rgba(196, 30, 58, 0.25);
+  --glow-blood-strong: 0 0 40px rgba(139, 12, 12, 0.4);
+  --glow-gold: 0 0 16px rgba(201, 169, 110, 0.2);
+  --glow-gold-strong: 0 0 32px rgba(212, 168, 64, 0.3);
+  --glow-lantern: 0 0 24px rgba(224, 112, 48, 0.25);
+  --glow-jade: 0 0 16px rgba(45, 138, 110, 0.2);
+
+  /* 内阴影 */
+  --inner-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+  --inner-glow-blood: inset 0 0 16px rgba(196, 30, 58, 0.08);
+
+  /* ====== 层级 ====== */
+  --z-particle-bg: 0;
+  --z-base: 1;
+  --z-particle-fg: 5;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-cinematic: 600;
+
+  /* ====== 缓动函数 ====== */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+  /* ====== 动画时长 ====== */
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 600ms;
+  --duration-cinematic: 1200ms;
+  --duration-reveal: 2000ms;
+
+  /* ====== 边框 ====== */
+  --border-thin: 1px solid rgba(255, 255, 255, 0.08);
+  --border-normal: 1px solid rgba(255, 255, 255, 0.12);
+  --border-accent: 1px solid rgba(196, 30, 58, 0.3);
+  --border-gold: 1px solid rgba(201, 169, 110, 0.2);
+
+  /* ====== 玻璃态 ====== */
+  --glass-bg: rgba(10, 10, 22, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-blur: 16px;
+}

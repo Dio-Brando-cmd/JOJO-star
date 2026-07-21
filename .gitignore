@@ -49,3 +49,4 @@ npm-debug.log*
 
 # 下载/发布目录
 download/
+.gstack/

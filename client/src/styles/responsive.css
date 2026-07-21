@@ -1,0 +1,16 @@
+/* === 响应式 — 移动端 / 平板 === */
+
+/* ---- 响应式 ---- */
+@media (max-width: 900px) {
+  .game-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  .game-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  .game-rightbar { border-left: none; border-top: 1px solid var(--border); }
+  .action-selector { flex-direction: column; align-items: center; }
+  .action-card { width: 100%; max-width: 300px; }
+  .role-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .role-cards-grid { grid-template-columns: 1fr; }
+  .role-intro-modal { max-width: 100%; margin: 10px; }
+}
