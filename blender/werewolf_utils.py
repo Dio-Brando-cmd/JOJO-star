@@ -97,13 +97,33 @@ def export_glb(path):
     op(_do)
     print(f"     📦 → {os.path.basename(path)}")
 
-# ====== 身体 (精雕版) ======
+# ====== 身体 (体型分化版) ======
+
+# 体型签名: (躯干半径, 四肢半径, 体宽, 肩宽因子, 腰窄因子, 臀宽因子, 颈粗因子, 头身比)
+BODY_SIGNATURES = {
+    # 窈窕纤细型 — 德鲁伊/僧侣/圣女
+    'slender_female': (0.12, 0.07, 0.72, 0.85, 0.78, 1.15, 0.75, 7.2),   # 莫莉安/布丽吉德
+    'slender_male':   (0.13, 0.08, 0.75, 0.90, 0.82, 0.90, 0.80, 7.0),    # 虚舟/卡赫特
+    'petite_female':  (0.11, 0.07, 0.70, 0.82, 0.75, 1.12, 0.72, 7.5),   # 芙蕾雅
+    # 运动员型 — 猎手
+    'athletic_female':(0.15, 0.10, 0.85, 1.05, 0.88, 1.00, 0.90, 7.0),   # 斯卡蒂
+    'athletic_male':  (0.17, 0.12, 0.92, 1.10, 0.90, 0.92, 0.95, 6.8),   # (中等战士)
+    # 肌肉型 — 战士
+    'muscular_male':  (0.20, 0.14, 1.05, 1.20, 0.95, 0.88, 1.05, 6.5),   # 西格德/赫克托
+    'compact_male':   (0.19, 0.13, 1.02, 1.15, 0.92, 0.90, 1.00, 6.6),   # 罗慕路斯
+    # 魁梧型
+    'heavy_male':     (0.25, 0.17, 1.12, 1.35, 1.00, 0.90, 1.20, 6.2),   # 哈尔瓦德
+}
+
+def get_body_shape(char_def):
+    """返回角色的体型签名"""
+    shape_key = char_def.get('shape', 'slender_male')
+    return BODY_SIGNATURES.get(shape_key, BODY_SIGNATURES['slender_male'])
+
 def make_body(char_def):
-    h = char_def['height']; build = char_def['build']; gender = char_def['gender']
-    bm = {'lean':(0.14,0.09,0.78),'average':(0.17,0.11,0.90),
-          'muscular':(0.21,0.14,1.05),'heavy':(0.26,0.17,1.12)}[build]
-    tr, lr, body_w = bm
-    if gender == 'female': tr *= 0.90; lr *= 0.88
+    h = char_def['height']; gender = char_def['gender']
+    tr, lr, body_w, shoulder_w, waist_narrow, hip_wide, neck_thick, head_ratio = get_body_shape(char_def)
+
     skin = mkmat(f"{char_def['id']}_skin", *char_def['skin'], rough=0.62)
     # 辅助颜色
     lip_color = mkmat(f"{char_def['id']}_lip",
@@ -292,8 +312,54 @@ def make_body(char_def):
             Cy(f"moustache_{sx}", sx*head_r*0.1, mouth_y-0.01, mouth_z+head_r*0.04, 0.01, head_r*0.12, beard_color)
             bpy.context.active_object.rotation_euler.z = sx*0.3
 
+    # ══════ 体型差异化缩放 ══════
+    _apply_body_shape(char_def)
+
     # 肌肉缩放
     _apply_muscle(char_def, tr, lr)
+
+
+def _apply_body_shape(char_def):
+    """根据体型签名调整全身比例 — 肩宽/腰细/臀宽/颈粗/头身比"""
+    shape = get_body_shape(char_def)
+    tr, lr, body_w, shoulder_w, waist_narrow, hip_wide, neck_thick, head_ratio = shape
+    h = char_def['height']
+
+    for obj in bpy.context.scene.objects:
+        n = obj.name.lower()
+        # 肩宽 — 锁骨/肩关节/三角肌/上臂起点
+        if any(k in n for k in ('shoulder','deltoid','clavicle')):
+            obj.location.x *= shoulder_w
+            obj.scale = tuple(s * shoulder_w for s in obj.scale)
+        # 腰细
+        if 'waist' in n and 'l_' not in n and 'r_' not in n:
+            obj.scale.x *= waist_narrow
+            obj.scale.y *= waist_narrow
+        # 臀宽
+        if 'pelvis' in n:
+            obj.scale.y *= hip_wide
+            if char_def['gender'] == 'female':
+                obj.scale.y *= 1.15  # 女性额外臀宽
+        # 颈粗
+        if 'neck' in n:
+            obj.scale.x *= neck_thick
+            obj.scale.y *= neck_thick
+        # 胸肌 (女性缩小)
+        if 'pectoral' in n and char_def['gender'] == 'female':
+            obj.scale = tuple(s * 0.75 for s in obj.scale)
+        # 头身比
+        if 'head' in n:
+            factor = 6.5 / head_ratio
+            obj.scale = tuple(s * factor for s in obj.scale)
+        # 腹肌 (瘦子隐藏)
+        if 'abs' in n and char_def.get('shape','').startswith('slender'):
+            obj.scale = (0, 0, 0)  # 瘦子无腹肌
+        # 血管 (瘦子隐藏)
+        if 'vein' in n and char_def.get('shape','').startswith('slender'):
+            obj.scale = (0, 0, 0)
+        # 斜方肌 (魁梧型加粗)
+        if 'torso' in n and char_def.get('shape') == 'heavy_male':
+            obj.scale.x *= 1.15; obj.scale.y *= 1.10
 
 
 def _apply_muscle(char_def, tr, lr):
