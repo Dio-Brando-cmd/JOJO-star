@@ -33,6 +33,7 @@ export default function LandingPage({ onNavigate }) {
             <a onClick={() => onNavigate('home')} className="active">首页</a>
             <a onClick={() => onNavigate('download')}>下载PC端</a>
             <a onClick={() => onNavigate('contact')}>联系我们</a>
+            <a onClick={() => onNavigate('stats')}>🏆 战绩</a>
             <button className="btn btn-primary btn-small" onClick={() => onNavigate('play')}>
               🎮 开始游戏
             </button>

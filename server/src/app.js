@@ -87,6 +87,19 @@ export function createServer(options = {}) {
     }
   });
 
+  // REST API: 战绩统计
+  app.get('/api/stats', (req, res) => {
+    try {
+      const myStats = userManager.getStats ? userManager.getStats() : {
+        gamesPlayed: 0, wins: 0, losses: 0, winRate: 0, roleStats: {}, recentGames: [],
+      };
+      const leaderboard = userManager.getLeaderboard ? userManager.getLeaderboard(20) : [];
+      res.json({ success: true, myStats, leaderboard });
+    } catch (e) {
+      res.json({ success: true, myStats: null, leaderboard: [] });
+    }
+  });
+
   // REST API: 版本信息
   app.get('/api/version', (req, res) => {
     res.json({
