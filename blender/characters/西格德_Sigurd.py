@@ -1,7 +1,10 @@
 """西格德 Sigurd — 维京老战士 | 1.91m 肌肉型"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from werewolf_utils import *
+import bpy, os
+
+# 找到 werewolf_utils.py（在 characters 目录的上一级）
+_this_dir = os.path.dirname(bpy.context.space_data.text.filepath)
+_utils_dir = os.path.dirname(_this_dir)
+exec(open(os.path.join(_utils_dir, 'werewolf_utils.py'), encoding='utf-8').read())
 
 generate({
     'id':'Sigurd','name':'西格德','height':1.91,'build':'muscular','gender':'male',

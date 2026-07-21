@@ -1,7 +1,8 @@
 """哈尔瓦德 Fenrir Kin — 魔狼血裔 | 1.95m 魁梧巨斧"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from werewolf_utils import *
+import bpy, os
+_this_dir = os.path.dirname(bpy.context.space_data.text.filepath)
+_utils_dir = os.path.dirname(_this_dir)
+exec(open(os.path.join(_utils_dir, 'werewolf_utils.py'), encoding='utf-8').read())
 
 generate({
     'id':'FenrirKin','name':'哈尔瓦德','height':1.95,'build':'heavy','gender':'male',
