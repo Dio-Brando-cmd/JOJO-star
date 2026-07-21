@@ -410,20 +410,97 @@ def add_hair(char_def):
 
 
 # ====== 细分 ======
+def add_skin_details(char_def):
+    """皮肤纹理 + 指甲 + 肚脐 + 关节皱纹 + 血管"""
+    skin = mkmat(f"{char_def['id']}_skin", *char_def['skin'], rough=0.62)
+    nail_mat = mkmat(f"{char_def['id']}_nail",
+        min(1,char_def['skin'][0]*0.85), min(1,char_def['skin'][1]*0.75), min(1,char_def['skin'][2]*0.65), rough=0.3)
+
+    # ── 指甲 (手指+脚趾) ──
+    for side, sx in [('l',-1),('r',1)]:
+        for fi, fx in enumerate([-0.035,-0.015,0,0.015,0.035]):
+            Cy(f"{side}_nail{fi}", sx*0.22+fx, -0.12, 0.475, 0.01, 0.015, nail_mat)
+        # 脚趾甲
+        for ti, tx in enumerate([-0.04,-0.02,0,0.02,0.04]):
+            Cy(f"{side}_toenail{ti}", sx*0.11+tx, 0.05, 0.038, 0.008, 0.012, nail_mat)
+
+    # ── 肚脐 ──
+    S("navel", 0, -0.16, 0.55, 0.02, skin)
+    # 肚脐凹陷用小圆环
+    Cy("navel_rim", 0, -0.16, 0.55, 0.022, 0.005, skin)
+    bpy.context.active_object.rotation_euler.x = math.pi/2
+
+    # ── 关节皱纹 ──
+    wrinkle_mat = mkmat(f"{char_def['id']}_wrinkle",
+        char_def['skin'][0]*0.7, char_def['skin'][1]*0.6, char_def['skin'][2]*0.5, rough=0.75)
+    # 肘关节
+    for side, sx in [('l',-1),('r',1)]:
+        for j in range(3):
+            Cy(f"{side}_elbow_wrinkle{j}", sx*0.22, -0.07+0.01*j, 0.63+0.01*j, 0.05, 0.005, wrinkle_mat)
+            bpy.context.active_object.rotation_euler.x = math.pi/2
+    # 膝关节
+    for side, sx in [('l',-1),('r',1)]:
+        for j in range(3):
+            Cy(f"{side}_knee_wrinkle{j}", sx*0.10, -0.07+0.01*j, 0.33+0.01*j, 0.06, 0.005, wrinkle_mat)
+            bpy.context.active_object.rotation_euler.x = math.pi/2
+    # 指关节
+    for side, sx in [('l',-1),('r',1)]:
+        for fi in range(5):
+            for seg in range(2):
+                Cy(f"{side}_knuckle{fi}_{seg}", sx*0.24-0.04+fi*0.02, -0.1, 0.46+seg*0.022, 0.012, 0.003, wrinkle_mat)
+
+    # ── 血管 (muscular/heavy) ──
+    if char_def['build'] in ('muscular', 'heavy'):
+        vein_mat = mkmat(f"{char_def['id']}_vein", 0.15, 0.22, 0.28, rough=0.45)
+        for side, sx in [('l',-1),('r',1)]:
+            # 前臂血管
+            for v in range(3):
+                Cy(f"{side}_vein_arm{v}", sx*0.22+random.uniform(-0.02,0.02), -0.08, 0.56+random.uniform(0,0.06), 0.004, random.uniform(0.04,0.08), vein_mat)
+                bpy.context.active_object.rotation_euler.x = random.uniform(-0.1,0.1)
+            # 手背血管
+            Cy(f"{side}_vein_hand", sx*0.24, -0.08, 0.46, 0.003, 0.05, vein_mat)
+
+
 def add_subdiv():
+    """细分 + 皮肤位移纹理"""
     for obj in bpy.context.scene.objects:
         name = obj.name.lower()
-        if any(k in name for k in ('head','chest','torso','arm','leg','thigh','shin','hand','shoulder','forearm','pelvis')):
+        # 身体 — 2级细分
+        if any(k in name for k in ('head','chest','torso','arm','leg','thigh','shin','hand',
+                                     'shoulder','forearm','pelvis','jaw','chin','nose','ear',
+                                     'foot','ankle','calf','knee','quad','bicep','deltoid',
+                                     'pectoral','ribcage','waist','neck','wrist','palm')):
             bpy.context.view_layer.objects.active = obj
             try:
                 op(lambda: bpy.ops.object.modifier_add(type='SUBSURF'))
                 obj.modifiers[-1].levels = 2
             except: pass
+        # 服装 — 1级细分
         if any(k in name for k in ('robe','tunic','cape','armor','chestplate','cloth')):
             bpy.context.view_layer.objects.active = obj
             try:
                 op(lambda: bpy.ops.object.modifier_add(type='SUBSURF'))
                 obj.modifiers[-1].levels = 1
+            except: pass
+
+    # ── 皮肤位移纹理 (给头部和躯干) ──
+    for obj in bpy.context.scene.objects:
+        name = obj.name.lower()
+        if name in ('head','chest','torso','jaw'):
+            bpy.context.view_layer.objects.active = obj
+            try:
+                op(lambda: bpy.ops.object.modifier_add(type='DISPLACE'))
+                disp = obj.modifiers[-1]
+                disp.strength = 0.002  # 微细毛孔级位移
+                disp.mid_level = 0.5
+                try:
+                    tex = bpy.data.textures.new(name=f"{obj.name}_skin_tex", type='CLOUDS')
+                    tex.noise_scale = 0.5
+                    tex.noise_depth = 2
+                    disp.texture = tex
+                except:
+                    try: tex = bpy.data.textures.new(name=f"{obj.name}_skin_tex", type='NOISE')
+                    except: pass
             except: pass
 
 
@@ -438,11 +515,12 @@ def generate(char_def):
     c = char_def
     print(f"\n  🎭 {c['id']} — {c['name']} | {c['height']}m | {c['build']} | {c['origin']}")
     clear()
-    make_body(c);                    print("     ↳ 身体")
+    make_body(c);                    print("     ↳ 身体(120+部件)")
+    add_skin_details(c);             print("     ↳ 皮肤(指甲/皱纹/血管/肚脐)")
     add_clothing(c);                 print("     ↳ 服装")
     add_weapon(c);                   print("     ↳ 武器")
     add_hair(c);                     print("     ↳ 发丝")
-    add_subdiv();                    print("     ↳ 细分")
+    add_subdiv();                    print("     ↳ 细分+皮肤纹理")
     select_all()
     path = os.path.join(OUTPUT_DIR, f"character_{c['id']}.glb")
     export_glb(path)
