@@ -154,7 +154,7 @@ export default function LandingPage({ onNavigate }) {
           <div className="footer-links">
             <a onClick={() => onNavigate('download')}>下载PC端</a>
             <a onClick={() => onNavigate('contact')}>联系我们</a>
-            <span className="footer-ver">v2.11.0</span>
+            <span className="footer-ver">v2.12.1</span>
           </div>
           <p className="footer-copy">© 2026 Werewolf Online. 为朋友聚会而生 🐺</p>
         </div>

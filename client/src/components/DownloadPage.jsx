@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 
 const DOWNLOAD_INFO = {
-  version: '2.11.0',
+  version: '2.12.1',
   releaseDate: '2026-07-21',
   fileSize: '约 117 MB',
   platform: 'Windows 10/11 (64位)',
@@ -32,6 +32,7 @@ const DOWNLOAD_INFO = {
     '🔄 自动检查更新',
   ],
   changelog: [
+    { ver: 'v2.12.1', date: '2026-07-21', changes: ['UI全面革新：设计Token系统+SVG角色插图+粒子背景', '官网三页面：首页/下载/联系我们', '角色选择交互修复', 'ChatBox气泡+时间戳', '战绩统计面板+排行榜', '电影化阶段转场动画', 'CSS模块化重构'] },
     { ver: 'v2.11.0', date: '2026-07-21', changes: ['修复Game类语法错误', '优化服务器部署流程', '新增官网页面'] },
     { ver: 'v2.10.0', date: '2026-07-20', changes: ['新增Android客户端支持', '排位系统优化', '断线重连增强'] },
     { ver: 'v1.4.0', date: '2026-06-26', changes: ['修复角色信息泄露', '猎人武器修复', '断线重连机制', '弃权投票修复', '阶段计时器'] },
@@ -45,7 +46,7 @@ export default function DownloadPage({ onNavigate }) {
     setDownloadStarted(true);
     // 触发浏览器下载（从服务器下载 EXE 文件）
     const link = document.createElement('a');
-    link.href = '/download/Werewolf_Setup_2.11.0.exe';
+    link.href = '/download/Werewolf_Setup_2.12.1.exe';
     link.download = `狼人杀_Werewolf_Setup_${DOWNLOAD_INFO.version}.exe`;
     document.body.appendChild(link);
     link.click();

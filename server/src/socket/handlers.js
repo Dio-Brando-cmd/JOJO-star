@@ -106,7 +106,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   // ==================== 版本检查（自动更新） ====================
 
   socket.on('app:checkVersion', (callback) => {
-    const currentVersion = process.env.APP_VERSION || '1.5.4';
+    const currentVersion = process.env.APP_VERSION || '2.12.1';
     const downloadUrl = '/download/狼人杀_Setup.exe';
     const apkDownloadUrl = '/download/werewolf.apk';
     callback?.({

@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 
 // 客户端版本号（与服务端比较）
-const CLIENT_VERSION = '1.5.0';
+const CLIENT_VERSION = '2.12.1';
 
 // 检测运行环境
 function getPlatform() {
