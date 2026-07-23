@@ -30,6 +30,14 @@
   padding: 0;
 }
 
+/* ---- 移动端触摸优化 ---- */
+button, .btn, [role="button"], .action-card, .target-btn, a[onClick] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 body {
   font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   background: var(--bg-primary);

@@ -75,6 +75,8 @@ public class NetworkManager : MonoBehaviour
     public event Action<string> OnGameStarted;
     public event Action<string, string> OnGameOver;
     public event Action<string, string> OnPhaseChange;
+    public event Action<string, string> OnChatReceived;     // sender, message
+    public event Action<RoomInfo[]> OnRoomListReceived;      // 大厅房间列表
 
     void Awake()
     {
@@ -134,13 +136,15 @@ public class NetworkManager : MonoBehaviour
             UnityMainThreadDispatcher.Enqueue(() => OnPrivateStateReceived?.Invoke(pvt));
         });
 
-        // game:characterSelect — 选人阶段
-        socket.On("game:state", response =>
+        // game:characterSelect — 选人阶段（独立事件）
+        socket.On("game:characterSelect", response =>
         {
-            var state = response.GetValue<GameState>();
-            // CHARACTER_SELECT phase is embedded in game:state
-            // We process it in the main handler
+            var data = response.GetValue<CharacterSelectData>();
+            UnityMainThreadDispatcher.Enqueue(() => OnCharacterSelect?.Invoke(data));
         });
+
+        // 在 game:state 中也检测 CHARACTER_SELECT phase
+        // This is handled in the main game:state handler above
 
         // game:started — 游戏正式开始
         socket.On("game:started", response =>
@@ -173,6 +177,21 @@ public class NetworkManager : MonoBehaviour
         socket.On("game:nightStep", response =>
         {
             Debug.Log("[Network] Night step changed");
+        });
+
+        // chat:message — 接收聊天消息
+        socket.On("chat:message", response =>
+        {
+            var obj = response.GetValue<Newtonsoft.Json.Linq.JObject>();
+            var sender = obj?["sender"]?.ToString() ?? "";
+            var message = obj?["message"]?.ToString() ?? "";
+            UnityMainThreadDispatcher.Enqueue(() => OnChatReceived?.Invoke(sender, message));
+        });
+
+        // game:returnToLobby — 游戏结束后返回房间大厅
+        socket.On("game:returnToLobby", response =>
+        {
+            Debug.Log("[Network] Return to lobby");
         });
 
         socket.ConnectAsync();
@@ -266,6 +285,82 @@ public class NetworkManager : MonoBehaviour
         });
     }
 
+    /// <summary>离开房间</summary>
+    public void LeaveRoom()
+    {
+        socket.EmitAsync("room:leave");
+    }
+
+    /// <summary>返回大厅（断开房间连接）</summary>
+    public void BackToLobby()
+    {
+        socket.EmitAsync("room:backToLobby");
+    }
+
+    /// <summary>游戏结束后返回房间大厅</summary>
+    public void ReturnToRoomLobby()
+    {
+        socket.EmitAsync("room:returnToLobby");
+    }
+
+    /// <summary>获取大厅房间列表</summary>
+    public void GetLobbyList(System.Action<RoomInfo[]> callback = null)
+    {
+        socket.EmitAsync("lobby:list", response =>
+        {
+            var arr = response.GetValue<Newtonsoft.Json.Linq.JArray>();
+            var rooms = arr?.ToObject<RoomInfo[]>();
+            UnityMainThreadDispatcher.Enqueue(() => callback?.Invoke(rooms));
+        });
+    }
+
+    /// <summary>设置房间密码</summary>
+    public void SetRoomPassword(string password)
+    {
+        socket.EmitAsync("room:setPassword", new { password });
+    }
+
+    /// <summary>切换人机模式</summary>
+    public void ToggleBots(bool enabled)
+    {
+        socket.EmitAsync("room:toggleBots", new { enabled });
+    }
+
+    /// <summary>设置人机数量</summary>
+    public void SetBotCount(int count)
+    {
+        socket.EmitAsync("room:setBotCount", new { count });
+    }
+
+    /// <summary>修改最大人数</summary>
+    public void UpdateMaxPlayers(int maxPlayers)
+    {
+        socket.EmitAsync("room:updateMaxPlayers", new { maxPlayers });
+    }
+
+    /// <summary>获取屋子访客数量</summary>
+    public void GetHouseVisitors(string houseId, System.Action<int> callback = null)
+    {
+        socket.EmitAsync("room:houseVisitors", new { houseId }, response =>
+        {
+            var obj = response.GetValue<Newtonsoft.Json.Linq.JObject>();
+            var count = obj?["count"]?.ToObject<int>() ?? 0;
+            UnityMainThreadDispatcher.Enqueue(() => callback?.Invoke(count));
+        });
+    }
+
+    /// <summary>跳过夜晚步骤</summary>
+    public void SkipNightStep()
+    {
+        socket.EmitAsync("night:skip");
+    }
+
+    /// <summary>请求全量游戏状态（断线重连）</summary>
+    public void RequestState()
+    {
+        socket.EmitAsync("game:requestState");
+    }
+
     void OnDestroy()
     {
         if (socket != null)
@@ -273,6 +368,20 @@ public class NetworkManager : MonoBehaviour
             socket.DisconnectAsync();
         }
     }
+}
+
+// ============================================================
+// RoomInfo.cs — 房间列表项
+// ============================================================
+[System.Serializable]
+public class RoomInfo
+{
+    public string roomCode;
+    public string hostName;
+    public int playerCount;
+    public int maxPlayers;
+    public bool isPrivate;
+    public bool hasPassword;
 }
 
 // ============================================================
