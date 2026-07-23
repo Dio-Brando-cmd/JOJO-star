@@ -36,7 +36,7 @@ public class CharacterImporter : EditorWindow
         ["NELIA"]           = new() { height=1.67f, build="slim",       weapon="Tome",       armor="ScholarRobe" },
     };
 
-    [MenuItem("Tools/Werewolf/Import All Characters")]
+    [MenuItem("Tools/VeilLand/Import All Characters")]
     public static void ImportAll()
     {
         string fbxPath = EditorUtility.OpenFolderPanel("Select FBX Export Folder", "Assets/Models/Characters", "");
@@ -111,7 +111,7 @@ public class CharacterImporter : EditorWindow
         }
     }
 
-    [MenuItem("Tools/Werewolf/Setup Village Scene")]
+    [MenuItem("Tools/VeilLand/Setup Village Scene")]
     public static void SetupVillageScene()
     {
         var villageGO = GameObject.Find("Village") ?? new GameObject("Village");

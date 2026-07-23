@@ -1,15 +1,15 @@
 # ============================================================
-# 狼人杀 — Windows Server 一键部署脚本
+# 帷幕之地 — Windows Server 一键部署脚本
 # 在服务器 PowerShell（管理员）中运行
 # ============================================================
 
-Write-Host "🐺 狼人杀 Windows Server 部署" -ForegroundColor Green
+Write-Host "🌑 帷幕之地 Windows Server 部署" -ForegroundColor Green
 Write-Host ""
 
 # 1. 开放 Windows 防火墙端口
 Write-Host "[1/4] 配置防火墙..."
-New-NetFirewallRule -DisplayName "Werewolf Game Port 4000" -Direction Inbound -Protocol TCP -LocalPort 4000 -Action Allow -ErrorAction SilentlyContinue
-New-NetFirewallRule -DisplayName "Werewolf HTTP Port 80"   -Direction Inbound -Protocol TCP -LocalPort 80   -Action Allow -ErrorAction SilentlyContinue
+New-NetFirewallRule -DisplayName "VeilLand Game Port 4000" -Direction Inbound -Protocol TCP -LocalPort 4000 -Action Allow -ErrorAction SilentlyContinue
+New-NetFirewallRule -DisplayName "VeilLand HTTP Port 80"   -Direction Inbound -Protocol TCP -LocalPort 80   -Action Allow -ErrorAction SilentlyContinue
 New-NetFirewallRule -DisplayName "SSH Port 22"             -Direction Inbound -Protocol TCP -LocalPort 22   -Action Allow -ErrorAction SilentlyContinue
 Write-Host "  防火墙规则已添加"
 
@@ -28,9 +28,9 @@ if (-not $nodeInstalled) {
     Write-Host "  Node.js 已安装: $(node -v)"
 }
 
-# 3. 下载并部署狼人杀
-Write-Host "[3/4] 部署狼人杀服务端..."
-$appDir = "C:\werewolf"
+# 3. 下载并部署帷幕之地
+Write-Host "[3/4] 部署帷幕之地服务端..."
+$appDir = "C:\veilland"
 New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 
 # 创建 package.json
@@ -68,8 +68,8 @@ npm install --production
 
 Write-Host ""
 Write-Host "════════════════════════════════════════════════" -ForegroundColor Green
-Write-Host "  🎉 狼人杀部署完成！" -ForegroundColor Green
-Write-Host "  启动命令: cd C:\werewolf && node server/src/index.js" -ForegroundColor Yellow
+Write-Host "  🎉 帷幕之地部署完成！" -ForegroundColor Green
+Write-Host "  启动命令: cd C:\veilland && node server/src/index.js" -ForegroundColor Yellow
 Write-Host "  游戏地址: http://210.16.170.144:4000" -ForegroundColor Cyan
 Write-Host "════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host ""

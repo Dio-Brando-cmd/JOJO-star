@@ -31,7 +31,7 @@ function resolveDataDir() {
 const DATA_DIR = resolveDataDir();
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const REPLAYS_FILE = path.join(DATA_DIR, 'replays.json');
-const USER_SALT = process.env.USER_PASSWORD_SALT || 'werewolf-user-salt-2024-v2';
+const USER_SALT = process.env.USER_PASSWORD_SALT || 'veilland-user-salt-2.13';
 const MAX_REPLAYS_PER_USER = 5;
 
 export class UserManager {

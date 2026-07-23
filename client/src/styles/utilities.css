@@ -186,7 +186,7 @@
   font-size: 0.82em;
   font-weight: 600;
 }
-.order-step.wolf { background: rgba(192,57,43,0.15); color: var(--wolf); }
+.order-step.corrupted { background: rgba(192,57,43,0.15); color: var(--corrupted); }
 .order-step.village { background: rgba(41,128,185,0.15); color: var(--village); }
 .order-arrow { color: var(--text-muted); font-size: 0.8em; }
 .order-note { color: var(--text-muted); font-size: 0.78em; }

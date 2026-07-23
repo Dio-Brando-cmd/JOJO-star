@@ -75,7 +75,7 @@ public class NightActionUI : MonoBehaviour
                 title = "🛡️ 守卫行动";
                 actions = new[] { "睡觉", "出门", "守护", "筑垒", "巡逻", "舍身" };
                 break;
-            case "WEREWOLF":
+            case "CORRUPTED":
                 title = "🐺 狼人行动";
                 actions = new[] { "睡觉", "出门", "刀人", "嚎叫召集", "伪装混入" };
                 break;

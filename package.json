@@ -1,7 +1,7 @@
 {
-  "name": "werewolf-online",
+  "name": "veilland",
   "version": "2.13.1",
-  "description": "狼人杀在线联机版 - PC桌面多人联机游戏",
+  "description": "帷幕之地 · 灵焰纪元 — 暗黑奇幻多人联机游戏",
   "private": true,
   "main": "electron/main.js",
   "type": "module",
@@ -22,7 +22,7 @@
   },
   "build": {
     "appId": "com.veilland.online",
-    "productName": "帷幕之地",
+    "productName": "帷幕之地 · 灵焰纪元",
     "directories": {
       "output": "release"
     },
@@ -54,7 +54,7 @@
       "icon": "client/public/moon.svg"
     },
     "portable": {
-      "artifactName": "Werewolf_Setup_${version}.exe"
+      "artifactName": "VeilLand_Setup_${version}.exe"
     }
   },
   "devDependencies": {

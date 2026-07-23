@@ -21,7 +21,7 @@ public class CharacterQAValidator : EditorWindow
 
     private Vector2 scrollPos;
 
-    [MenuItem("Tools/Werewolf/QA Validate All Characters")]
+    [MenuItem("Tools/VeilLand/QA Validate All Characters")]
     public static void ValidateAll()
     {
         var window = GetWindow<CharacterQAValidator>("Character QA");
@@ -181,7 +181,7 @@ public class QAResult
 // ============================================================
 public class LODSetupTool : EditorWindow
 {
-    [MenuItem("Tools/Werewolf/Setup LOD Groups")]
+    [MenuItem("Tools/VeilLand/Setup LOD Groups")]
     public static void SetupAllLODs()
     {
         string prefabDir = "Assets/Prefabs/Characters";

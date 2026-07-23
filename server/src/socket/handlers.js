@@ -21,7 +21,7 @@ function sanitizeMessage(msg) {
 
 // ===== 简易密码哈希 =====
 import crypto from 'crypto';
-const PASSWORD_SALT = process.env.ROOM_PASSWORD_SALT || 'werewolf-server-salt-2024';
+const PASSWORD_SALT = process.env.ROOM_PASSWORD_SALT || 'veilland-server-salt-2.13';
 
 function hashPassword(password) {
   if (!password || typeof password !== 'string') return null;
@@ -108,7 +108,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   socket.on('app:checkVersion', (callback) => {
     const currentVersion = process.env.APP_VERSION || '2.13.1';
     const downloadUrl = '/download/帷幕之地_Setup.exe';
-    const apkDownloadUrl = '/download/werewolf.apk';
+    const apkDownloadUrl = '/download/veilland.apk';
     callback?.({
       version: currentVersion,
       downloadUrl,

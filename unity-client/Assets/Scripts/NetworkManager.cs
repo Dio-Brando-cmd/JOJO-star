@@ -1,5 +1,5 @@
 // ============================================================
-// NetworkManager.cs — 连接狼人杀Node.js服务端
+// NetworkManager.cs — 连接帷幕之地Node.js服务端
 // 使用 SocketIOClient 包 (Unity Asset Store 免费)
 // 安装: Window → Package Manager → Add from git URL:
 //   https://github.com/itisnajim/SocketIOUnity.git

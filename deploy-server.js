@@ -1,5 +1,5 @@
 // ============================================================
-// 狼人杀服务器部署脚本
+// 帷幕之地服务器部署脚本
 // 将更新后的服务器代码部署到云服务器
 // 用法: node deploy-server.js
 // ============================================================
@@ -14,7 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // ====== 配置 ======
 const REMOTE_HOST = '210.16.170.144';
 const REMOTE_USER = 'root';
-const REMOTE_PATH = '/opt/werewolf-server';
+const REMOTE_PATH = '/opt/veilland-server';
 const REMOTE_PORT = 22;
 
 // 本机构建目录
@@ -35,7 +35,7 @@ function log(msg, color = 'cyan') {
 }
 
 async function deploy() {
-  log('🐺 狼人杀 — 部署到云服务器');
+  log('🌑 帷幕之地 — 部署到云服务器');
   log(`   目标: ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}`);
 
   // 1. 检查构建产物
@@ -66,7 +66,7 @@ async function deploy() {
   log(`   ssh ${REMOTE_USER}@${REMOTE_HOST}`, 'green');
   log(`   cd ${REMOTE_PATH}`, 'green');
   log('   npm install --production', 'green');
-  log('   pm2 restart werewolf-server || pm2 start src/index.js --name werewolf-server', 'green');
+  log('   pm2 restart veilland-server || pm2 start src/index.js --name veilland-server', 'green');
   log('');
   log('   或者直接使用 rsync (更快):', 'yellow');
   log('');

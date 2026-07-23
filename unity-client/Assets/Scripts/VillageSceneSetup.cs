@@ -62,7 +62,7 @@ public class VillageSceneSetup : MonoBehaviour
         ClearAll();
 
         string[] houseNames = {
-            "猎人屋", "守卫屋", "种狼屋", "狼人屋",
+            "追猎者庇护所", "帷幕守卫庇护所", "种狼屋", "狼人屋",
             "预言家屋", "毒巫屋", "药巫屋", "村民1屋",
             "村民2屋", "村民3屋", "村民4屋", "村民5屋",
         };

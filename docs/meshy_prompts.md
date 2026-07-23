@@ -1,4 +1,4 @@
-# 狼人杀 10角色 — Meshy AI 生成提示词
+# 帷幕之地 10角色 — Meshy AI 生成提示词
 
 > 复制粘贴到 [meshy.ai](https://www.meshy.ai) → Text to 3D → 每次生成4个候选 → 选最好的下载
 

@@ -567,7 +567,7 @@ def generate_character(char_def):
 # ====== 导出 ======
 OUTPUT_DIR = os.path.join(
     os.path.dirname(bpy.data.filepath) if bpy.data.filepath
-    else os.path.expanduser("~"), "werewolf_models"
+    else os.path.expanduser("~"), "veilland_models"
 )
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -595,7 +595,7 @@ for i, char in enumerate(CHARACTERS):
     print(f"     ↳ {char['name']} ({char['height']}m) → x={offset_x:.0f}")
 
 select_all()
-all_glb = os.path.join(OUTPUT_DIR, "werewolf_all_characters.glb")
+all_glb = os.path.join(OUTPUT_DIR, "veilland_all_characters.glb")
 safe_gltf(all_glb)
 
 print(f"\n{'='*60}")

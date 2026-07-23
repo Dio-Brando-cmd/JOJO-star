@@ -1,4 +1,4 @@
-# 🐺 狼人杀 3D 建模脚本
+# 🌑 帷幕之地 3D 建模脚本
 
 在 Blender 中运行这些 Python 脚本，自动生成游戏所需的 3D 角色模型和地形场景。
 
@@ -23,7 +23,7 @@
 | 角色 | 文件名 | 特色 |
 |------|--------|------|
 | 狼人 | `werewolf_werewolf.glb` | 暗红狼头 + 发光红眼 |
-| 种狼 | `werewolf_alpha_wolf.glb` | 金冠狼形 |
+| 种狼 | `werewolf_alpha_corrupted.glb` | 金冠狼形 |
 | 预言家 | `werewolf_seer.glb` | 紫袍 + 水晶球 |
 | 毒巫 | `werewolf_poison_witch.glb` | 绿帽 + 毒药瓶 |
 | 药巫 | `werewolf_heal_witch.glb` | 青帽 + 治愈药瓶 |

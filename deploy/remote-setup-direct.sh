@@ -15,10 +15,10 @@ npm install -g pm2 2>/dev/null || true
 
 # 解压部署
 cd /opt/werewolf
-tar -xzf werewolf.tar.gz
+tar -xzf veilland.tar.gz
 
 # 安装依赖
-cd /opt/werewolf/server
+cd /opt/veilland/server
 npm install --production 2>&1
 
 # 开放端口
@@ -28,7 +28,7 @@ ufw allow 4000/tcp 2>/dev/null || true
 
 # 启动服务
 pm2 delete werewolf 2>/dev/null || true
-pm2 start src/index.js --name werewolf -- --port 4000
+pm2 start src/index.js --name veilland -- --port 4000
 pm2 save
 pm2 startup 2>/dev/null || true
 

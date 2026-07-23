@@ -105,7 +105,7 @@ export function createServer(options = {}) {
     res.json({
       version: process.env.APP_VERSION || '2.13.1',
       downloadUrl: '/download/帷幕之地_Setup.exe',
-      apkDownloadUrl: '/download/werewolf.apk',
+      apkDownloadUrl: '/download/veilland.apk',
       releaseDate: '2026-07-20',
       releaseNotes: 'v2.13.1 🌑 帷幕之地·灵焰纪元 — 全面品牌重塑：蚀者/冥僧人/帷幕学者/草药学者/愈灵师/帷幕守卫/灵痕追猎者/灵织者、灵符体系、灵焰猎枪、全新世界观',
       fileSize: 113 * 1024 * 1024, // ~113MB

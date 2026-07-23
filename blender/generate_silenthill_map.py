@@ -1,6 +1,6 @@
 """
 ============================================================
- 狼人杀 3D 大型地图 — 寂静岭风格神秘遗迹
+ 帷幕之地 3D 大型地图 — 寂静岭风格神秘遗迹
  兼容 Blender 4.0 ~ 5.x LTS
  规模 150×150m，地形起伏，多地面纹理
 ============================================================
@@ -382,14 +382,14 @@ def main():
 # ====== 导出 ======
 OUTPUT_DIR = os.path.join(
     os.path.dirname(bpy.data.filepath) if bpy.data.filepath
-    else os.path.expanduser("~"), "werewolf_models"
+    else os.path.expanduser("~"), "veilland_models"
 )
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 clear()
 main()
 bpy.ops.object.select_all(action='SELECT')
-glb = os.path.join(OUTPUT_DIR, "werewolf_silenthill_map.glb")
+glb = os.path.join(OUTPUT_DIR, "veilland_silenthill_map.glb")
 print(f"\n导出: {glb}")
 safe_gltf(glb)
 print(f"文件: werewolf_silenthill_map.glb")

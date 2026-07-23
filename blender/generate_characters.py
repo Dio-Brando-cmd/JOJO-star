@@ -1,6 +1,6 @@
 """
 ============================================================
- 狼人杀 3D 角色生成器 — 兼容 Blender 4.0 ~ 5.x LTS
+ 帷幕之地 3D 角色生成器 — 兼容 Blender 4.0 ~ 5.x LTS
  在 Blender Scripting 工作区运行此脚本 (Alt+P)
 ============================================================
 """
@@ -64,12 +64,12 @@ def mat_socket(bsdf, name, value):
 # ====== 配置 ======
 OUTPUT_DIR = os.path.join(
     os.path.dirname(bpy.data.filepath) if bpy.data.filepath
-    else os.path.expanduser("~"), "werewolf_models"
+    else os.path.expanduser("~"), "veilland_models"
 )
 
 ROLE_COLORS = {
     'werewolf':       (0.55, 0.05, 0.05, 1.0),
-    'alpha_wolf':     (0.42, 0.02, 0.02, 1.0),
+    'alpha_corrupted':     (0.42, 0.02, 0.02, 1.0),
     'seer':           (0.24, 0.10, 0.36, 1.0),
     'poison_witch':   (0.10, 0.24, 0.12, 1.0),
     'heal_witch':     (0.10, 0.22, 0.18, 1.0),
@@ -79,7 +79,7 @@ ROLE_COLORS = {
 }
 
 ROLE_NAMES_CN = {
-    'werewolf': '狼人', 'alpha_wolf': '种狼', 'seer': '预言家',
+    'werewolf': '狼人', 'alpha_corrupted': '种狼', 'seer': '预言家',
     'poison_witch': '毒巫', 'heal_witch': '药巫', 'villager': '村民',
     'guard': '守卫', 'hunter': '猎人',
 }
@@ -173,7 +173,7 @@ def add_witch_hat(body, color, offset=(0, 0, 0.05)):
     return hat
 
 
-def add_wolf_head(body, color, size=1.0):
+def add_corrupted_head(body, color, size=1.0):
     # 从 body children 移除旧 head
     for ch in [c for c in body.children if 'head' in c.name.lower()]:
         try: bpy.data.objects.remove(ch)
@@ -195,7 +195,7 @@ def add_wolf_head(body, color, size=1.0):
         eye = bpy.context.active_object
         eye.data.materials.append(create_material(f"{body.name}_eye", (0.9, 0.1, 0.1, 1.0)))
 
-    m = create_material(f"{body.name}_wolf", color)
+    m = create_material(f"{body.name}_corrupted", color)
     for o in (head, ear1, ear2): o.data.materials.append(m)
 
     for o in (head, ear1, ear2): o.select_set(True)
@@ -239,11 +239,11 @@ def generate_character(role_id):
     name_en = role_id.replace('_', ' ').title()
     print(f"  生成: {ROLE_NAMES_CN[role_id]} ({name_en})...")
 
-    if role_id in ('werewolf', 'alpha_wolf'):
-        size = 1.15 if role_id == 'alpha_wolf' else 1.0
+    if role_id in ('corrupted', 'nether_monk'):
+        size = 1.15 if role_id == 'alpha_corrupted' else 1.0
         body = create_body(name_en, color, 1.7 * size)
-        add_wolf_head(body, color, size)
-        if role_id == 'alpha_wolf':
+        add_corrupted_head(body, color, size)
+        if role_id == 'alpha_corrupted':
             bpy.ops.mesh.primitive_cone_add(radius1=0.06, radius2=0.1, depth=0.12, location=(0, 0, 2.15))
             crown = bpy.context.active_object
             crown.data.materials.append(create_material(f"{body.name}_crown", (0.8, 0.65, 0.2, 1.0)))
@@ -293,7 +293,7 @@ def export_model(obj, filename):
 
 def main():
     print("=" * 60)
-    print("  🐺 狼人杀 3D 角色生成器")
+    print("  🌑 帷幕之地 3D 角色生成器")
     print(f"  兼容 Blender 4.0 ~ 5.x")
     print("=" * 60)
 
@@ -303,7 +303,7 @@ def main():
     for role_id in ROLE_COLORS:
         clear_scene()
         obj = generate_character(role_id)
-        export_model(obj, f"werewolf_{role_id}")
+        export_model(obj, f"veilland_{role_id}")
         print()
 
     # 集合场景
@@ -314,7 +314,7 @@ def main():
         obj.location.x = (i - 3.5) * 2.0
 
     bpy.ops.object.select_all(action='SELECT')
-    scene_glb = os.path.join(OUTPUT_DIR, "werewolf_all_characters.glb")
+    scene_glb = os.path.join(OUTPUT_DIR, "veilland_all_characters.glb")
     safe_export_gltf(scene_glb)
     print(f"\n集合场景 → {scene_glb}")
 

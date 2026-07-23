@@ -1,5 +1,5 @@
 ════════════════════════════════════════════════════════
-  🐺 狼人杀 — 云端部署指南（v1.1 修复版）
+  🌑 帷幕之地 — 云端部署指南（v1.1 修复版）
 ════════════════════════════════════════════════════════
 
 2026/06/25 修复内容：
@@ -36,11 +36,11 @@
 【步骤1】在本地打包
    cd werewolf-online
    npm run build:client
-   tar -czf werewolf-deploy.tar.gz \
+   tar -czf veilland-deploy.tar.gz \
      server/package.json server/src client/dist deploy/Dockerfile
 
 【步骤2】上传到服务器
-   scp werewolf-deploy.tar.gz root@你的IP:/root/
+   scp veilland-deploy.tar.gz root@你的IP:/root/
 
 【步骤3】SSH到服务器部署
    ssh root@你的IP
@@ -51,9 +51,9 @@
    # 解压并启动
    mkdir -p /opt/werewolf
    cd /opt/werewolf
-   tar -xzf /root/werewolf-deploy.tar.gz
+   tar -xzf /root/veilland-deploy.tar.gz
    docker build -t werewolf -f deploy/Dockerfile .
-   docker run -d --name werewolf --restart=unless-stopped -p 80:4000 werewolf
+   docker run -d --name veilland --restart=unless-stopped -p 80:4000 werewolf
 
 【步骤4】完成！
    浏览器打开 http://你的服务器IP
@@ -68,7 +68,7 @@
    停止服务:    docker stop werewolf
    更新代码后:  docker stop werewolf && docker rm werewolf
                 docker build -t werewolf -f deploy/Dockerfile .
-                docker run -d --name werewolf --restart=unless-stopped -p 80:4000 werewolf
+                docker run -d --name veilland --restart=unless-stopped -p 80:4000 werewolf
 
 ════════════════════════════════════════════════════════
   安全建议

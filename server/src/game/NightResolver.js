@@ -1014,7 +1014,7 @@ export class NightResolver {
             type: 'old_hunter_detected',
             player: target.id,
             detectedWolves: killers,
-            msg: '老猎人的陷阱触发了——你发现了进入你家的狼人！',
+            msg: '老猎人的陷阱触发了——你发现了进入庇护所的蚀者！',
           });
         }
       }
@@ -1120,7 +1120,7 @@ export class NightResolver {
           p.team = 'WOLF';
           p.willBecomeWolf = false;
           p.infectedByAlpha = false;
-          this.log.push({ type: 'became_wolf', player: p.id });
+          this.log.push({ type: 'became_corrupted', player: p.id });
         }
       }
     }

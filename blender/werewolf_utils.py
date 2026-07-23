@@ -1,6 +1,6 @@
 """
 ============================================================
- 狼人杀 Blender 共享库 v4 — 8头身人体比例精雕
+ 帷幕之地 Blender 共享库 v4 — 8头身人体比例精雕
  兼容 Blender 4.0 ~ 5.x LTS
 ============================================================
 """
@@ -490,7 +490,7 @@ def add_subdiv():
 # ====== 导出 ======
 OUTPUT_DIR = os.path.join(
     os.path.dirname(bpy.data.filepath) if bpy.data.filepath
-    else os.path.expanduser("~"), "werewolf_models"
+    else os.path.expanduser("~"), "veilland_models"
 )
 os.makedirs(OUTPUT_DIR,exist_ok=True)
 
