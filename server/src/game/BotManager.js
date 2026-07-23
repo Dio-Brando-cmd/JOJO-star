@@ -17,7 +17,7 @@ export class BotManager {
       voteHistory: [],
       deathHistory: [],
       suspicion: new Map(),
-      howlHeard: [],          // 听到嚎叫的狼人
+      resonanceHeard: [],          // 听到裂隙共鸣的蚀者
       trapLocations: new Set(), // 已知陷阱位置
       fortifiedHouses: new Set(), // 已知筑垒屋子
     };
@@ -52,7 +52,7 @@ export class BotManager {
           if (entry.wolves) entry.wolves.forEach(w => this.memory.knownWolves.add(w));
         }
         if (entry.type === 'wolf_howl_heard') {
-          this.memory.howlHeard.push(entry.howler);
+          this.memory.resonanceHeard.push(entry.howler);
         }
         if (entry.type === 'hunter_trap' || entry.type === 'old_hunter_trap') {
           this.memory.trapLocations.add(entry.target);
@@ -167,16 +167,16 @@ export class BotManager {
     const checked = [...this.memory.checkedPlayers.entries()];
     const msgs = [];
     if (bot.isWolf()) {
-      msgs.push('我觉得XX很可疑...', '我是普通村民，没什么信息', '大家冷静分析', '我怀疑有人带节奏');
+      msgs.push('我觉得XX很可疑...', '我是灵织者，感知到了一些灵焰波动', '大家冷静分析', '我怀疑有人带节奏');
     } else if (bot.role === ROLES.VEIL_SCHOLAR && checked.length > 0) {
       const [target, result] = checked[checked.length - 1];
       const targetName = this.game.getPlayer(target)?.name || '某人';
-      msgs.push(`我查验了${targetName}，是${result === 'GOOD' ? '好人' : '狼人'}！`);
+      msgs.push(`我察灵了${targetName}，灵焰${result === 'GOOD' ? '纯净' : '已被蚀痕侵蚀'}！`);
     } else if (bot.isWeaver()) {
       const typeMsgs = {
-        [SPIRIT_WEAVER_TYPES.OLD_VETERAN]: ['我这双老眼还看得清...', '我见过太多狼了'],
-        [SPIRIT_WEAVER_TYPES.WANDERING_TRADER]: ['我听到了一些风声...', '消息就是力量'],
-        [SPIRIT_WEAVER_TYPES.CHRONICLER]: ['让我讲个故事...', '从前有只狼...'],
+        [SPIRIT_WEAVER_TYPES.OLD_VETERAN]: ['我这双老眼还看得清...', '我察觉到了蚀痕的气息'],
+        [SPIRIT_WEAVER_TYPES.WANDERING_TRADER]: ['我感知到了一些灵焰波动...', '消息就是力量'],
+        [SPIRIT_WEAVER_TYPES.CHRONICLER]: ['让我讲个故事...', '在帷幕之地的传说中...'],
         [SPIRIT_WEAVER_TYPES.ARMOR_SMITH]: ['我的铁锤可以砸碎任何东西', '门锁好了，安心睡吧'],
         [SPIRIT_WEAVER_TYPES.VEIL_WEAVER]: ['我听到了一些细微的声响...', '每一根线都有它的去向'],
       };
@@ -268,7 +268,7 @@ export class BotManager {
     if (!bot.isTransformed && !bot.hasUsedInfect) {
       const infectTarget = this._pickWolfKillTarget(bot, targets) || rt;
       if (infectTarget && Math.random() < 0.65) {
-        // 15%概率同时编织假身份
+        // 15%概率同时编织灵焰遮蔽
         const useFakeId = Math.random() < 0.15;
         const fakeRoles = [ROLES.VEIL_SCHOLAR, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER];
         return {
@@ -323,15 +323,15 @@ export class BotManager {
 
   _werewolfAction(bot, targets, rt) {
     const roll = Math.random();
-    // 10% 嚎叫（冷却中跳过）
+    // 10% 裂隙共鸣（冷却中跳过）
     if (roll < 0.10 && bot.howlCooldown <= 0) {
       return { action: NIGHT_ACTIONS.HOWL, target: null, ability: { howl: true } };
     }
-    // 12% 伪装
+    // 12% 灵焰遮蔽
     if (roll < 0.22 && rt) {
       return { action: NIGHT_ACTIONS.DISGUISE, target: rt.id, ability: { disguise: true } };
     }
-    // 65% 刀人
+    // 65% 噬灵
     if (roll < 0.87 && rt) {
       const killTarget = this._pickWolfKillTarget(bot, targets) || rt;
       const trackScent = Math.random() < 0.4;
@@ -417,7 +417,7 @@ export class BotManager {
         ability: { diagnose: true },
       };
     }
-    // 万能药 20%
+    // 灵焰修复 20%
     if (roll < 0.40 && bot.hasHealTalisman && rt) {
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
