@@ -15,7 +15,7 @@ function isCapacitorNative() {
   // 备用: Android WebView 特征 (Capacitor 在 Android 上用 WebView)
   const ua = window.navigator?.userAgent || '';
   if (ua.includes('Android') && ua.includes('wv')) return true;
-  if (ua.includes('WerewolfApp')) return true;
+  if (ua.includes('VeilLandApp')) return true;
   return false;
 }
 
@@ -24,7 +24,7 @@ function getServerURL() {
   // 1. 构建时环境变量（VITE_SERVER_URL=http://...）
   if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL;
   // 2. 用户手动保存的服务器地址
-  const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('werewolf_server_url') : null;
+  const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('veilland_server_url') : null;
   if (stored) return stored;
   // 3. 移动端原生APP → 硬编码公网服务器
   if (isCapacitorNative()) return 'http://210.16.170.144:4000';

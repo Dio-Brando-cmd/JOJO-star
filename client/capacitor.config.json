@@ -1,6 +1,6 @@
 {
-  "appId": "com.werewolf.online",
-  "appName": "狼人杀",
+  "appId": "com.veilland.online",
+  "appName": "帷幕之地",
   "webDir": "dist",
   "server": {
     "url": "http://210.16.170.144:4000",

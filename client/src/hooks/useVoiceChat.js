@@ -25,14 +25,37 @@ const ICE_SERVERS = {
 function isSecureContext() {
   if (typeof window === 'undefined') return true;
   const ua = window.navigator?.userAgent || '';
-  if (ua.includes('Electron') || ua.includes('Werewolf')) return true;
+  if (ua.includes('Electron') || ua.includes('VeilLand')) return true;
   if (window.isSecureContext) return true;
   const hostname = window.location.hostname;
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  // localhost 始终允许
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') return true;
+  // 允许局域网IP访问（开发/测试场景）
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)) return true;
+  // 允许已知域名
+  if (hostname === 'veilland.com' || hostname.endsWith('.veilland.com')) return true;
+  return false;
 }
 
 function supportsGetUserMedia() {
   return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+}
+
+// 全局 AudioContext 提前解锁——在首次用户交互时执行
+let _globalAudioCtx = null;
+let _ctxUnlocked = false;
+function unlockAudioContextGlobally() {
+  if (_ctxUnlocked) return;
+  try {
+    _globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_globalAudioCtx.state === 'suspended') _globalAudioCtx.resume();
+    _ctxUnlocked = true;
+  } catch (e) { /* ignore */ }
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', unlockAudioContextGlobally, { once: true });
+  document.addEventListener('touchend', unlockAudioContextGlobally, { once: true });
+  document.addEventListener('keydown', unlockAudioContextGlobally, { once: true });
 }
 
 export function useVoiceChat(socket, playerId, gameState) {
@@ -159,14 +182,18 @@ export function useVoiceChat(socket, playerId, gameState) {
       audio.srcObject = event.streams[0];
       audio.autoplay = true;
       audio.volume = 0.8;
-      audio.play().catch(e => {
+      // 先尝试直接播放
+      audio.play().catch(() => {
+        // 被浏览器自动播放策略阻止——等待用户交互后恢复
         const resume = () => {
           audio.play().catch(() => {});
           document.removeEventListener('click', resume);
           document.removeEventListener('keydown', resume);
+          document.removeEventListener('touchend', resume);
         };
         document.addEventListener('click', resume, { once: true });
         document.addEventListener('keydown', resume, { once: true });
+        document.addEventListener('touchend', resume, { once: true });
       });
       audioElements.current.set(peerId, audio);
 

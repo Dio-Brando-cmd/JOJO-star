@@ -11,7 +11,7 @@ const CLIENT_VERSION = '2.13.1';
 function getPlatform() {
   if (typeof window === 'undefined') return 'web';
   const ua = window.navigator?.userAgent || '';
-  if (ua.includes('Electron') || ua.includes('Werewolf')) return 'electron';
+  if (ua.includes('Electron') || ua.includes('VeilLand')) return 'electron';
   // Capacitor 注入的 native 桥
   if (window.Capacitor?.isNativePlatform?.()) return 'android';
   // 备用检测: Android WebView
@@ -38,12 +38,12 @@ export default function UpdatePrompt({ show, onClose, updateInfo }) {
     setDownloading(true);
     // 移动端：使用原生 DownloadManager 自动下载+安装
     if (isMobile) {
-      const apkUrl = updateInfo.apkDownloadUrl || '/download/werewolf.apk';
+      const apkUrl = updateInfo.apkDownloadUrl || '/download/veilland.apk';
       const fullUrl = apkUrl.startsWith('http') ? apkUrl : `${window.location.origin}${apkUrl}`;
       try {
         // 调用 Android 原生下载接口
         if (window.AndroidBridge?.downloadAndInstall) {
-          window.AndroidBridge.downloadAndInstall(fullUrl, 'werewolf.apk');
+          window.AndroidBridge.downloadAndInstall(fullUrl, 'veilland.apk');
           setTimeout(() => setDownloading(false), 2000);
           return;
         }
@@ -51,7 +51,7 @@ export default function UpdatePrompt({ show, onClose, updateInfo }) {
       // 回退：浏览器下载
       const a = document.createElement('a');
       a.href = fullUrl;
-      a.download = '狼人杀.apk';
+      a.download = '帷幕之地.apk';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

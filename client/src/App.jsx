@@ -47,7 +47,7 @@ export default function App() {
   const [playerName, setPlayerName] = useState('');
   const [joined, setJoined] = useState(false);
   const [showName, setShowName] = useState(() => {
-    return localStorage.getItem('werewolf_show_name') !== 'false';
+    return localStorage.getItem('veilland_show_name') !== 'false';
   });
   const [showSettings, setShowSettings] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
@@ -180,7 +180,7 @@ export default function App() {
   const handleToggleShowName = useCallback(() => {
     const next = !showName;
     setShowName(next);
-    localStorage.setItem('werewolf_show_name', String(next));
+    localStorage.setItem('veilland_show_name', String(next));
   }, [showName]);
 
   // ==================== 官网页面路由 ====================
@@ -356,7 +356,7 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
   const [serverUrl, setServerUrl] = useState(() => {
-    return localStorage.getItem('werewolf_server_url') || '';
+    return localStorage.getItem('veilland_server_url') || '';
   });
 
   const handleLogin = async (e) => {
@@ -386,7 +386,7 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
     if (!name) { setLocalError('请输入昵称'); return; }
     if (name.length > 10) { setLocalError('昵称最长10个字符'); return; }
     setLocalError('');
-    if (serverUrl.trim()) localStorage.setItem('werewolf_server_url', serverUrl.trim());
+    if (serverUrl.trim()) localStorage.setItem('veilland_server_url', serverUrl.trim());
     // 等待连接后再进入
     const ok = await auth.quickPlay(name);
     if (ok) onQuickPlay(name);
@@ -396,9 +396,9 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
     <div className="screen login-screen">
       <div className="login-card">
         <div className="game-logo">
-          <span className="logo-icon">🐺</span>
+          <span className="logo-icon">🌑</span>
           <h1>帷幕之地</h1>
-          <p className="subtitle">在线联机版</p>
+          <p className="subtitle">灵焰纪元</p>
         </div>
 
         {/* 标签切换 */}

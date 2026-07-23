@@ -1,5 +1,5 @@
 // PWA Service Worker - 缓存静态资源，支持离线访问
-const CACHE_NAME = 'werewolf-v1';
+const CACHE_NAME = 'veilland-v1';
 const ASSETS = [
   '/',
   '/index.html',

@@ -35,7 +35,7 @@ const DOWNLOAD_INFO = {
     { ver: 'v2.12.1', date: '2026-07-21', changes: ['UI全面革新：设计Token系统+SVG角色插图+粒子背景', '官网三页面：首页/下载/联系我们', '角色选择交互修复', 'ChatBox气泡+时间戳', '战绩统计面板+排行榜', '电影化阶段转场动画', 'CSS模块化重构'] },
     { ver: 'v2.11.0', date: '2026-07-21', changes: ['修复Game类语法错误', '优化服务器部署流程', '新增官网页面'] },
     { ver: 'v2.10.0', date: '2026-07-20', changes: ['新增Android客户端支持', '排位系统优化', '断线重连增强'] },
-    { ver: 'v1.4.0', date: '2026-06-26', changes: ['修复角色信息泄露', '猎人武器修复', '断线重连机制', '弃权投票修复', '阶段计时器'] },
+    { ver: 'v1.4.0', date: '2026-06-26', changes: ['修复角色信息泄露', '追猎者武器修复', '断线重连机制', '弃权投票修复', '阶段计时器'] },
   ],
 };
 
@@ -46,7 +46,7 @@ export default function DownloadPage({ onNavigate }) {
     setDownloadStarted(true);
     // 触发浏览器下载（从服务器下载 EXE 文件）
     const link = document.createElement('a');
-    link.href = '/download/Werewolf_Setup_2.12.1.exe';
+    link.href = `/download/VeilLand_Setup_${DOWNLOAD_INFO.version}.exe`;
     link.download = `帷幕之地_VeilLand_Setup_${DOWNLOAD_INFO.version}.exe`;
     document.body.appendChild(link);
     link.click();
@@ -59,8 +59,8 @@ export default function DownloadPage({ onNavigate }) {
       <nav className="landing-nav">
         <div className="landing-nav-inner">
           <a className="nav-brand" onClick={() => onNavigate('home')}>
-            <span className="brand-icon">🐺</span>
-            <span className="brand-text">狼人杀</span>
+            <span className="brand-icon">🌑</span>
+            <span className="brand-text">帷幕之地</span>
           </a>
           <div className="nav-links">
             <a onClick={() => onNavigate('home')}>首页</a>
@@ -74,7 +74,7 @@ export default function DownloadPage({ onNavigate }) {
       </nav>
 
       <div className="static-content">
-        <h1 className="static-title">💻 下载PC客户端</h1>
+        <h1 className="static-title">💻 下载桌面客户端</h1>
         <p className="static-desc">
           下载桌面版客户端，获得更流畅的游戏体验
         </p>
@@ -84,9 +84,7 @@ export default function DownloadPage({ onNavigate }) {
           <div className="download-main-card">
             <div className="download-platform-icon">🖥️</div>
             <h2>Windows 桌面版</h2>
-            <p className="download-ver">
-              版本 {DOWNLOAD_INFO.version} · {DOWNLOAD_INFO.releaseDate} · {DOWNLOAD_INFO.fileSize}
-            </p>
+            <p className="download-ver">版本 {DOWNLOAD_INFO.version} · {DOWNLOAD_INFO.releaseDate}</p>
 
             {downloadStarted ? (
               <div className="download-started">
@@ -165,7 +163,7 @@ export default function DownloadPage({ onNavigate }) {
               <span className="step-badge">3</span>
               <div>
                 <h4>开始游戏</h4>
-                <p>安装完成后桌面会出现"狼人杀"快捷方式，双击启动即可</p>
+                <p>安装完成后桌面会出现"帷幕之地"快捷方式，双击启动即可</p>
               </div>
             </div>
           </div>
@@ -207,15 +205,15 @@ export default function DownloadPage({ onNavigate }) {
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-brand">
-            <span>🐺</span>
-            <strong>帷幕之地 在线联机版</strong>
+            <span>🌑</span>
+            <strong>帷幕之地 · 灵焰纪元</strong>
           </div>
           <div className="footer-links">
             <a onClick={() => onNavigate('home')}>首页</a>
             <a onClick={() => onNavigate('download')}>下载PC端</a>
             <a onClick={() => onNavigate('contact')}>联系我们</a>
           </div>
-          <p className="footer-copy">© 2026 Werewolf Online. 为朋友聚会而生 🐺</p>
+          <p className="footer-copy">© 2026 帷幕之地 VeilLand. 在灵焰的微光中守望 🌑</p>
         </div>
       </footer>
     </div>
