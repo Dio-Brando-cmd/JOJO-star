@@ -52,7 +52,7 @@ export default function DayPhase({ socket }) {
         )}
       </div>
 
-      {/* 猎人白天开枪 */}
+      {/* 追猎者白昼追猎 */}
       {canShoot && (
         <div className="hunter-day-shoot">
           <h4>🔫 追猎者射击（白天必杀）</h4>

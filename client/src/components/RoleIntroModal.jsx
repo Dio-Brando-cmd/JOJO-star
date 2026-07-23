@@ -9,58 +9,58 @@ import { ROLES, ROLE_NAMES, ROLE_ICONS, VILLAGER_TYPE_NAMES } from '../utils/con
 const ROLE_DETAILS = [
   {
     id: ROLES.NETHER_MONK,
-    name: '种狼',
-    icon: '👑🐺',
+    name: '冥僧人',
+    icon: '🕯️🌑',
     team: 'CORRUPTED',
     teamName: '蚀者阵营',
     color: '#c0392b',
     desc: '狼群的首领，兼具变身、感染与刀人的多重能力。可以选择潜伏伪装，也可以选择正面强攻。',
     abilities: [
-      '🐺 <strong>变狼</strong>：变身为狼人形态。变狼前不会被察灵家查出。',
+      '🌑 <strong>蚀变</strong>：灵焰完全蚀变。蚀变前察灵显示为纯净。',
       '🦠 <strong>感染</strong>：感染一名玩家，下个夜晚蚀变为蚀者（察灵家保留能力但查验反转）。',
       '🎭 <strong>假身份编织</strong>：变狼前可伪装成一种神职身份，被帷幕学者察灵时显示为该身份。使用感染后伪装失效。',
       '🔪 <strong>刀人</strong>：变狼后在蚀者步骤与狼群一起选择击杀目标。',
-      '💉 <strong>狼群激素</strong>（被动）：每有一只狼人被投票出局，获得一次额外感染机会。',
+      '💉 <strong>裂隙引导</strong>（被动）：每次有蚀者被放逐，获得一次额外堕化机会。',
     ],
     tips: '💡 策略：先潜伏编织假身份，再择机变身。感染察灵家是最强干扰——让好人的信息核心彻底混乱。',
   },
   {
     id: ROLES.CORRUPTED,
-    name: '狼人',
-    icon: '🐺',
+    name: '蚀者',
+    icon: '🌑',
     team: 'CORRUPTED',
     teamName: '蚀者阵营',
     color: '#e74c3c',
     desc: '夜晚出没的猎手。不止会刀人——还能嚎叫召集同伴、伪装混入人群、追踪猎物的气味。',
     abilities: [
       '🔪 <strong>刀人</strong>：在蚀者步骤击杀目标。锁定的是人而非屋子，会跟随目标移动。',
-      '🐺 <strong>相认机制</strong>：去另一蚀者庇护所则双方相认。互刀则相认不死。',
-      '📢 <strong>嚎叫召集</strong>：放弃刀人，发出嚎叫。所有未相认的狼人听到召唤，下回合相认概率翻倍。冷却2回合。',
-      '🎭 <strong>伪装</strong>：伪装成好人出门，计入屋子人数，不暴露狼人身份。代价：当晚不能刀人。',
+      '🌑 <strong>共鸣机制</strong>：去另一蚀者庇护所则双方共鸣。互噬则不死。',
+      '📢 <strong>裂隙共鸣</strong>：放弃噬灵，发出裂隙信号。所有未共鸣的蚀者收到召唤，下回合共鸣概率翻倍。冷却2蚀月。',
+      '🎭 <strong>伪装</strong>：伪装成好人出门，计入屋子人数，不暴露蚀者身份。代价：当晚不能刀人。',
       '👃 <strong>嗅觉追踪</strong>（被动）：刀人时若目标出了门，可闻到目标去了谁家。',
     ],
     tips: '💡 策略：嚎叫+伪装+刀人三者选一，增加了每夜的决策深度。尽早用嚎叫召集同伴，伪装可用于渗透信息。',
   },
   {
     id: ROLES.VEIL_SCHOLAR,
-    name: '察灵家',
-    icon: '🔮',
+    name: '帷幕学者',
+    icon: '👁️',
     team: 'VEIL_KEEPERS',
     teamName: '守幕者阵营',
     color: '#7d3c98',
     desc: '每夜查验一名玩家的身份。新增梦境线索、灵视和公开察灵能力，是好人方最丰富的信息核心。',
     abilities: [
-      '🔮 <strong>查验</strong>：每夜查验一名玩家，获知"好人"或"狼人"。白天查看目标头像：金色=好人，银白=狼人。',
+      '🔮 <strong>查验</strong>：每夜查验一名玩家，获知"好人"或"狼人"。白天查看目标头像：金色=守幕者，暗紫=蚀者。',
       '🌙 <strong>梦境碎片</strong>（被动）：查验后额外获得一条模糊线索——如"有人去过目标屋子"。',
       '👻 <strong>灵视</strong>：不查活人，改为查验已死亡玩家——获知死者的真实身份。消耗当夜查验机会。',
-      '📢 <strong>公开察灵</strong>（每局限1次，白天）：公开宣布查验结果。若判断错误则自己被投票出局——梭哈能力！',
-      '🦠 <strong>被感染时</strong>：保留察灵能力，但查验结果反转。获知种狼身份。',
+      '📢 <strong>公开察灵</strong>（每局限1次，白天）：公开宣布察灵结果。若判断错误则自己被投票出局——梭哈能力！',
+      '🦠 <strong>被感染时</strong>：保留察灵能力，但察灵结果反转。获知种狼身份。',
     ],
     tips: '💡 策略：梦境碎片提供辅助推理线索。灵视可用来验证已死者的身份（确认之前查验是否正确）。公开察灵是终极武器——用之前确保没被感染。',
   },
   {
     id: ROLES.HERBAL_SAGE,
-    name: '毒巫',
+    name: '草药学者',
     icon: '☠️🧪',
     team: 'VEIL_KEEPERS',
     teamName: '守幕者阵营',
@@ -78,7 +78,7 @@ const ROLE_DETAILS = [
   },
   {
     id: ROLES.SPIRIT_MENDER,
-    name: '药巫',
+    name: '愈灵师',
     icon: '💚🧪',
     team: 'VEIL_KEEPERS',
     teamName: '守幕者阵营',
@@ -95,7 +95,7 @@ const ROLE_DETAILS = [
   },
   {
     id: ROLES.VEIL_GUARDIAN,
-    name: '守卫',
+    name: '帷幕守卫',
     icon: '🛡️',
     team: 'VEIL_KEEPERS',
     teamName: '守幕者阵营',
@@ -103,8 +103,8 @@ const ROLE_DETAILS = [
     desc: '强壮的守护者。新增筑垒、巡逻、舍身——从"站桩挡刀"变为"战术指挥官"。',
     abilities: [
       '🛡️ <strong>守护</strong>：去目标家中守护。守护姿态不计入屋子人数。≤2人被狼攻击→重伤挡下击杀。',
-      '🏰 <strong>筑垒</strong>：加固目标屋子。狼人不能攻击该屋内的人（但毒巫的蚀灭符阵可击穿）。哈尔瓦德无法进入筑垒的屋子。',
-      '👀 <strong>巡逻</strong>：不守护具体目标，改为巡视全村。获知今晚哪些屋子有狼人进入（数量，不知是谁）。用守护换信息。',
+      '🏰 <strong>筑垒</strong>：加固目标屋子。蚀者不能攻击该屋内的人（但毒巫的蚀灭符阵可击穿）。哈尔瓦德无法进入筑垒的屋子。',
+      '👀 <strong>巡逻</strong>：不守护具体目标，改为巡视全村。获知今晚哪些屋子有蚀者进入（数量，不知是谁）。用守护换信息。',
       '💀 <strong>舍身</strong>：标记一个替死目标。若该目标当晚死亡，守卫替其死亡。一次性的最高牺牲。',
       '💔 <strong>重伤机制</strong>：独自在家被1狼攻击→重伤且该狼获知你是守卫。只有药巫万能药能治重伤。',
     ],
@@ -112,7 +112,7 @@ const ROLE_DETAILS = [
   },
   {
     id: ROLES.FLAME_TRACKER,
-    name: '猎人',
+    name: '灵痕追猎者',
     icon: '🔫',
     team: 'VEIL_KEEPERS',
     teamName: '守幕者阵营',
@@ -129,7 +129,7 @@ const ROLE_DETAILS = [
   },
   {
     id: ROLES.SPIRIT_WEAVER,
-    name: '村民',
+    name: '灵织者',
     icon: '👨‍🌾',
     team: 'VEIL_KEEPERS',
     teamName: '守幕者阵营',
@@ -139,7 +139,7 @@ const ROLE_DETAILS = [
       '🚶 <strong>出门</strong>：去别人家中，天亮后得知目标屋子的访客人数（≥3人显示"很多人"并被赶回家）。',
       '👂 <strong>帷幕低语</strong>：在目标屋子外帷幕低语。基于屋内实际成员给线索（织布女的线索更精确）。',
       '🎯 <strong>8种子类型</strong>：',
-      '　🔫 老猎人：20%概率识破进入自家的狼人；可在家设陷阱',
+      '　🔫 老兵灵织者：20%概率识破进入庇护所的蚀者；可在家设陷阱',
       '　📦 旅行行路灵织者：每晚可访问2个屋子；可交易信息',
       '　🌿 学徒灵织者：可推迟目标死亡1回合；感知谁被毒过',
       '　📖 说书人：讨论发言时间翻倍；可额外发言一次',
@@ -165,7 +165,7 @@ export default function RoleIntroModal({ show, onClose }) {
 
         <div className="modal-body">
           <p className="intro-text">
-            本局狼人杀共有 <strong>8种职业角色 + 8种灵织者子类型 + 10种表层身份</strong>，每个角色拥有多元的行动方式和能力。
+            本局帷幕之地共有 <strong>8种职业角色 + 8种灵织者子类型 + 10种表层身份</strong>，每个角色拥有多元的行动方式和能力。
             请仔细阅读以下简介，了解你所扮演角色的全部能力。
           </p>
 
@@ -201,7 +201,7 @@ export default function RoleIntroModal({ show, onClose }) {
               <span className="order-arrow">→</span>
               <span className="order-step village">🛡️ 守卫</span>
               <span className="order-arrow">→</span>
-              <span className="order-step wolf">🐺 狼人群</span>
+              <span className="order-step corrupted">🌑 蚀者群</span>
               <span className="order-arrow">→</span>
               <span className="order-step village">🔮 察灵家</span>
               <span className="order-arrow">→</span>

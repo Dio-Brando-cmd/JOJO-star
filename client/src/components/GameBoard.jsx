@@ -2,7 +2,7 @@
 // 游戏主界面 —— 玩家列表 + 阶段面板 + 语音 + 聊天 + 音效
 // ============================================================
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import PlayerList from './PlayerList';
 import NightPhase from './NightPhase';
 import DayPhase from './DayPhase';
@@ -14,6 +14,7 @@ import RoleCard from './RoleCard';
 import RoleIntroModal from './RoleIntroModal';
 import { VoiceChatContainer } from './VoiceChat';
 import AudioControls from './AudioControls';
+import PhaseTransition, { getTransitionType } from './effects/PhaseTransition';
 import { PHASES } from '../utils/constants';
 
 export default function GameBoard({ socket, playerName, audio, voiceChat, bgm, onOpenSettings }) {
@@ -22,6 +23,30 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, bgm, o
   const [showRules, setShowRules] = useState(false);
   const [lastWords, setLastWords] = useState('');
   const [lastWordsSent, setLastWordsSent] = useState(false);
+  const [transition, setTransition] = useState(null);
+  const prevPhaseRef = useRef(null);
+
+  // 阶段切换转场
+  useEffect(() => {
+    if (!gameState?.phase) return;
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = gameState.phase;
+    if (!prev || prev === gameState.phase) return;
+    const winner = gameState.gameResult?.winner;
+    const myTeam = privateState?.myTeam;
+    const isWin = winner && myTeam && winner === myTeam;
+    const transType = getTransitionType(prev, gameState.phase, isWin ? 'win' : (winner ? 'lose' : undefined));
+    if (transType) setTransition(transType);
+  }, [gameState?.phase]);
+
+  // 结算阶段特殊处理
+  useEffect(() => {
+    if (gameState?.phase === 'GAME_OVER' && gameState?.gameResult) {
+      const myTeam = privateState?.myTeam;
+      const isWin = myTeam && gameState.gameResult.winner === myTeam;
+      setTransition(isWin ? 'WIN' : 'LOSE');
+    }
+  }, [gameState?.phase === 'GAME_OVER' && gameState?.gameResult]);
 
   // 根据游戏阶段切换背景音乐
   useEffect(() => {
@@ -63,6 +88,14 @@ export default function GameBoard({ socket, playerName, audio, voiceChat, bgm, o
 
   return (
     <div className="screen game-screen">
+      {/* 阶段转场动画 */}
+      {transition && (
+        <PhaseTransition
+          type={transition}
+          onComplete={() => setTransition(null)}
+        />
+      )}
+
       {/* v2.0: 选人阶段全屏覆盖 */}
       {gameState.phase === 'CHARACTER_SELECT' && (
         <CharacterSelect
@@ -319,11 +352,11 @@ function formatLogEntry(entry, players) {
     case 'death':
       return <span>💀 <strong>{getName(entry.player)}</strong> 死亡（{entry.reason}）</span>;
     case 'wolf_kill':
-      return <span>🐺 蚀者噬灵了某个目标</span>;
+      return <span>🌑 蚀者噬灵了某个目标</span>;
     case 'mass_seal':
       return <span>☠️ 某间屋子被蚀灭符阵覆盖</span>;
     case 'hunter_shoot':
-      return <span>🔫 猎人扣动了扳机</span>;
+      return <span>🎯 追猎者扣动了灵焰猎枪</span>;
     case 'talisman_save':
       return <span>💚 有人被愈灵符救回</span>;
     case 'heal_save':
@@ -331,9 +364,9 @@ function formatLogEntry(entry, players) {
     case 'seal_transferred':
       return <span>🧪 蚀痕净化转移到了别人身上</span>;
     case 'hunter_defend':
-      return <span>💥 猎人的短火铳击杀了攻击者</span>;
+      return <span>💥 追猎者的噬灭短铳击杀了攻击者</span>;
     case 'became_wolf':
-      return <span>🐺 有人蚀变为蚀者</span>;
+      return <span>🌑 有人蚀变为蚀者</span>;
     case 'house_visit':
       return <span>🏠 你去了 <strong>{getName(entry.target)}</strong> 的家 — {entry.desc || (entry.count === -1 ? '很多人' : `${entry.count}人`)}</span>;
     default:

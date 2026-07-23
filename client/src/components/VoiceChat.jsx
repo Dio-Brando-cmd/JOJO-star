@@ -91,8 +91,14 @@ export default function VoiceChat({ voiceChat, players, myId }) {
 
   // ====== 已加入语音 ======
   if (isVoiceJoined) {
-    const handlePTTDown = () => { if (setPTT) setPTT(true); };
-    const handlePTTUp = () => { if (setPTT) setPTT(false); };
+    const handlePTTDown = (e) => {
+      e.preventDefault();
+      if (setPTT) setPTT(true);
+    };
+    const handlePTTUp = (e) => {
+      e.preventDefault();
+      if (setPTT) setPTT(false);
+    };
 
     return (
       <div className="voice-chat voice-chat-active">
@@ -112,10 +118,12 @@ export default function VoiceChat({ voiceChat, players, myId }) {
             onMouseLeave={handlePTTUp}
             onTouchStart={handlePTTDown}
             onTouchEnd={handlePTTUp}
+            onTouchCancel={handlePTTUp}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            {isPTT ? '🔴 说话中...' : '🎙️ 按住说话'}
+            {isPTT ? '🔴 说话中（松开停止）' : '🎙️ 按住说话'}
           </button>
-          <span className="ptt-hint">或按住空格键说话（按键说话/PTT模式）</span>
+          <span className="ptt-hint">按住按钮或空格键说话 · PTT按键模式</span>
         </div>
 
         <div className="voice-speakers">
@@ -130,7 +138,7 @@ export default function VoiceChat({ voiceChat, players, myId }) {
             );
           })}
           {players?.filter(p => p.id !== myId && p.alive).length === 0 && (
-            <span className="no-speakers">等待其他玩家加入...</span>
+            <span className="no-speakers">等待其他玩家加入语音...</span>
           )}
         </div>
       </div>
@@ -144,7 +152,7 @@ export default function VoiceChat({ voiceChat, players, myId }) {
         <div className="voice-permission-content">
           <span className="voice-permission-icon">🎤</span>
           <h4>语音聊天需要权限</h4>
-          <p>狼人杀需要使用你的<strong>麦克风</strong>进行语音交流，以及<strong>扬声器</strong>播放其他玩家的声音。</p>
+          <p>帷幕之地需要使用你的<strong>麦克风</strong>进行语音交流，以及<strong>扬声器</strong>播放其他玩家的声音。</p>
           <p className="voice-permission-note">
             PTT按键说话模式 — 只有按住按钮时才发送语音，保护你的隐私。
           </p>

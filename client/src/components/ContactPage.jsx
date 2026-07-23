@@ -50,8 +50,8 @@ export default function ContactPage({ onNavigate }) {
       <nav className="landing-nav">
         <div className="landing-nav-inner">
           <a className="nav-brand" onClick={() => onNavigate('home')}>
-            <span className="brand-icon">🐺</span>
-            <span className="brand-text">狼人杀</span>
+            <span className="brand-icon">🌑</span>
+            <span className="brand-text">帷幕之地</span>
           </a>
           <div className="nav-links">
             <a onClick={() => onNavigate('home')}>首页</a>
@@ -77,7 +77,7 @@ export default function ContactPage({ onNavigate }) {
               <span className="contact-icon">📧</span>
               <div>
                 <h4>邮箱</h4>
-                <p>werewolf.game@outlook.com</p>
+                <p>veilland.game@outlook.com</p>
               </div>
             </div>
             <div className="contact-info-card">
@@ -174,15 +174,15 @@ export default function ContactPage({ onNavigate }) {
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-brand">
-            <span>🐺</span>
-            <strong>帷幕之地 在线联机版</strong>
+            <span>🌑</span>
+            <strong>帷幕之地 · 灵焰纪元</strong>
           </div>
           <div className="footer-links">
             <a onClick={() => onNavigate('home')}>首页</a>
             <a onClick={() => onNavigate('download')}>下载PC端</a>
             <a onClick={() => onNavigate('contact')}>联系我们</a>
           </div>
-          <p className="footer-copy">© 2026 Werewolf Online. 为朋友聚会而生 🐺</p>
+          <p className="footer-copy">© 2026 帷幕之地 VeilLand. 在灵焰的微光中守望 🌑</p>
         </div>
       </footer>
     </div>

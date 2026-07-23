@@ -154,7 +154,7 @@ export default function NightPhase({ socket }) {
         />
       )}
 
-      {/* 种狼特殊：告知被感染者 */}
+      {/* 冥僧人特殊：告知被堕化者 */}
       {myRole === ROLES.NETHER_MONK && myPrivate?.hasUsedInfect && (
         <div className="alpha-notify-section">
           <button
@@ -165,9 +165,9 @@ export default function NightPhase({ socket }) {
               }
             }}
           >
-            📢 告知被感染者
+            📢 告知被堕化者
           </button>
-          <p className="alpha-notify-hint">向被你感染的玩家揭露你的身份</p>
+          <p className="alpha-notify-hint">向被你堕化的玩家揭露你的身份</p>
         </div>
       )}
     </div>
@@ -188,7 +188,7 @@ function ActionSelector({ myRole, myPrivate, round, onSelect }) {
         <span className="action-desc">离开自己的屋子去别人家</span>
       </button>
 
-      {/* 使用能力（非村民角色） */}
+      {/* 使用能力（专业守幕者） */}
       {!isWeaver && (
         <button className="action-card" onClick={() => onSelect(NIGHT_ACTIONS.USE_ABILITY)}>
           <span className="action-icon">✨</span>
@@ -197,7 +197,7 @@ function ActionSelector({ myRole, myPrivate, round, onSelect }) {
         </button>
       )}
 
-      {/* 帷幕低语（村民专属） */}
+      {/* 帷幕低语（灵织者专属） */}
       {isWeaver && (
         <button className="action-card eavesdrop-card" onClick={() => onSelect(NIGHT_ACTIONS.EAVESDROP)}>
           <span className="action-icon">👂</span>
@@ -310,7 +310,7 @@ function AbilityOptions({ myRole, myPrivate, ability, setAbility, target, aliveP
 function AlphaWolfOptions({ ability, setAbility, myPrivate, nightStep }) {
   const toggle = (key) => setAbility(prev => ({ ...prev, [key]: !prev[key] }));
   const canInfect = !myPrivate?.hasUsedInfect && !myPrivate?.hasKilled;
-  // 冥僧步骤只能变身/感染；刀人在蚀者步骤进行
+  // 冥僧步骤只能蚀变/堕化；噬灵在蚀者步骤进行
   const isWolfStep = nightStep === 'CORRUPTED';
   const canKill = isWolfStep && myPrivate?.isTransformed && !myPrivate?.hasKilled;
 
@@ -319,23 +319,23 @@ function AlphaWolfOptions({ ability, setAbility, myPrivate, nightStep }) {
       {!isWolfStep && !myPrivate?.isTransformed && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.transform} onChange={() => toggle('transform')} />
-          <span>🐺 变狼（变狼后可在蚀者步骤与同伴一起刀人）</span>
+          <span>🌑 蚀变（蚀变后可在蚀者步骤与同伴一起噬灵）</span>
         </label>
       )}
       {!isWolfStep && canInfect && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.infect} onChange={() => toggle('infect')} />
-          <span>🦠 感染目标（下个夜晚生效；使用后当前夜晚算狼人）</span>
+          <span>🦠 堕化目标（下个蚀月生效；使用后当前夜晚算蚀者）</span>
         </label>
       )}
       {isWolfStep && canKill && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.kill} onChange={() => toggle('kill')} />
-          <span>🔪 刀人（作为狼群一员选择击杀目标）</span>
+          <span>🌑 噬灵（作为蚀者群一员选择噬灵目标）</span>
         </label>
       )}
       {isWolfStep && myPrivate?.isTransformed && !canKill && (
-        <p className="ability-note" style={{color:'#888', fontSize:'0.9em'}}>🐺 你已变狼，今晚随狼群一起行动（本步骤自动视为刀人目标选择）</p>
+        <p className="ability-note" style={{color:'#888', fontSize:'0.9em'}}>🌑 你已蚀变，今晚随蚀者群一起行动（本步骤自动视为噬灵目标选择）</p>
       )}
     </div>
   );
@@ -357,7 +357,7 @@ function SeerOptions({ ability, setAbility }) {
     <div className="ability-options">
       <label className="ability-check">
         <input type="checkbox" checked={!!ability.check} onChange={() => setAbility(prev => ({ ...prev, check: !prev.check }))} />
-        <span>🔮 查验目标是否是好人</span>
+        <span>👁️ 察灵目标是否被蚀痕沾染</span>
       </label>
     </div>
   );
@@ -386,7 +386,7 @@ function HealWitchOptions({ ability, setAbility, myPrivate, target, alivePlayers
       {myPrivate?.hasHealTalisman && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.heal} onChange={() => setAbility(prev => ({ ...prev, heal: !prev.heal, healTarget: target }))} />
-          <span>💚 使用万能药（可治疗一切，包括灵蚀重伤）</span>
+          <span>💫 灵焰修复（可修复一切灵焰损伤，包括灵蚀重伤）</span>
         </label>
       )}
       {myPrivate?.hasSealTalisman && (
@@ -406,16 +406,16 @@ function HunterOptions({ ability, setAbility, myPrivate }) {
       <p className="weapon-note">🔫 选择携带的武器（只有带出门才会腐蚀，留在家中安全）:</p>
       <label className="ability-check">
         <input type="checkbox" checked={!!ability.hasRifle} onChange={() => toggleWeapon('hasRifle')} />
-        <span>🔫 猎枪 — 观察目标是否出门，可以射杀（带出门会腐蚀，留在家中安全）</span>
+        <span>🔫 灵焰猎枪 — 观察目标是否夜行，可以射杀（带出会腐蚀，留庇护所安全）</span>
       </label>
       <label className="ability-check">
         <input type="checkbox" checked={!!ability.hasBlunderbuss} onChange={() => toggleWeapon('hasBlunderbuss')} />
-        <span>💥 短火铳 — 受到攻击时反杀（带出门会腐蚀，只能保一晚）</span>
+        <span>💥 噬灭短铳 — 受到攻击时反杀（带出会腐蚀，只能保一晚）</span>
       </label>
       {ability.hasRifle && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.useRifle} onChange={() => setAbility(prev => ({ ...prev, useRifle: !prev.useRifle, rifleTarget: target }))} />
-          <span>🎯 使用猎枪射杀目标（开枪后猎枪消耗，无论是否出门）</span>
+          <span>🎯 使用灵焰猎枪射杀目标（开枪后猎枪消耗）</span>
         </label>
       )}
     </div>
@@ -433,7 +433,7 @@ function checkIsMyTurn(role, nightStep, myPrivate, round) {
     case NIGHT_STEPS.VEIL_GUARDIAN:
       return role === ROLES.VEIL_GUARDIAN;
     case NIGHT_STEPS.CORRUPTED:
-      // 普通狼人 + 种狼（种狼在变身/感染后算狼人群，私密状态可能尚未更新故一律放行）
+      // 蚀者 + 冥僧人（冥僧人在蚀变/堕化后算蚀者群）
       return role === ROLES.CORRUPTED || role === ROLES.NETHER_MONK;
     case NIGHT_STEPS.VEIL_SCHOLAR:
       return role === ROLES.VEIL_SCHOLAR;
@@ -449,9 +449,9 @@ function checkIsMyTurn(role, nightStep, myPrivate, round) {
 }
 
 function shouldBeAwake(role, nightStep) {
-  // 狼人在冥僧步骤不醒，除非是种狼
+  // 蚀者在冥僧步骤不醒，除非是冥僧人
   if (nightStep === NIGHT_STEPS.NETHER_MONK && role === ROLES.CORRUPTED) return false;
-  // 守卫在猎人步骤不醒
+  // 帷幕守卫在追猎者步骤不醒
   if (nightStep === NIGHT_STEPS.FLAME_TRACKER && role === ROLES.VEIL_GUARDIAN) return false;
   return true;
 }
@@ -462,13 +462,13 @@ function isWeaverRole(role) {
 
 function getAbilityDesc(role) {
   const descs = {
-    [ROLES.NETHER_MONK]: '变狼 / 感染 / 刀人',
+    [ROLES.NETHER_MONK]: '蚀变 / 堕化 / 噬灵',
     [ROLES.VEIL_GUARDIAN]: '守护一个人（去其家中）',
-    [ROLES.CORRUPTED]: '刀人（锁定人，不锁定屋）',
-    [ROLES.VEIL_SCHOLAR]: '查验一个人是否是好人',
+    [ROLES.CORRUPTED]: '噬灵（锁定灵焰，不锁定庇护所）',
+    [ROLES.VEIL_SCHOLAR]: '察灵辨识纯净或蚀痕',
     [ROLES.HERBAL_SAGE]: '蚀灭符阵 / 灵符',
-    [ROLES.SPIRIT_MENDER]: '万能药 / 毒药',
-    [ROLES.FLAME_TRACKER]: '观察 + 猎枪 / 短火铳',
+    [ROLES.SPIRIT_MENDER]: '灵焰修复 / 蚀痕净化',
+    [ROLES.FLAME_TRACKER]: '观察 + 灵焰猎枪 / 噬灭短铳',
   };
   return descs[role] || '';
 }

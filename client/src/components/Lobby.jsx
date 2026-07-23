@@ -121,7 +121,7 @@ export default function Lobby({ socket, playerName, bgm, onJoined, onChangeName 
     <div className="screen lobby-screen">
       <div className="lobby-card lobby-card-wide">
         <div className="lobby-header">
-          <span className="logo-icon">🐺</span>
+          <span className="logo-icon">🌑</span>
           <h1>帷幕之地</h1>
           <p className="player-name-display">
             玩家: <strong>{playerName}</strong>
@@ -294,7 +294,7 @@ function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
   const [showRoleIntro, setShowRoleIntro] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showName, setShowName] = useState(() => {
-    return localStorage.getItem('werewolf_show_name') !== 'false';
+    return localStorage.getItem('veilland_show_name') !== 'false';
   });
   const [privacyMsg, setPrivacyMsg] = useState('');
   const [startError, setStartError] = useState('');
@@ -340,7 +340,7 @@ function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
   const handleToggleShowName = () => {
     const next = !showName;
     setShowName(next);
-    localStorage.setItem('werewolf_show_name', String(next));
+    localStorage.setItem('veilland_show_name', String(next));
   };
 
   const handleTogglePrivacy = async (isPrivate, password) => {

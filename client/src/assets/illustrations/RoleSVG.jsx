@@ -61,7 +61,7 @@ export default function RoleSVG({ role, size = 160 }) {
   const renderSilhouette = () => {
     switch (role) {
       case ROLES.CORRUPTED:
-        return <WerewolfSilhouette cx={cx} cy={cy} r={r} />;
+        return <VeilLandSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.NETHER_MONK:
         return <AlphaWolfSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.VEIL_SCHOLAR:
@@ -158,7 +158,7 @@ export default function RoleSVG({ role, size = 160 }) {
 
 // ====== 各角色剪影 ======
 
-function WerewolfSilhouette({ cx, cy, r }) {
+function VeilLandSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 40 * scale}, ${cy - 55 * scale}) scale(${scale})`} opacity="0.85">
@@ -300,7 +300,7 @@ function HunterSilhouette({ cx, cy, r }) {
       <path d="M32 14 C32 6 52 6 52 14Z" fill="#2a1008" stroke="#d35400" strokeWidth="0.5" />
       {/* 身体 */}
       <path d="M22 16 C18 45 22 70 28 95 L56 95 C62 70 66 45 62 16Z" fill="#2a1008" opacity="0.8" />
-      {/* 猎枪 */}
+      {/* 灵焰猎枪 */}
       <line x1="62" y1="30" x2="78" y2="20" stroke="#8a9bb5" strokeWidth="2.5" opacity="0.7" />
       <rect x="58" y="28" width="6" height="12" rx="1" fill="#5a3a2a" stroke="#8a9bb5" strokeWidth="0.5" opacity="0.6" />
       {/* 枪口烟雾 */}

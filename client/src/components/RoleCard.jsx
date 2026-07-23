@@ -1,6 +1,6 @@
 // ============================================================
 // 角色卡 — v2.0 扩展版
-// 展示玩家自己的角色信息（含表层身份、村民类型、新能力状态）
+// 展示玩家自己的角色信息（含表层身份、灵织者类型、新能力状态）
 // ============================================================
 
 import React from 'react';
@@ -56,8 +56,8 @@ export default function RoleCard({ privateState }) {
 
       {/* 角色详细信息 */}
       <div className="role-card-details">
-        {pvt?.isTransformed && <span className="detail-tag wolf">🐺 已变狼</span>}
-        {pvt?.hasUsedInfect && <span className="detail-tag wolf">🦠 已感染</span>}
+        {pvt?.isTransformed && <span className="detail-tag wolf">🌑 已蚀变</span>}
+        {pvt?.hasUsedInfect && <span className="detail-tag wolf">🦠 已堕化</span>}
         {pvt?.fakeIdentity && <span className="detail-tag wolf">🎭 伪装: {pvt.fakeIdentity}</span>}
 
         {(role === ROLES.HERBAL_SAGE || role === ROLES.SPIRIT_MENDER) && pvt?.hasHealTalisman !== undefined && (
@@ -73,22 +73,22 @@ export default function RoleCard({ privateState }) {
           <span className="detail-tag heal">🌿 药草可收获</span>
         )}
 
-        {pvt?.hasRifle && pvt?.rifleUsable && <span className="detail-tag hunter">🔫 猎枪可用</span>}
-        {pvt?.hasBlunderbuss && pvt?.blunderbussUsable && <span className="detail-tag hunter">💥 短火铳可用</span>}
+        {pvt?.hasRifle && pvt?.rifleUsable && <span className="detail-tag hunter">🔫 灵焰猎枪可用</span>}
+        {pvt?.hasBlunderbuss && pvt?.blunderbussUsable && <span className="detail-tag hunter">💥 噬灭短铳可用</span>}
 
-        {pvt?.willBecomeWolf && <span className="detail-tag warning">⚠️ 即将变狼</span>}
+        {pvt?.willBecomeWolf && <span className="detail-tag warning">⚠️ 即将蚀变</span>}
         {pvt?.canShootNextNight && <span className="detail-tag hunter">🎯 明晚可追踪</span>}
         {pvt?.heavyInjury && <span className="detail-tag danger">💔 重伤</span>}
 
-        {/* 村民特有状态 */}
+        {/* 灵织者特有状态 */}
         {pvt?.doorFortified && <span className="detail-tag safe">🔒 门锁加固</span>}
         {pvt?.herbalRemedyUsed && <span className="detail-tag heal">🌿 草药已用</span>}
         {pvt?.nightWatchAlert && (
           <span className="detail-tag info">👁️ 出门: {pvt.nightWatchAlert.outCount}人</span>
         )}
 
-        {/* 狼人特有状态 */}
-        {pvt?.howlCooldown > 0 && <span className="detail-tag wolf">📢 嚎叫冷却: {pvt.howlCooldown}回合</span>}
+        {/* 蚀者特有状态 */}
+        {pvt?.howlCooldown > 0 && <span className="detail-tag wolf">📢 裂隙共鸣冷却: {pvt.howlCooldown}回合</span>}
         {pvt?.corrosionMistActive && <span className="detail-tag poison">🌫️ 蚀雾就绪</span>}
 
         {/* 察灵家特有状态 */}
@@ -111,14 +111,14 @@ export default function RoleCard({ privateState }) {
       {/* 已知同伴 */}
       {pvt?.knownWolves?.length > 0 && (
         <div className="role-card-allies">
-          <h5>🐺 已知同伴:</h5>
+          <h5>🌑 已知蚀者同伴:</h5>
           {pvt.knownWolves.map(wid => (
             <span key={wid} className="ally-tag">{wid}</span>
           ))}
         </div>
       )}
 
-      {/* 嗅觉追踪记录 */}
+      {/* 灵痕追踪记录 */}
       {pvt?.scentTrail?.length > 0 && (
         <div className="role-card-allies">
           <h5>👃 嗅觉追踪:</h5>
@@ -156,19 +156,19 @@ function formatPrivateLog(entry) {
   switch (entry.type) {
     // 察灵家相关
     case 'seer_check':
-      return `🔮 查验结果: ${entry.result === 'GOOD' ? '好人 ✅' : entry.result === 'WOLF' ? '狼人 🐺' : entry.result}`;
+      return `🔮 察灵结果: ${entry.result === 'GOOD' ? '守幕者 ✅' : entry.result === 'WOLF' ? '蚀者 🌑' : entry.result}`;
     case 'seer_check_fake':
-      return `🔮 查验结果: ${entry.fakeRole || '?'}（可疑——可能是假身份）`;
+      return `🔮 察灵结果: ${entry.fakeRole || '?'}（可疑——可能是假身份）`;
     case 'seer_dream':
       return `🌙 梦境碎片: ${entry.fragment || '模糊的幻象...'}`;
     case 'seer_spirit_vision':
       return `👻 灵视: 死者身份 — ${entry.role || '?'}`;
 
-    // 狼人相关
+    // 蚀者相关
     case 'wolf_meet':
-      return '🐺 你感知到另一名蚀者！';
+      return '🌑 你感知到另一名蚀者！';
     case 'wolves_united':
-      return '🐺 蚀者们已共鸣，下回合可协同行动';
+      return '🌑 蚀者们已共鸣，下蚀月可协同行动';
     case 'wolf_mutual_kill':
       return '⚔️ 两名蚀者互噬，已相认';
     case 'wolf_howl':
@@ -222,7 +222,7 @@ function formatPrivateLog(entry) {
 
     // 种狼相关
     case 'alpha_transform':
-      return '🐺 种狼完成了变狼';
+      return '🌑 冥僧人完成了蚀变';
     case 'alpha_fake_identity':
       return `🎭 假身份编织: ${entry.fakeRole || '?'}`;
     case 'alpha_infected_visible':
@@ -232,11 +232,11 @@ function formatPrivateLog(entry) {
     case 'infected':
       return '🦠 你被冥僧人堕化，下个夜晚将蚀变为蚀者';
     case 'seer_infected':
-      return '🔮 种狼试图感染你，但你保留了察灵能力';
+      return '🔮 冥僧人试图堕化你，但你保留了察灵能力';
     case 'alpha_to_villager':
-      return '👨‍🌾 冥僧人堕化了帷幕学者，自己变成了村民';
+      return '👨‍🌾 冥僧人堕化了帷幕学者，自己转化为灵织者';
     case 'became_wolf':
-      return '🐺 你已蚀变为蚀者！';
+      return '🌑 你已蚀变为蚀者！';
 
     // 村民相关
     case 'eavesdrop':

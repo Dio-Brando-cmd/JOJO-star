@@ -52,8 +52,8 @@ export default function StatsPanel({ socket, auth, onBack }) {
       <nav className="landing-nav">
         <div className="landing-nav-inner">
           <a className="nav-brand" onClick={onBack}>
-            <span className="brand-icon">🐺</span>
-            <span className="brand-text">狼人杀</span>
+            <span className="brand-icon">🌑</span>
+            <span className="brand-text">帷幕之地</span>
           </a>
           <div className="nav-links">
             <button className="btn btn-text" onClick={onBack}>← 返回</button>

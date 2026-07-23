@@ -1,6 +1,6 @@
 // ============================================================
 // 角色选择器 —— 房主在大厅配置本局角色池（随机分配）
-// 支持同名角色多选（如2狼人、3村民）
+// 支持同名角色多选（如2蚀者、3灵织者）
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -8,14 +8,14 @@ import { ROLES, ROLE_NAMES, ROLE_ICONS } from '../utils/constants';
 
 // 所有可选角色（带推荐最大数量）
 const ALL_ROLES = [
-  { id: ROLES.NETHER_MONK, name: '种狼', icon: '👑🐺', team: 'CORRUPTED', desc: '可堕化/蚀变/噬灵', max: 1 },
-  { id: ROLES.CORRUPTED, name: '狼人', icon: '🐺', team: 'CORRUPTED', desc: '夜晚噬灵，锁定灵焰而非庇护所', max: 5 },
-  { id: ROLES.VEIL_SCHOLAR, name: '察灵家', icon: '🔮', team: 'VEIL_KEEPERS', desc: '察灵辨识纯净/蚀痕', max: 1 },
-  { id: ROLES.HERBAL_SAGE, name: '毒巫', icon: '☠️🧪', team: 'VEIL_KEEPERS', desc: '蚀灭符阵+灵符', max: 1 },
-  { id: ROLES.SPIRIT_MENDER, name: '药巫', icon: '💚🧪', team: 'VEIL_KEEPERS', desc: '灵焰修复+蚀痕净化', max: 1 },
-  { id: ROLES.VEIL_GUARDIAN, name: '守卫', icon: '🛡️', team: 'VEIL_KEEPERS', desc: '灵焰庇护一人，可灵蚀重伤', max: 1 },
-  { id: ROLES.FLAME_TRACKER, name: '猎人', icon: '🔫', team: 'VEIL_KEEPERS', desc: '灵焰猎枪+噬灭短铳', max: 1 },
-  { id: ROLES.SPIRIT_WEAVER, name: '村民', icon: '👨‍🌾', team: 'VEIL_KEEPERS', desc: '普通村民', max: 8 },
+  { id: ROLES.NETHER_MONK, name: '冥僧人', icon: '🕯️🌑', team: 'CORRUPTED', desc: '堕化他人·蚀变·噬灵·灵焰遮蔽', max: 1 },
+  { id: ROLES.CORRUPTED, name: '蚀者', icon: '🌑', team: 'CORRUPTED', desc: '夜晚噬灵，吞噬他人灵焰', max: 5 },
+  { id: ROLES.VEIL_SCHOLAR, name: '帷幕学者', icon: '👁️', team: 'VEIL_KEEPERS', desc: '察灵辨识纯净/蚀痕', max: 1 },
+  { id: ROLES.HERBAL_SAGE, name: '草药学者', icon: '🌿📜', team: 'VEIL_KEEPERS', desc: '蚀灭符阵+灵符', max: 1 },
+  { id: ROLES.SPIRIT_MENDER, name: '愈灵师', icon: '💫', team: 'VEIL_KEEPERS', desc: '灵焰修复+蚀痕净化', max: 1 },
+  { id: ROLES.VEIL_GUARDIAN, name: '帷幕守卫', icon: '🛡️✨', team: 'VEIL_KEEPERS', desc: '灵焰庇护一人，可灵蚀重伤', max: 1 },
+  { id: ROLES.FLAME_TRACKER, name: '灵痕追猎者', icon: '🎯', team: 'VEIL_KEEPERS', desc: '灵焰猎枪+噬灭短铳', max: 1 },
+  { id: ROLES.SPIRIT_WEAVER, name: '灵织者', icon: '🧵', team: 'VEIL_KEEPERS', desc: '灵焰感知·帷幕低语·灵织术', max: 8 },
 ];
 
 // 默认推荐配置
@@ -137,7 +137,7 @@ export default function RoleSelector({ isHost, playerCount, currentConfig, onUpd
     if (!hasVillage) return '必须至少有一个守幕者阵营角色';
     const wolves = config.filter(r => r === ROLES.CORRUPTED || r === ROLES.NETHER_MONK).length;
     const village = config.length - wolves;
-    if (wolves >= village) return '狼人数量不能≥好人数量';
+    if (wolves >= village) return '蚀者数量不能≥守幕者数量';
     return null;
   }, [buildConfig, playerCount]);
 
@@ -181,7 +181,7 @@ export default function RoleSelector({ isHost, playerCount, currentConfig, onUpd
       <h4>🎭 角色配置（房主 — 随机分配）</h4>
       <p className="select-hint">
         玩家 {playerCount} 人 | 已配置 {totalSelected}/{playerCount} 个角色 |
-        🐺狼人 {wolfCount} | 👥好人 {villageCount}
+        🌑蚀者 {wolfCount} | ✨守幕者 {villageCount}
       </p>
       {totalSelected > 0 && totalSelected !== playerCount && (
         <p className="warning-text">⚠️ 角色数量需等于玩家数量</p>

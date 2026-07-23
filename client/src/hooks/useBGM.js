@@ -25,17 +25,17 @@ const DEFAULT_PHASE_TRACKS = {
 
 export function useBGM() {
   const [bgmEnabled, setBgmEnabled] = useState(() => {
-    return localStorage.getItem('werewolf_bgm_enabled') !== 'false';
+    return localStorage.getItem('veilland_bgm_enabled') !== 'false';
   });
   const [bgmVolume, setBgmVolume] = useState(() => {
-    return parseFloat(localStorage.getItem('werewolf_bgm_volume') || '0.5');
+    return parseFloat(localStorage.getItem('veilland_bgm_volume') || '0.5');
   });
   const [currentTrack, setCurrentTrack] = useState(() => {
-    return localStorage.getItem('werewolf_bgm_track') || 'JO飞';
+    return localStorage.getItem('veilland_bgm_track') || 'JO飞';
   });
   const [phaseTracks, setPhaseTracks] = useState(() => {
     try {
-      const saved = localStorage.getItem('werewolf_bgm_phase_tracks');
+      const saved = localStorage.getItem('veilland_bgm_phase_tracks');
       return saved ? JSON.parse(saved) : { ...DEFAULT_PHASE_TRACKS };
     } catch { return { ...DEFAULT_PHASE_TRACKS }; }
   });
@@ -103,7 +103,7 @@ export function useBGM() {
   // 切换曲目
   const setTrack = useCallback((trackId) => {
     setCurrentTrack(trackId);
-    localStorage.setItem('werewolf_bgm_track', trackId);
+    localStorage.setItem('veilland_bgm_track', trackId);
     const track = BGM_TRACKS.find(t => t.id === trackId);
     if (track && track.file) {
       play(track.file);
@@ -116,7 +116,7 @@ export function useBGM() {
   const setPhaseTrack = useCallback((phase, trackId) => {
     setPhaseTracks(prev => {
       const next = { ...prev, [phase]: trackId };
-      localStorage.setItem('werewolf_bgm_phase_tracks', JSON.stringify(next));
+      localStorage.setItem('veilland_bgm_phase_tracks', JSON.stringify(next));
       return next;
     });
   }, []);
@@ -125,7 +125,7 @@ export function useBGM() {
   const toggleBGM = useCallback(() => {
     setBgmEnabled(prev => {
       const next = !prev;
-      localStorage.setItem('werewolf_bgm_enabled', String(next));
+      localStorage.setItem('veilland_bgm_enabled', String(next));
       if (!next) stop();
       return next;
     });
@@ -134,7 +134,7 @@ export function useBGM() {
   // 设置音量
   const setVolume = useCallback((vol) => {
     setBgmVolume(vol);
-    localStorage.setItem('werewolf_bgm_volume', String(vol));
+    localStorage.setItem('veilland_bgm_volume', String(vol));
   }, []);
 
   return {
