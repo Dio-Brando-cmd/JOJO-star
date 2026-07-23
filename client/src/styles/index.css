@@ -5,20 +5,20 @@
 
 /* ---- CSS变量 ---- */
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-card: #0f3460;
-  --bg-input: #1a1a3e;
+  --bg-primary: #0d0a1a;
+  --bg-secondary: #1a1640;
+  --bg-card: #1e1850;
+  --bg-input: #151030;
   --text-primary: #e8e8e8;
   --text-secondary: #a0a0b8;
   --text-muted: #6a6a80;
-  --accent: #e94560;
-  --accent2: #f5c518;
+  --accent: #c9a050;
+  --accent2: #8a6bc0;
   --success: #27ae60;
-  --danger: #c0392b;
-  --wolf: #c0392b;
-  --village: #2980b9;
-  --border: #2a2a4a;
+  --danger: #8b3a3a;
+  --wolf: #6b3fa0;
+  --village: #c9a050;
+  --border: #2a2050;
   --radius: 10px;
   --shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
