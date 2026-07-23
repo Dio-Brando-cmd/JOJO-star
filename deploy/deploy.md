@@ -1,4 +1,4 @@
-# 狼人杀 — 云端部署指南
+# 帷幕之地 — 云端部署指南
 
 ## 方案 A：便宜 VPS 部署（推荐，永久可用）
 
@@ -17,10 +17,10 @@ curl -fsSL https://get.docker.com | sh
 # 在本地电脑打包
 cd werewolf-online
 npm run build:client
-tar -czf werewolf.tar.gz server/src package.json client/dist deploy/Dockerfile
+tar -czf veilland.tar.gz server/src package.json client/dist deploy/Dockerfile
 
 # 上传到服务器（替换为你的服务器IP）
-scp werewolf.tar.gz root@你的服务器IP:/root/
+scp veilland.tar.gz root@你的服务器IP:/root/
 ```
 
 ### 4. 在服务器上启动
@@ -30,10 +30,10 @@ ssh root@你的服务器IP
 
 # 解压并构建
 cd /root
-tar -xzf werewolf.tar.gz
+tar -xzf veilland.tar.gz
 docker build -t werewolf -f deploy/Dockerfile .
 # 生产环境请修改盐值环境变量（务必修改默认值！）
-docker run -d -p 80:4000 --restart=unless-stopped --name werewolf \
+docker run -d -p 80:4000 --restart=unless-stopped --name veilland \
   -e PORT=4000 \
   -e USER_PASSWORD_SALT="your-random-salt-here" \
   -e ROOM_PASSWORD_SALT="your-random-salt-here" \

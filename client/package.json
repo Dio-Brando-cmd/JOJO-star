@@ -1,6 +1,6 @@
 {
   "name": "veilland-client",
-  "version": "2.12.1",
+  "version": "2.13.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host",

@@ -1,5 +1,5 @@
 [开发环境搭建指南.md](https://github.com/user-attachments/files/30181899/default.md)
-# 🐺 狼人杀在线联机版 — 开发环境搭建指南
+# 🐺 帷幕之地 — 开发环境搭建指南
 
 > 给一起开发的小伙伴：clone 仓库后用 IDE 打开会报错是正常的，按下面步骤来就行。
 

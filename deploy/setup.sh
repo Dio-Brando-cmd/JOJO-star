@@ -1,12 +1,12 @@
 #!/bin/bash
 # ======================================================
-# 狼人杀 VPS 一键部署脚本
+# 帷幕之地 VPS 一键部署脚本
 # 使用方法：在云服务器上运行 bash setup.sh
 # ======================================================
 
 set -e
 
-echo "🐺 狼人杀服务器 — 一键部署"
+echo "🐺 帷幕之地服务器 — 一键部署"
 echo "================================================"
 
 # 1. 安装 Docker（如果没有）
@@ -50,7 +50,7 @@ echo ""
 echo "  cd werewolf-online"
 echo "  npm run build:client"
 echo "  scp -r server package.json 用户名@$(hostname -I | awk '{print $1}'):/opt/werewolf/"
-echo "  scp -r client/dist 用户名@$(hostname -I | awk '{print $1}'):/opt/werewolf/client/"
+echo "  scp -r client/dist 用户名@$(hostname -I | awk '{print $1}'):/opt/veilland/client/"
 echo ""
 echo "  然后回到这里继续..."
 echo "================================================"

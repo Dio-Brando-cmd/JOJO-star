@@ -1,4 +1,4 @@
-// 狼人杀 - 修正版部署脚本 (部署到 /opt/werewolf/server/src)
+// 帷幕之地 - 修正版部署脚本 (部署到 /opt/veilland/server/src)
 import { Client } from 'ssh2';
 import { readdirSync, statSync } from 'fs';
 import { join, dirname, relative } from 'path';
@@ -9,9 +9,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const HOST = '210.16.170.144';
 const USER = 'root';
 const PWD = 'zx4ShToBKhT9tVcQ';
-const REMOTE_SRC = '/opt/werewolf/server/src';
-const REMOTE_DIST = '/opt/werewolf/client/dist';
-const REMOTE_BGM = '/opt/werewolf/client/dist/bgm';
+const REMOTE_SRC = '/opt/veilland/server/src';
+const REMOTE_DIST = '/opt/veilland/client/dist';
+const REMOTE_BGM = '/opt/veilland/client/dist/bgm';
 
 function collectFiles(dir, base) {
   const files = [];
@@ -137,7 +137,7 @@ conn.on('ready', () => {
 
     function restartPM2() {
       console.log('\n创建数据目录并重启...');
-      conn.exec('mkdir -p /opt/werewolf/server/data && pm2 restart werewolf', (e, stream) => {
+      conn.exec('mkdir -p /opt/veilland/server/data && pm2 restart veilland', (e, stream) => {
         if (e) { console.log('exec失败:', e.message); conn.end(); return; }
         let out = '';
         stream.on('data', (d) => { out += d.toString(); });

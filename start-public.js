@@ -88,7 +88,7 @@ async function main() {
 
   console.log('');
   console.log('═══════════════════════════════════════════');
-  console.log('  🐺 狼人杀 — 联机地址');
+  console.log('  🌑 帷幕之地 — 联机地址');
   console.log('═══════════════════════════════════════════');
 
   if (result) {

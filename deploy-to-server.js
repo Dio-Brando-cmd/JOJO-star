@@ -1,5 +1,5 @@
 // ============================================================
-// 狼人杀 自动部署脚本 (使用 ssh2)
+// 帷幕之地 自动部署脚本 (使用 ssh2)
 // 用法: node deploy-to-server.js <密码>
 // ============================================================
 
@@ -15,7 +15,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const HOST = '210.16.170.144';
 const PORT = 22;
 const USER = 'root';
-const REMOTE_BASE = '/opt/werewolf-server';
+const REMOTE_BASE = '/opt/veilland-server';
 
 // ====== 本机文件路径 ======
 const SERVER_SRC = join(__dirname, 'server', 'src');
@@ -58,7 +58,7 @@ function collectFiles(dir, base = dir) {
 
 // ====== 主流程 ======
 async function deploy() {
-  console.log(c.cyan('🐺 狼人杀 — 自动部署到云服务器'));
+  console.log(c.cyan('🌑 帷幕之地 — 自动部署到云服务器'));
   console.log(c.cyan(`   目标: ${USER}@${HOST}:${REMOTE_BASE}\n`));
 
   // 1. 收集文件
@@ -170,7 +170,7 @@ async function deploy() {
   console.log(c.yellow('[4/4] 重启服务器...'));
 
   const restartResult = await new Promise((resolve) => {
-    const restartCmd = 'cd /opt/werewolf-server && npm install --production 2>&1 && (USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 restart werewolf-server 2>&1 || USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 start index.js --name werewolf-server 2>&1)';
+    const restartCmd = 'cd /opt/veilland-server && npm install --production 2>&1 && (USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 restart veilland-server 2>&1 || USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 start index.js --name veilland-server 2>&1)';
     conn.exec(restartCmd, (err, stream) => {
       if (err) { resolve({ error: err.message }); return; }
       let output = '';
@@ -183,7 +183,7 @@ async function deploy() {
   if (restartResult.error) {
     console.log(c.red(`   ❌ 重启失败: ${restartResult.error}`));
     console.log(c.yellow('   请手动 SSH 到服务器执行:'));
-    console.log(c.yellow('   cd /opt/werewolf-server && npm install && pm2 restart werewolf-server'));
+    console.log(c.yellow('   cd /opt/veilland-server && npm install && pm2 restart veilland-server'));
   } else {
     console.log(c.green('   ✅ 服务器重启成功'));
     console.log(c.cyan(`   ${restartResult.output?.trim()}`));

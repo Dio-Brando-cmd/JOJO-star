@@ -469,7 +469,7 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '双重血统',
         type: TRAIT_TYPES.PASSIVE,
-        effect: '无论里身份为何，始终能听到狼人的裂隙共鸣（获知裂隙共鸣发生但不知是谁）',
+        effect: '无论里身份为何，始终能听到蚀者的裂隙共鸣（获知裂隙共鸣发生但不知是谁）',
         icon: '🌗',
       },
       {
@@ -619,9 +619,9 @@ export const CHARACTER_IDENTITIES = {
   GOREN: {
     id: 'GOREN', name: '格伦', title: '流浪锻甲灵织者',
     origin: MYTH_ORIGINS.MINE, gender: 'male',
-    story: '帷幕之地最好的锻甲灵织者。他打造过猎人的枪管、守卫的盾牌、女巫的药瓶架。狼人肆虐后他把铁砧搬到了暮色村。"如果我的铁能救一个人，这把锤子就没白抡。"',
+    story: '帷幕之地最好的锻甲灵织者。他打造过猎人的枪管、守卫的盾牌、女巫的药瓶架。蚀痕蔓延后他把铁砧搬到了暮色村。"如果我的铁能救一个人，这把锤子就没白抡。"',
     externalTraits: [
-      { name: '锻甲灵织者之力', type: TRAIT_TYPES.PASSIVE, effect: '加固自家门锁(抵御一次狼人)。被投出局时可带走一名投票者', icon: '🔨' },
+      { name: '锻甲灵织者之力', type: TRAIT_TYPES.PASSIVE, effect: '加固自家门锁(抵御一次蚀者噬灵)。被投出局时可带走一名投票者', icon: '🔨' },
       { name: '自制装备', type: TRAIT_TYPES.ACTIVE, effect: '可打造一件临时护甲给他人(持续1晚)', icon: '⚒️' },
       { name: '笨重', type: TRAIT_TYPES.WEAKNESS, effect: '移动速度-10%，潜行等级-2', icon: '🏋️' },
     ],

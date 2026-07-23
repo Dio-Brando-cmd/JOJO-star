@@ -9,7 +9,7 @@ using System.IO;
 
 public class ProjectSetup : EditorWindow
 {
-    [MenuItem("Tools/Werewolf/Setup Project (Full)")]
+    [MenuItem("Tools/VeilLand/Setup Project (Full)")]
     public static void SetupFull()
     {
         CreateFolders();
@@ -18,7 +18,7 @@ public class ProjectSetup : EditorWindow
         SetupPhysics();
         SetupPlayerSettings();
         SetupScene();
-        Debug.Log("✅ Werewolf project fully configured");
+        Debug.Log("✅ VeilLand project fully configured");
     }
 
     static void CreateFolders()
@@ -91,13 +91,13 @@ public class ProjectSetup : EditorWindow
 
     static void SetupPlayerSettings()
     {
-        PlayerSettings.companyName = "Werewolf Studio";
+        PlayerSettings.companyName = "VeilLand Studio";
         PlayerSettings.productName = "帷幕之地";
         PlayerSettings.SetApplicationIdentifier(
-            NamedBuildTarget.Standalone, "com.werewolf.veilland");
+            NamedBuildTarget.Standalone, "com.veilland.online");
     }
 
-    [MenuItem("Tools/Werewolf/Create Main Scene")]
+    [MenuItem("Tools/VeilLand/Create Main Scene")]
     static void SetupScene()
     {
         var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();

@@ -235,7 +235,7 @@ function formatPrivateLog(entry) {
       return '🔮 冥僧人试图堕化你，但你保留了察灵能力';
     case 'alpha_to_villager':
       return '👨‍🌾 冥僧人堕化了帷幕学者，自己转化为灵织者';
-    case 'became_wolf':
+    case 'became_corrupted':
       return '🌑 你已蚀变为蚀者！';
 
     // 村民相关
@@ -248,7 +248,7 @@ function formatPrivateLog(entry) {
     case 'old_hunter_trap':
       return '🪤 老猎人的陷阱已布设——等待猎物';
     case 'old_hunter_detected':
-      return `🎯 老猎人发现了进入你家的狼人！`;
+      return `🎯 老猎人发现了进入庇护所的蚀者！`;
     case 'merchant_double_visit':
       return `📦 商人访问了两个屋子: ${entry.firstTarget || '?'} 和 ${entry.secondTarget || '?'}`;
     case 'trade_info':

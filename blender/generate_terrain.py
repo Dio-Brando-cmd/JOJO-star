@@ -1,6 +1,6 @@
 """
 ============================================================
- 狼人杀 3D 地形场景生成器 — 兼容 Blender 4.0 ~ 5.x LTS
+ 帷幕之地 3D 地形场景生成器 — 兼容 Blender 4.0 ~ 5.x LTS
  在 Blender Scripting 工作区运行此脚本 (Alt+P)
 ============================================================
 """
@@ -53,7 +53,7 @@ def mat_socket(bsdf, name, value):
 # ====== 配置 ======
 OUTPUT_DIR = os.path.join(
     os.path.dirname(bpy.data.filepath) if bpy.data.filepath
-    else os.path.expanduser("~"), "werewolf_models"
+    else os.path.expanduser("~"), "veilland_models"
 )
 
 # ====== 工具函数 ======
@@ -292,7 +292,7 @@ def generate_full_map():
 
 def main():
     print("=" * 60)
-    print("  🏞️ 狼人杀 3D 地形生成器")
+    print("  🏞️ 帷幕之地 3D 地形生成器")
     print(f"  兼容 Blender 4.0 ~ 5.x")
     print("=" * 60)
 
@@ -310,7 +310,7 @@ def main():
         clear_scene()
         generator()
         bpy.ops.object.select_all(action='SELECT')
-        glb = os.path.join(OUTPUT_DIR, f"werewolf_{scene_name}.glb")
+        glb = os.path.join(OUTPUT_DIR, f"veilland_{scene_name}.glb")
         safe_export_gltf(glb)
         print(f"     → {glb}\n")
 

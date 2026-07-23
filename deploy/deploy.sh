@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# 狼人杀 — 一键部署到云服务器
+# 帷幕之地 — 一键部署到云服务器
 # 用法: ./deploy/deploy.sh <服务器IP>
 # 示例: ./deploy/deploy.sh 123.456.789.0
 # ============================================================
@@ -12,7 +12,7 @@ if [ -z "$SERVER_IP" ]; then
   exit 1
 fi
 
-echo "🐺 狼人杀 — 部署到 $SERVER_IP"
+echo "🌑 帷幕之地 — 部署到 $SERVER_IP"
 echo ""
 
 # 1. 构建前端
@@ -22,7 +22,7 @@ npm run build:client
 
 # 2. 打包部署文件
 echo "📦 [2/5] 打包部署文件..."
-tar -czf werewolf-deploy.tar.gz \
+tar -czf veilland-deploy.tar.gz \
   server/package.json \
   server/package-lock.json \
   server/src \
@@ -30,11 +30,11 @@ tar -czf werewolf-deploy.tar.gz \
   deploy/Dockerfile \
   deploy/docker-compose.yml
 
-echo "   包大小: $(du -h werewolf-deploy.tar.gz | cut -f1)"
+echo "   包大小: $(du -h veilland-deploy.tar.gz | cut -f1)"
 
 # 3. 上传到服务器
 echo "📦 [3/5] 上传到服务器..."
-scp werewolf-deploy.tar.gz "root@$SERVER_IP:/root/"
+scp veilland-deploy.tar.gz "root@$SERVER_IP:/root/"
 
 # 4. SSH 部署
 echo "📦 [4/5] 服务器上部署..."
@@ -45,8 +45,8 @@ set -e
 cd /root
 mkdir -p /opt/werewolf
 cd /opt/werewolf
-tar -xzf /root/werewolf-deploy.tar.gz
-rm /root/werewolf-deploy.tar.gz
+tar -xzf /root/veilland-deploy.tar.gz
+rm /root/veilland-deploy.tar.gz
 
 # 确保端口开放
 if command -v ufw >/dev/null 2>&1; then
@@ -60,7 +60,7 @@ docker rm werewolf 2>/dev/null || true
 # 构建并启动
 docker build -t werewolf -f deploy/Dockerfile .
 docker run -d \
-  --name werewolf \
+  --name veilland \
   --restart=unless-stopped \
   -p 4000:4000 \
   -e PORT=4000 \
@@ -72,7 +72,7 @@ docker ps --filter name=werewolf --format "table {{.Names}}\t{{.Status}}\t{{.Por
 EOF
 
 # 5. 清理本地打包文件
-rm werewolf-deploy.tar.gz
+rm veilland-deploy.tar.gz
 
 echo ""
 echo "════════════════════════════════════════════════"

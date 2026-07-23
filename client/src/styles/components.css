@@ -698,7 +698,7 @@
   font-size: 0.75em;
   font-weight: 600;
 }
-.team-badge.WOLF { background: var(--wolf); color: white; }
+.team-badge.CORRUPTED { background: var(--corrupted); color: white; }
 .team-badge.VILLAGE { background: var(--village); color: white; }
 
 .role-card-details {
@@ -721,7 +721,7 @@
   padding-top: 8px;
   border-top: 1px solid var(--border);
 }
-.role-card-allies h5 { color: var(--wolf); font-size: 0.85em; margin-bottom: 4px; }
+.role-card-allies h5 { color: var(--corrupted); font-size: 0.85em; margin-bottom: 4px; }
 .ally-tag { font-size: 0.8em; color: var(--text-muted); display: block; }
 
 .role-card-log {
@@ -815,7 +815,7 @@
 .reveal-name { display: block; font-weight: 600; font-size: 0.9em; }
 .reveal-role { font-size: 0.8em; font-weight: 700; color: var(--accent2); }
 .reveal-team { font-size: 0.7em; padding: 1px 6px; border-radius: 4px; }
-.reveal-team.WOLF { background: rgba(192,57,43,0.2); color: var(--wolf); }
+.reveal-team.CORRUPTED { background: rgba(192,57,43,0.2); color: var(--corrupted); }
 .reveal-team.VILLAGE { background: rgba(41,128,185,0.2); color: var(--village); }
 .reveal-status { font-size: 0.75em; }
 .reveal-status.alive { color: var(--success); }
@@ -1072,7 +1072,7 @@
 }
 .role-option:hover { border-color: var(--accent2); }
 .role-option.selected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
-.role-option.WOLF.selected { border-color: var(--wolf); }
+.role-option.CORRUPTED.selected { border-color: var(--corrupted); }
 .role-option.VILLAGE.selected { border-color: var(--village); }
 .role-option-icon { font-size: 1.5em; }
 .role-option-name { font-weight: 600; }
@@ -1103,7 +1103,7 @@
   border-radius: 6px;
   font-weight: 600;
 }
-.config-role-tag.WOLF { background: rgba(192,57,43,0.2); color: var(--wolf); }
+.config-role-tag.CORRUPTED { background: rgba(192,57,43,0.2); color: var(--corrupted); }
 .config-role-tag.VILLAGE { background: rgba(41,128,185,0.2); color: var(--village); }
 
 .role-count-controls {

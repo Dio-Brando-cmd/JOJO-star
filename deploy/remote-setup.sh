@@ -1,5 +1,5 @@
 #!/bin/bash
-# 狼人杀 — 远程服务器部署脚本
+# 帷幕之地 — 远程服务器部署脚本
 set -e
 
 echo "=== Docker 镜像源 ==="
@@ -15,7 +15,7 @@ systemctl is-active docker
 
 echo "=== 解压代码包 ==="
 cd /opt/werewolf
-tar -xzf werewolf.tar.gz
+tar -xzf veilland.tar.gz
 
 echo "=== Dockerfile ==="
 cat > /opt/werewolf/Dockerfile << 'DOCKERFILE'
@@ -42,7 +42,7 @@ docker build -t werewolf /opt/werewolf 2>&1
 echo "=== 启动服务 ==="
 docker stop werewolf 2>/dev/null || true
 docker rm werewolf 2>/dev/null || true
-docker run -d --name werewolf --restart=unless-stopped -p 80:4000 \
+docker run -d --name veilland --restart=unless-stopped -p 80:4000 \
   -e PORT=4000 \
   -e USER_PASSWORD_SALT=werewolf-prod-salt-$(date +%s) \
   -e ROOM_PASSWORD_SALT=werewolf-room-salt-$(date +%s) \

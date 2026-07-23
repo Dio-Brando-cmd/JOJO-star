@@ -205,7 +205,7 @@ export class TraitSystem {
   }
 
   /**
-   * 检查"戒律"：不能投票给第一晚查出的狼人
+   * 检查"戒律"：不能投票给第一晚查出的蚀者
    */
   canVoteEarlyWolf(player, target) {
     if (!this.hasTrait(player, '戒律')) return true;
@@ -228,7 +228,7 @@ export class TraitSystem {
   }
 
   /**
-   * 狼之嗅觉（罗慕路斯）：感知附近狼人
+   * 狼之嗅觉（罗慕路斯）：感知附近蚀者
    */
   getWolfSense(player) {
     if (!this.hasTrait(player, '狼之嗅觉')) return null;

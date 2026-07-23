@@ -2,7 +2,7 @@
 import bpy, os
 _this_dir = os.path.dirname(bpy.context.space_data.text.filepath)
 _utils_dir = os.path.dirname(_this_dir)
-exec(open(os.path.join(_utils_dir, 'werewolf_utils.py'), encoding='utf-8').read())
+exec(open(os.path.join(_utils_dir, 'veilland_utils.py'), encoding='utf-8').read())
 
 generate({
     'id':'Hector','name':'赫克托','height':1.88,'shape':'muscular_male','gender':'male',

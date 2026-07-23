@@ -1,5 +1,5 @@
 // ============================================================
-// 狼人杀桌面客户端 — 全平台互通版本
+// 帷幕之地桌面客户端 — 全平台互通版本
 // 与网页版、Android版使用同一云服务器
 // ============================================================
 
@@ -72,7 +72,7 @@ function createWindow(serverUrl) {
     height: 900,
     minWidth: 1000,
     minHeight: 700,
-    title: '🐺 狼人杀 — 在线联机',
+    title: '🌑 帷幕之地 — 在线联机',
     icon: path.join(__dirname, '..', 'client', 'public', 'moon.svg'),
     webPreferences: {
       nodeIntegration: false,
@@ -100,8 +100,8 @@ function createWindow(serverUrl) {
   mainWindow.loadURL(serverUrl);
 
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.setTitle('🐺 狼人杀 — 在线联机');
-    console.log('🐺 狼人杀桌面版已启动');
+    mainWindow.setTitle('🌑 帷幕之地 — 在线联机');
+    console.log('🌑 帷幕之地桌面版已启动');
     console.log('   服务器:', serverUrl);
     console.log('   互通版本: Web | Android | Desktop');
   });

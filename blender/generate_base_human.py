@@ -242,7 +242,7 @@ def main():
     print("  有机拓扑 | 可直接雕刻")
     print("="*55)
 
-    OUTPUT = os.path.join(os.path.expanduser("~"), "werewolf_models", "base_humans")
+    OUTPUT = os.path.join(os.path.expanduser("~"), "veilland_models", "base_humans")
     os.makedirs(OUTPUT, exist_ok=True)
 
     for preset in HUMAN_PRESETS:

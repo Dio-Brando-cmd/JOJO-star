@@ -155,7 +155,7 @@ export class Game {
       }
     });
 
-    // 不告知狼人彼此身份
+    // 不告知蚀者彼此身份
   }
 
   // ==================== 计时器管理 ====================
@@ -541,7 +541,7 @@ export class Game {
     // 人机AI在3D模式下随机移动
     for (const bot of this.getAliveBots?.() || []) {
       if (bot.isWolf()) {
-        bot._3dAction = 'HUNT'; // AI狼人自动狩猎
+        bot._3dAction = 'HUNT'; // AI蚀者自动噬灵
       } else {
         bot._3dAction = Math.random() < 0.4 ? 'HIDE' : 'ROAM';
       }
@@ -922,9 +922,9 @@ export class Game {
     );
 
     if (aliveWolves.length === 0) {
-      this.endGame(TEAMS.VEIL_KEEPERS, '所有狼人已出局');
+      this.endGame(TEAMS.VEIL_KEEPERS, '所有蚀者已出局');
     } else if (aliveWolves.length >= aliveVillage.length) {
-      this.endGame(TEAMS.CORRUPTED, '狼人数量不少于好人，狼人获胜');
+      this.endGame(TEAMS.CORRUPTED, '蚀者数量不少于守幕者，蚀者获胜');
     }
   }
 

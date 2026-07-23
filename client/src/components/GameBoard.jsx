@@ -365,7 +365,7 @@ function formatLogEntry(entry, players) {
       return <span>🧪 蚀痕净化转移到了别人身上</span>;
     case 'hunter_defend':
       return <span>💥 追猎者的噬灭短铳击杀了攻击者</span>;
-    case 'became_wolf':
+    case 'became_corrupted':
       return <span>🌑 有人蚀变为蚀者</span>;
     case 'house_visit':
       return <span>🏠 你去了 <strong>{getName(entry.target)}</strong> 的家 — {entry.desc || (entry.count === -1 ? '很多人' : `${entry.count}人`)}</span>;
