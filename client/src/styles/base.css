@@ -39,6 +39,13 @@ input:focus {
   border-color: var(--accent);
 }
 
+/* ---- 移动端触摸优化 ---- */
+button, .btn, [role="button"], .action-card, .target-btn, a[onClick] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
 
 /* ---- 页面容器 ---- */
 .screen {

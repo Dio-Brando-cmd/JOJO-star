@@ -74,6 +74,19 @@ export default function NightPhase({ socket }) {
   // 判断是否轮到我行动
   const isMyTurn = checkIsMyTurn(myRole, nightStep, myPrivate, gameState.round);
 
+  // 角色信息尚未到达——显示加载
+  if (!myRole) {
+    return (
+      <div className="night-panel">
+        <div className="night-waiting">
+          <h3>🌙 夜晚 - {NIGHT_STEP_NAMES[nightStep] || nightStep}</h3>
+          <p className="waiting-text">正在获取角色信息...</p>
+          <div className="night-spinner" />
+        </div>
+      </div>
+    );
+  }
+
   // 如果不是我的回合，显示等待画面
   if (!isMyTurn) {
     return (
