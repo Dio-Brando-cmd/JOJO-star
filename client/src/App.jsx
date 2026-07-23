@@ -20,7 +20,7 @@ import SettingsPanel from './components/SettingsPanel';
 import UpdatePrompt from './components/UpdatePrompt';
 
 // 当前客户端版本号（与服务端比较判断是否需要更新）
-const CLIENT_VERSION = '2.12.1';
+const CLIENT_VERSION = '2.13.1';
 
 // 简易版本比较：返回 1 表示 v1 > v2, -1 表示 v1 < v2, 0 表示相等
 function compareVersion(v1, v2) {
@@ -397,7 +397,7 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
       <div className="login-card">
         <div className="game-logo">
           <span className="logo-icon">🐺</span>
-          <h1>狼人杀</h1>
+          <h1>帷幕之地</h1>
           <p className="subtitle">在线联机版</p>
         </div>
 

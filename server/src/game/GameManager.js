@@ -246,7 +246,7 @@ export class GameManager {
       if (p.guardingTarget === oldId) {
         p.guardingTarget = newSocketId;
       }
-      // 狼人击杀目标
+      // 蚀者噬灵目标
       if (p.wolfKillTarget === oldId) {
         p.wolfKillTarget = newSocketId;
       }

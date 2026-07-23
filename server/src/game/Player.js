@@ -1,9 +1,9 @@
 // ============================================================
 // 玩家类 — v2.0 扩展版
-// 新增：村民子类型、扩展能力状态、表层身份引用、特质状态
+// 新增：灵织者子类型、扩展能力状态、表层身份引用、特质状态
 // ============================================================
 
-import { ROLES, ROLE_TEAM, VILLAGER_TYPES } from './constants.js';
+import { ROLES, ROLE_TEAM, SPIRIT_WEAVER_TYPES } from './constants.js';
 
 export class Player {
   constructor(id, name, role) {
@@ -26,7 +26,7 @@ export class Player {
     this.nightTarget = null;
     this.nightAbility = null;
 
-    // ---- 种狼特有 ----
+    // ---- 冥僧人特有 ----
     this.isTransformed = false;
     this.hasUsedInfect = false;
     this.hasKilled = false;
@@ -34,7 +34,7 @@ export class Player {
     this.willBecomeWolf = false;
     // 新增：假身份编织
     this.fakeIdentity = null;          // 伪装的神职身份（被查验时显示为该身份）
-    this.packHormoneBonus = 0;        // 狼群激素额外感染次数
+    this.riftGuidanceBonus = 0;        // 狼群激素额外感染次数
 
     // ---- 守卫特有 ----
     this.guardingTarget = null;
@@ -46,7 +46,7 @@ export class Player {
     this.patrolled = false;            // 是否巡逻过
     this.sacrificeTarget = null;       // 舍身替死目标
 
-    // ---- 狼人特有 ----
+    // ---- 蚀者特有 ----
     this.knownWolves = [];
     this.wolvesOpenEyesTogether = [];
     this.wolfKillTarget = null;
@@ -56,7 +56,7 @@ export class Player {
     this.disguised = false;            // 是否伪装中
     this.scentTrail = [];              // 嗅觉追踪记录 [{target, house}]
 
-    // ---- 猎人特有 ----
+    // ---- 灵痕追猎者特有 ----
     this.canAct = false;
     this.hasRifle = false;
     this.hasBlunderbuss = false;
@@ -69,42 +69,42 @@ export class Player {
     this.trapTarget = null;            // 陷阱设伏目标屋子
     this.revengeTarget = null;         // 复仇目标（投票出局时触发）
 
-    // ---- 女巫特有 ----
-    this.hasPotion = true;
-    this.hasPoison = true;
-    this.potionTarget = null;
-    this.poisonTarget = null;
-    // 新增：毒雾/配方
-    this.poisonFogTarget = null;       // 毒雾陷阱目标屋子
-    this.poisonFogActive = false;      // 毒雾是否激活
-    this.poisonMaterials = 2;          // 毒药材料（2材料→1烈性毒药，1材料→1普通毒药）
+    // ---- 草药学者/愈灵师特有 ----
+    this.hasHealTalisman = true;
+    this.hasSealTalisman = true;
+    this.talismanTarget = null;
+    this.sealTarget = null;
+    // 新增：蚀雾/配方
+    this.corrosionMistTarget = null;       // 蚀雾符阵目标屋子
+    this.corrosionMistActive = false;      // 蚀雾是否激活
+    this.talismanMaterials = 2;          // 毒药材料（2材料→1蚀灭符阵，1材料→1普通毒药）
 
-    // ---- 药巫特有 ----
-    // (reuses hasPotion, hasPoison, potionTarget, poisonTarget)
+    // ---- 愈灵师特有 ----
+    // (reuses hasHealTalisman, hasSealTalisman, talismanTarget, poisonTarget)
     // 新增：药草园/诊断
-    this.herbGardenPlanted = false;    // 是否种植了药草
-    this.herbGardenReady = false;      // 药草是否可收获
+    this.talismanChargeStarted = false;    // 是否种植了药草
+    this.talismanCharged = false;      // 药草是否可收获
     this.diagnoseTarget = null;        // 诊断目标
     this.diagnoseResult = null;        // 诊断结果
 
-    // ---- 预言家特有 ----
+    // ---- 帷幕学者特有 ----
     this.checkTarget = null;
     this.checkResult = null;
-    // 新增：梦境碎片/公开预言/灵视
+    // 新增：梦境碎片/公开察灵/灵视
     this.dreamFragment = null;         // 梦境线索文本
-    this.publicProphecyUsed = false;   // 公开预言是否已使用（每局限1次）
+    this.publicProphecyUsed = false;   // 公开察灵是否已使用（每局限1次）
     this.spiritVisionTarget = null;    // 灵视目标（查验死人）
 
-    // ---- 村民特有 ----
-    this.villagerIndex = -1;
-    this.villagerType = null;          // 村民子类型（OLD_HUNTER / MERCHANT / ...）
-    this.villagerName = null;          // 村民名字（如"老杰克"）
-    this.villagerTitle = null;         // 村民称号（如"退休猎人"）
-    // 村民扩展状态
-    this.herbalRemedyUsed = false;     // 草药师：是否用过草药
-    this.herbalRemedyTarget = null;    // 草药师：草药目标
-    this.doorFortified = false;        // 铁匠：门锁是否加固
-    this.nightWatchAlert = null;       // 守夜人：门外的动静
+    // ---- 灵织者特有 ----
+    this.weaverIndex = -1;
+    this.weaverType = null;          // 灵织者子类型（OLD_HUNTER / MERCHANT / ...）
+    this.weaverName = null;          // 灵织者名字（如"老杰克"）
+    this.weaverTitle = null;         // 灵织者称号（如"退休猎人"）
+    // 灵织者扩展状态
+    this.herbalRemedyUsed = false;     // 学徒灵织者：是否用过草药
+    this.herbalRemedyTarget = null;    // 学徒灵织者：草药目标
+    this.doorFortified = false;        // 锻甲灵织者：门锁是否加固
+    this.nightWatchAlert = null;       // 守夜灵织者：门外的动静
 
     // ---- 表层身份（第二步使用） ----
     this.characterId = null;           // 选择的表层身份ID（如'SIGURD'）
@@ -133,11 +133,11 @@ export class Player {
     this.wolfKillTarget = null;
     this.checkTarget = null;
     this.checkResult = null;
-    this.potionTarget = null;
-    this.poisonTarget = null;
+    this.talismanTarget = null;
+    this.sealTarget = null;
     this.observedTarget = null;
     this.observedTargetWentOut = false;
-    this.poisonFogTarget = null;
+    this.corrosionMistTarget = null;
     this.diagnoseTarget = null;
     this.diagnoseResult = null;
     this.dreamFragment = null;
@@ -153,19 +153,19 @@ export class Player {
     // 注意：不重置持续状态（武器、重伤、已用道具、冷却等）
   }
 
-  // 是否属于狼人阵营
+  // 是否属于蚀者阵营
   isWolf() {
-    return this.team === 'WOLF';
+    return this.team === 'CORRUPTED';
   }
 
   // 是否是神职
   isGod() {
-    return [ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER].includes(this.role);
+    return [ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(this.role);
   }
 
   // 是否是村民
-  isVillager() {
-    return this.role === ROLES.VILLAGER;
+  isWeaver() {
+    return this.role === ROLES.SPIRIT_WEAVER;
   }
 
   // 获取当前所在屋子ID
@@ -177,29 +177,29 @@ export class Player {
   // 是否应被计入屋子人数
   countInHouse() {
     if (!this.alive) return false;
-    if ((this.role === ROLES.WEREWOLF || this.role === ROLES.ALPHA_WOLF) && this.nightAction === 'GO_OUT' && !this.disguised) {
+    if ((this.role === ROLES.CORRUPTED || this.role === ROLES.NETHER_MONK) && this.nightAction === 'GO_OUT' && !this.disguised) {
       return false;
     }
-    if (this.role === ROLES.GUARD && this.isGuarding) {
+    if (this.role === ROLES.VEIL_GUARDIAN && this.isGuarding) {
       return false;
     }
     return true;
   }
 
   // 获取村民类型特有能力的描述
-  getVillagerAbilityDescription() {
-    if (this.role !== ROLES.VILLAGER || !this.villagerType) return null;
+  getWeaverAbilityDescription() {
+    if (this.role !== ROLES.SPIRIT_WEAVER || !this.weaverType) return null;
     const descriptions = {
-      [VILLAGER_TYPES.OLD_HUNTER]: '直觉：20%概率识别进入自家的狼人。陷阱：可在家设陷阱。',
-      [VILLAGER_TYPES.MERCHANT]: '双访问：每晚可访问2个屋子。交易：可交换信息。',
-      [VILLAGER_TYPES.HERBALIST]: '草药：可推迟目标死亡1回合。草药识别：感知谁被毒过。',
-      [VILLAGER_TYPES.STORYTELLER]: '雄辩：讨论发言时间翻倍。故事：可额外发言一次。',
-      [VILLAGER_TYPES.NIGHT_WATCHER]: '守夜：察觉自家门外经过者。暗哨：可选择不睡觉获知今晚出门人数。',
-      [VILLAGER_TYPES.BAKER]: '人缘：知道更多人的夜晚去向。炊烟：天亮时额外获知一条全村信息。',
-      [VILLAGER_TYPES.BLACKSMITH]: '铁门：加固自家门锁，抵御一次狼人入侵。铁锤：被投票出局时随机带走一名投票者。',
-      [VILLAGER_TYPES.WEAVER]: '织网：偷听线索排除干扰项（准确率+50%）。丝线：可感知谁进过自己家。',
+      [SPIRIT_WEAVER_TYPES.OLD_VETERAN]: '直觉：20%概率识别进入庇护所的蚀者。陷阱：可在家设陷阱。',
+      [SPIRIT_WEAVER_TYPES.WANDERING_TRADER]: '双访问：每晚可访问2个屋子。交易：可交换信息。',
+      [SPIRIT_WEAVER_TYPES.SPIRIT_APPRENTICE]: '草药：可推迟目标灵焰消散1蚀月。灵植辨识：感知谁被蚀灭符阵波及。',
+      [SPIRIT_WEAVER_TYPES.CHRONICLER]: '雄辩：讨论发言时间翻倍。故事：可额外发言一次。',
+      [SPIRIT_WEAVER_TYPES.NIGHT_SENTINEL]: '守夜：察觉自家门外经过者。暗哨：可选择不睡觉获知今晚出门人数。',
+      [SPIRIT_WEAVER_TYPES.HEARTH_KEEPER]: '人缘：知道更多人的夜晚去向。炊烟：天亮时额外获知一条全村信息。',
+      [SPIRIT_WEAVER_TYPES.ARMOR_SMITH]: '铁门：加固自家门锁，抵御一次蚀者噬灵。铁锤：被放逐时随机带走一名投票者。',
+      [SPIRIT_WEAVER_TYPES.VEIL_WEAVER]: '织网：帷幕低语排除干扰项（准确率+50%）。丝线：可感知谁进入过自己的庇护所。',
     };
-    return descriptions[this.villagerType] || null;
+    return descriptions[this.weaverType] || null;
   }
 
   // 冷却管理
@@ -230,20 +230,20 @@ export class Player {
       isGuarding: this.isGuarding,
       // v2.0 新增公开信息
       characterId: this.characterId,
-      villagerType: this.role === ROLES.VILLAGER ? this.villagerType : undefined,
-      villagerName: this.role === ROLES.VILLAGER ? this.villagerName : undefined,
+      weaverType: this.role === ROLES.SPIRIT_WEAVER ? this.weaverType : undefined,
+      weaverName: this.role === ROLES.SPIRIT_WEAVER ? this.weaverName : undefined,
     };
   }
 
   toPrivateJSON() {
-    const isWitch = this.role === ROLES.POISON_WITCH || this.role === ROLES.HEAL_WITCH;
+    const isWitch = this.role === ROLES.HERBAL_SAGE || this.role === ROLES.SPIRIT_MENDER;
     return {
       ...this.toJSON(),
       role: this.role,
       team: this.team,
-      hasPotion: isWitch ? this.hasPotion : undefined,
-      hasPoison: isWitch ? this.hasPoison : undefined,
-      poisonMaterials: isWitch ? this.poisonMaterials : undefined,
+      hasHealTalisman: isWitch ? this.hasHealTalisman : undefined,
+      hasSealTalisman: isWitch ? this.hasSealTalisman : undefined,
+      talismanMaterials: isWitch ? this.talismanMaterials : undefined,
       hasRifle: this.hasRifle,
       hasBlunderbuss: this.hasBlunderbuss,
       rifleUsable: this.rifleUsable,
@@ -260,14 +260,14 @@ export class Player {
       fakeIdentity: this.fakeIdentity,
       howlCooldown: this.howlCooldown,
       heavyInjury: this.heavyInjury,
-      poisonFogActive: this.poisonFogActive,
-      herbGardenReady: this.herbGardenReady,
+      corrosionMistActive: this.corrosionMistActive,
+      talismanCharged: this.talismanCharged,
       dreamFragment: this.dreamFragment,
       publicProphecyUsed: this.publicProphecyUsed,
       diagnoseResult: this.diagnoseResult,
-      villagerType: this.villagerType,
-      villagerName: this.villagerName,
-      villagerTitle: this.villagerTitle,
+      weaverType: this.weaverType,
+      weaverName: this.weaverName,
+      weaverTitle: this.weaverTitle,
       characterId: this.characterId,
       characterTraits: this.characterTraits,
       traitCooldowns: this.traitCooldowns,

@@ -3,7 +3,7 @@
 // 覆盖所有升级后的角色能力
 // ============================================================
 
-import { ROLES, NIGHT_ACTIONS, NIGHT_STEPS, VILLAGER_TYPES, ALPHA_ACTIONS } from './constants.js';
+import { ROLES, NIGHT_ACTIONS, NIGHT_STEPS, SPIRIT_WEAVER_TYPES, ALPHA_ACTIONS } from './constants.js';
 
 export class BotManager {
   constructor(game) {
@@ -63,7 +63,7 @@ export class BotManager {
       }
     }
     for (const p of this.game.players) {
-      if (!p.alive && p.role && p.role !== ROLES.VILLAGER && p.role !== ROLES.WEREWOLF && p.role !== ROLES.ALPHA_WOLF) {
+      if (!p.alive && p.role && p.role !== ROLES.SPIRIT_WEAVER && p.role !== ROLES.CORRUPTED && p.role !== ROLES.NETHER_MONK) {
         this.memory.knownGods.add(p.id);
       }
     }
@@ -168,19 +168,19 @@ export class BotManager {
     const msgs = [];
     if (bot.isWolf()) {
       msgs.push('我觉得XX很可疑...', '我是普通村民，没什么信息', '大家冷静分析', '我怀疑有人带节奏');
-    } else if (bot.role === ROLES.SEER && checked.length > 0) {
+    } else if (bot.role === ROLES.VEIL_SCHOLAR && checked.length > 0) {
       const [target, result] = checked[checked.length - 1];
       const targetName = this.game.getPlayer(target)?.name || '某人';
       msgs.push(`我查验了${targetName}，是${result === 'GOOD' ? '好人' : '狼人'}！`);
-    } else if (bot.isVillager()) {
+    } else if (bot.isWeaver()) {
       const typeMsgs = {
-        [VILLAGER_TYPES.OLD_HUNTER]: ['我这双老眼还看得清...', '我见过太多狼了'],
-        [VILLAGER_TYPES.MERCHANT]: ['我听到了一些风声...', '消息就是力量'],
-        [VILLAGER_TYPES.STORYTELLER]: ['让我讲个故事...', '从前有只狼...'],
-        [VILLAGER_TYPES.BLACKSMITH]: ['我的铁锤可以砸碎任何东西', '门锁好了，安心睡吧'],
-        [VILLAGER_TYPES.WEAVER]: ['我听到了一些细微的声响...', '每一根线都有它的去向'],
+        [SPIRIT_WEAVER_TYPES.OLD_VETERAN]: ['我这双老眼还看得清...', '我见过太多狼了'],
+        [SPIRIT_WEAVER_TYPES.WANDERING_TRADER]: ['我听到了一些风声...', '消息就是力量'],
+        [SPIRIT_WEAVER_TYPES.CHRONICLER]: ['让我讲个故事...', '从前有只狼...'],
+        [SPIRIT_WEAVER_TYPES.ARMOR_SMITH]: ['我的铁锤可以砸碎任何东西', '门锁好了，安心睡吧'],
+        [SPIRIT_WEAVER_TYPES.VEIL_WEAVER]: ['我听到了一些细微的声响...', '每一根线都有它的去向'],
       };
-      const vtMsgs = typeMsgs[bot.villagerType] || ['我是村民，听神职带队', '大家跟预言家走'];
+      const vtMsgs = typeMsgs[bot.weaverType] || ['我是灵织者，听大家带队', '大家跟帷幕学者走'];
       msgs.push(...vtMsgs);
     } else if (bot.isGod()) {
       msgs.push('我有一些信息但先不说', '请大家理性投票', '注意观察投票行为');
@@ -195,14 +195,14 @@ export class BotManager {
     const randomTarget = targets.length > 0 ? targets[Math.floor(Math.random() * targets.length)] : null;
 
     switch (bot.role) {
-      case ROLES.HUNTER:     return this._hunterAction(bot, targets, randomTarget);
-      case ROLES.ALPHA_WOLF: return this._alphaWolfAction(bot, targets, randomTarget);
-      case ROLES.GUARD:      return this._guardAction(bot, targets, randomTarget);
-      case ROLES.WEREWOLF:   return this._werewolfAction(bot, targets, randomTarget);
-      case ROLES.SEER:       return this._seerAction(bot, targets, randomTarget);
-      case ROLES.POISON_WITCH: return this._poisonWitchAction(bot, targets, randomTarget);
-      case ROLES.HEAL_WITCH:   return this._healWitchAction(bot, targets, randomTarget);
-      case ROLES.VILLAGER:   return this._villagerAction(bot, targets, randomTarget);
+      case ROLES.FLAME_TRACKER:     return this._hunterAction(bot, targets, randomTarget);
+      case ROLES.NETHER_MONK: return this._alphaWolfAction(bot, targets, randomTarget);
+      case ROLES.VEIL_GUARDIAN:      return this._guardAction(bot, targets, randomTarget);
+      case ROLES.CORRUPTED:   return this._werewolfAction(bot, targets, randomTarget);
+      case ROLES.VEIL_SCHOLAR:       return this._seerAction(bot, targets, randomTarget);
+      case ROLES.HERBAL_SAGE: return this._poisonWitchAction(bot, targets, randomTarget);
+      case ROLES.SPIRIT_MENDER:   return this._healWitchAction(bot, targets, randomTarget);
+      case ROLES.SPIRIT_WEAVER:   return this._villagerAction(bot, targets, randomTarget);
       default: return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
     }
   }
@@ -217,7 +217,7 @@ export class BotManager {
 
     const knownGod = pool.filter(p => this.memory.knownGods.has(p.id));
     if (knownGod.length > 0 && Math.random() < 0.7) return knownGod[Math.floor(Math.random() * knownGod.length)];
-    const seers = pool.filter(p => p.role === ROLES.SEER);
+    const seers = pool.filter(p => p.role === ROLES.VEIL_SCHOLAR);
     if (seers.length > 0 && Math.random() < 0.5) return seers[Math.floor(Math.random() * seers.length)];
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -270,7 +270,7 @@ export class BotManager {
       if (infectTarget && Math.random() < 0.65) {
         // 15%概率同时编织假身份
         const useFakeId = Math.random() < 0.15;
-        const fakeRoles = [ROLES.SEER, ROLES.GUARD, ROLES.HUNTER];
+        const fakeRoles = [ROLES.VEIL_SCHOLAR, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER];
         return {
           action: NIGHT_ACTIONS.USE_ABILITY,
           target: infectTarget.id,
@@ -375,30 +375,30 @@ export class BotManager {
     const knownWolf = targets.find(p => this.memory.knownWolves.has(p.id));
     const roll = Math.random();
 
-    // 毒雾陷阱 25%
+    // 蚀雾符阵 25%
     if (roll < 0.25 && rt) {
       const fogTarget = knownWolf || rt;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: fogTarget.id,
-        ability: { poisonFog: true, poisonFogTarget: fogTarget.id },
+        ability: { corrosionMist: true, corrosionMistTarget: fogTarget.id },
       };
     }
-    // 烈性毒药（有足够材料）
-    if (roll < 0.55 && rt && (bot.poisonMaterials || 2) >= 2) {
+    // 蚀灭符阵（有足够材料）
+    if (roll < 0.55 && rt && (bot.talismanMaterials || 2) >= 2) {
       const poisonTarget = knownWolf || rt;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: poisonTarget.id,
-        ability: { lethalPoison: true, lethalPoisonTarget: poisonTarget.id },
+        ability: { massSeal: true, massSealTarget: poisonTarget.id },
       };
     }
-    // 药水 15%
-    if (roll < 0.70 && rt && bot.hasPotion) {
+    // 灵符 15%
+    if (roll < 0.70 && rt && bot.hasHealTalisman) {
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: rt.id,
-        ability: { potion: true, potionTarget: rt.id },
+        ability: { talisman: true, talismanTarget: rt.id },
       };
     }
     return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
@@ -418,7 +418,7 @@ export class BotManager {
       };
     }
     // 万能药 20%
-    if (roll < 0.40 && bot.hasPotion && rt) {
+    if (roll < 0.40 && bot.hasHealTalisman && rt) {
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: rt.id,
@@ -426,7 +426,7 @@ export class BotManager {
       };
     }
     // 毒药 25%
-    if (roll < 0.65 && bot.hasPoison && rt) {
+    if (roll < 0.65 && bot.hasSealTalisman && rt) {
       const poisonTarget = knownWolf || rt;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
@@ -435,7 +435,7 @@ export class BotManager {
       };
     }
     // 药草园 15%
-    if (roll < 0.80 && !bot.herbGardenPlanted) {
+    if (roll < 0.80 && !bot.talismanChargeStarted) {
       return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: { plantHerbGarden: true } };
     }
     // 战场急救 10%
@@ -452,13 +452,13 @@ export class BotManager {
   _villagerAction(bot, targets, rt) {
     const roll = Math.random();
 
-    switch (bot.villagerType) {
-      case VILLAGER_TYPES.OLD_HUNTER:
+    switch (bot.weaverType) {
+      case SPIRIT_WEAVER_TYPES.OLD_VETERAN:
         if (roll < 0.35 && !bot.doorFortified) return { action: NIGHT_ACTIONS.TRAP_SET, target: null, ability: null };
         if (roll < 0.70 && rt) return { action: NIGHT_ACTIONS.GO_OUT, target: rt.id, ability: null };
         return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
 
-      case VILLAGER_TYPES.MERCHANT:
+      case SPIRIT_WEAVER_TYPES.WANDERING_TRADER:
         if (roll < 0.50 && rt) {
           const second = targets.filter(t => t.id !== rt.id)[0];
           return {
@@ -469,27 +469,27 @@ export class BotManager {
         }
         return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
 
-      case VILLAGER_TYPES.HERBALIST:
+      case SPIRIT_WEAVER_TYPES.SPIRIT_APPRENTICE:
         if (roll < 0.60 && rt) {
           return { action: NIGHT_ACTIONS.HERBAL_REMEDY, target: rt.id, ability: null };
         }
         return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
 
-      case VILLAGER_TYPES.NIGHT_WATCHER:
+      case SPIRIT_WEAVER_TYPES.NIGHT_SENTINEL:
         if (roll < 0.65) return { action: NIGHT_ACTIONS.NIGHT_WATCH, target: null, ability: null };
         if (roll < 0.80 && rt) return { action: NIGHT_ACTIONS.GO_OUT, target: rt.id, ability: null };
         return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
 
-      case VILLAGER_TYPES.BLACKSMITH:
+      case SPIRIT_WEAVER_TYPES.ARMOR_SMITH:
         if (roll < 0.45 && !bot.doorFortified) return { action: NIGHT_ACTIONS.FORTIFY_DOOR, target: null, ability: null };
         if (roll < 0.70 && rt) return { action: NIGHT_ACTIONS.GO_OUT, target: rt.id, ability: null };
         return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
 
-      case VILLAGER_TYPES.WEAVER:
+      case SPIRIT_WEAVER_TYPES.VEIL_WEAVER:
         if (roll < 0.60 && rt) return { action: NIGHT_ACTIONS.EAVESDROP, target: rt.id, ability: null };
         return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
 
-      case VILLAGER_TYPES.BAKER:
+      case SPIRIT_WEAVER_TYPES.HEARTH_KEEPER:
         if (roll < 0.60 && rt) return { action: NIGHT_ACTIONS.GO_OUT, target: rt.id, ability: null };
         return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
 

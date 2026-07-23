@@ -187,8 +187,8 @@ export class TraitSystem {
    */
   canVoteFor(player, target) {
     if (!this.hasTrait(player, '荣誉枷锁')) return true;
-    // 已知的好人阵营玩家不能投
-    if (target.team === 'VILLAGE' && player.knownGoodPlayers?.includes(target.id)) {
+    // 已知的守幕者阵营玩家不能投
+    if (target.team === 'VEIL_KEEPERS' && player.knownGoodPlayers?.includes(target.id)) {
       return false;
     }
     return true;
@@ -247,7 +247,7 @@ export class TraitSystem {
   }
 
   /**
-   * 织网（莉莉安）：偷听线索准确率+50%
+   * 织网（莉莉安）：帷幕低语线索准确率+50%
    */
   getEavesdropBonus(player) {
     if (this.hasTrait(player, '织网')) {
@@ -271,7 +271,7 @@ export class TraitSystem {
     const target = outPlayers[Math.floor(Math.random() * outPlayers.length)];
     return {
       type: 'social_info',
-      message: `你听说${target.name || target.villagerName || '某人'}今晚出门了`,
+      message: `你听说${target.name || target.weaverName || '某人'}今晚出门了`,
     };
   }
 
@@ -301,14 +301,14 @@ export class TraitSystem {
     if (!this.hasTrait(player, '银之恐惧')) return true;
     // 检查该屋子是否被守卫筑垒
     const guard = this.game.players.find(p =>
-      p.role === ROLES.GUARD && p.alive && p.fortifiedTarget === houseId
+      p.role === ROLES.VEIL_GUARDIAN && p.alive && p.fortifiedTarget === houseId
     );
     if (guard) return false;
     return true;
   }
 
   /**
-   * 纤弱（芙蕾雅）：被狼人攻击时无法自行逃脱
+   * 纤弱（芙蕾雅）：被蚀者噬灵时无法自行逃脱
    */
   isFrail(player) {
     return this.hasTrait(player, '纤弱');

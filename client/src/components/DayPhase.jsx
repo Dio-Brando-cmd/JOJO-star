@@ -1,5 +1,5 @@
 // ============================================================
-// 白天阶段 —— 讨论 + 触发投票 + 猎人开枪
+// 白天阶段 —— 讨论 + 触发投票 + 追猎者射击
 // ============================================================
 
 import React from 'react';
@@ -11,14 +11,14 @@ export default function DayPhase({ socket }) {
 
   const myRole = privateState?.myRole;
   const myPrivate = privateState?.myPrivateState;
-  const isHunter = myRole === ROLES.HUNTER;
+  const isHunter = myRole === ROLES.FLAME_TRACKER;
   const canShoot = isHunter && myPrivate?.hasRifle && myPrivate?.rifleUsable;
 
   return (
     <div className="day-panel">
       <div className="day-header">
         <h3>☀️ 白天 — 第 {gameState.round} 回合</h3>
-        <p className="day-subtitle">讨论阶段 — 自由发言，找出狼人</p>
+        <p className="day-subtitle">讨论阶段 — 自由发言，辨识蚀者</p>
       </div>
 
       {/* 死亡公告 */}
@@ -55,7 +55,7 @@ export default function DayPhase({ socket }) {
       {/* 猎人白天开枪 */}
       {canShoot && (
         <div className="hunter-day-shoot">
-          <h4>🔫 猎人开枪（白天必杀）</h4>
+          <h4>🔫 追猎者射击（白天必杀）</h4>
           <p>选择你要射杀的目标:</p>
           <div className="shoot-targets">
             {gameState.players

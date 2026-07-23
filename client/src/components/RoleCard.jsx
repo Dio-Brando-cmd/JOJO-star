@@ -25,14 +25,14 @@ export default function RoleCard({ privateState }) {
         <div className="role-card-info">
           <h3 className="role-name">{ROLE_NAMES[role]}</h3>
           <span className={`team-badge ${team}`}>{TEAM_NAMES[team]}</span>
-          {/* 村民子类型显示 */}
-          {pvt?.villagerType && (
+          {/* 灵织者子类型显示 */}
+          {pvt?.weaverType && (
             <span className="villager-type-badge">
-              {VILLAGER_TYPE_NAMES[pvt.villagerType] || pvt.villagerType}
+              {VILLAGER_TYPE_NAMES[pvt.weaverType] || pvt.weaverType}
             </span>
           )}
-          {pvt?.villagerName && (
-            <span className="villager-name-badge">「{pvt.villagerName}」</span>
+          {pvt?.weaverName && (
+            <span className="villager-name-badge">「{pvt.weaverName}」</span>
           )}
         </div>
       </div>
@@ -60,16 +60,16 @@ export default function RoleCard({ privateState }) {
         {pvt?.hasUsedInfect && <span className="detail-tag wolf">🦠 已感染</span>}
         {pvt?.fakeIdentity && <span className="detail-tag wolf">🎭 伪装: {pvt.fakeIdentity}</span>}
 
-        {(role === ROLES.POISON_WITCH || role === ROLES.HEAL_WITCH) && pvt?.hasPotion !== undefined && (
-          <span className="detail-tag heal">💊 解药: {pvt.hasPotion ? '有' : '已用'}</span>
+        {(role === ROLES.HERBAL_SAGE || role === ROLES.SPIRIT_MENDER) && pvt?.hasHealTalisman !== undefined && (
+          <span className="detail-tag heal">💊 解药: {pvt.hasHealTalisman ? '有' : '已用'}</span>
         )}
-        {(role === ROLES.POISON_WITCH || role === ROLES.HEAL_WITCH) && pvt?.hasPoison !== undefined && (
-          <span className="detail-tag poison">🧪 毒药: {pvt.hasPoison ? '有' : '已用'}</span>
+        {(role === ROLES.HERBAL_SAGE || role === ROLES.SPIRIT_MENDER) && pvt?.hasSealTalisman !== undefined && (
+          <span className="detail-tag poison">🧪 毒药: {pvt.hasSealTalisman ? '有' : '已用'}</span>
         )}
-        {role === ROLES.POISON_WITCH && pvt?.poisonMaterials !== undefined && (
-          <span className="detail-tag poison">⚗️ 毒材: {pvt.poisonMaterials}</span>
+        {role === ROLES.HERBAL_SAGE && pvt?.talismanMaterials !== undefined && (
+          <span className="detail-tag poison">⚗️ 符材: {pvt.talismanMaterials}</span>
         )}
-        {role === ROLES.HEAL_WITCH && pvt?.herbGardenReady && (
+        {role === ROLES.SPIRIT_MENDER && pvt?.talismanCharged && (
           <span className="detail-tag heal">🌿 药草可收获</span>
         )}
 
@@ -89,11 +89,11 @@ export default function RoleCard({ privateState }) {
 
         {/* 狼人特有状态 */}
         {pvt?.howlCooldown > 0 && <span className="detail-tag wolf">📢 嚎叫冷却: {pvt.howlCooldown}回合</span>}
-        {pvt?.poisonFogActive && <span className="detail-tag poison">🌫️ 毒雾就绪</span>}
+        {pvt?.corrosionMistActive && <span className="detail-tag poison">🌫️ 蚀雾就绪</span>}
 
-        {/* 预言家特有状态 */}
+        {/* 察灵家特有状态 */}
         {pvt?.dreamFragment && <span className="detail-tag seer">🌙 梦境线索已获取</span>}
-        {pvt?.publicProphecyUsed && <span className="detail-tag seer">📢 公开预言已用</span>}
+        {pvt?.publicProphecyUsed && <span className="detail-tag seer">📢 公开察灵已用</span>}
         {pvt?.diagnoseResult && <span className="detail-tag info">🔍 诊断完成</span>}
 
         {/* 特质冷却 */}
@@ -154,7 +154,7 @@ export default function RoleCard({ privateState }) {
 
 function formatPrivateLog(entry) {
   switch (entry.type) {
-    // 预言家相关
+    // 察灵家相关
     case 'seer_check':
       return `🔮 查验结果: ${entry.result === 'GOOD' ? '好人 ✅' : entry.result === 'WOLF' ? '狼人 🐺' : entry.result}`;
     case 'seer_check_fake':
@@ -166,11 +166,11 @@ function formatPrivateLog(entry) {
 
     // 狼人相关
     case 'wolf_meet':
-      return '🐺 你遇到了另一只狼人！';
+      return '🐺 你感知到另一名蚀者！';
     case 'wolves_united':
-      return '🐺 狼人们已相认，下回合可协同行动';
+      return '🐺 蚀者们已共鸣，下回合可协同行动';
     case 'wolf_mutual_kill':
-      return '⚔️ 两只狼人互刀，已相认';
+      return '⚔️ 两名蚀者互噬，已相认';
     case 'wolf_howl':
       return '📢 你发出了嚎叫——同伴们听到了召唤';
     case 'wolf_howl_heard':
@@ -184,7 +184,7 @@ function formatPrivateLog(entry) {
     case 'guard_heavy_injury':
       return '💔 守卫进入了重伤状态';
     case 'guard_heavy_injury_alone':
-      return '💔 守卫独自在家被狼人袭击，重伤';
+      return '💔 守卫独自在家被蚀者噬灵，重伤';
     case 'guard_heavy_injury_3plus':
       return '💔 守卫在多人屋内被袭，重伤';
     case 'guard_fortify':
@@ -195,8 +195,8 @@ function formatPrivateLog(entry) {
       return `💀 舍身誓言: 若 ${entry.target || '?'} 死亡，你将替其而死`;
 
     // 女巫相关
-    case 'poison_fog_set':
-      return `🌫️ 毒雾已布设在 ${entry.target || '?'} 的屋子——明晚触发`;
+    case 'corrosion_mist_set':
+      return `🌫️ 蚀雾已布设在 ${entry.target || '?'} 的屋子——明晚触发`;
     case 'heal_injury':
       return '💚 重伤已被万能药治愈';
     case 'battlefield_aid':
@@ -226,23 +226,23 @@ function formatPrivateLog(entry) {
     case 'alpha_fake_identity':
       return `🎭 假身份编织: ${entry.fakeRole || '?'}`;
     case 'alpha_infected_visible':
-      return '⚠️ 种狼使用了感染——现在可被预言家查出';
+      return '⚠️ 种狼使用了感染——现在可被察灵家查出';
 
     // 感染相关
     case 'infected':
-      return '🦠 你被种狼感染，下个夜晚将变为狼人';
+      return '🦠 你被冥僧人堕化，下个夜晚将蚀变为蚀者';
     case 'seer_infected':
-      return '🔮 种狼试图感染你，但你保留了预言能力';
+      return '🔮 种狼试图感染你，但你保留了察灵能力';
     case 'alpha_to_villager':
-      return '👨‍🌾 种狼感染了预言家，自己变成了村民';
+      return '👨‍🌾 冥僧人堕化了帷幕学者，自己变成了村民';
     case 'became_wolf':
-      return '🐺 你已变为狼人！';
+      return '🐺 你已蚀变为蚀者！';
 
     // 村民相关
     case 'eavesdrop':
-      return `👂 ${entry.result || entry.msg || '偷听结果不明'}`;
+      return `👂 ${entry.result || entry.msg || '帷幕低语结果不明'}`;
     case 'eavesdrop_accurate':
-      return `🧵 精确偷听: ${entry.result || '...'}`;
+      return `🧵 精确帷幕低语: ${entry.result || '...'}`;
     case 'house_visit':
       return `🏠 ${entry.desc || '去了目标家'}`;
     case 'old_hunter_trap':
@@ -258,17 +258,17 @@ function formatPrivateLog(entry) {
     case 'night_watch':
       return `👁️ 守夜: 今晚有 ${entry.outCount || 0} 人出门`;
     case 'blacksmith_fortify':
-      return '🔒 门锁已加固——可抵御一次狼人入侵';
+      return '🔒 门锁已加固——可抵御一次蚀者噬灵';
     case 'blacksmith_door_blocked':
-      return '🔒 你的加固门锁挡住了狼人攻击！但门锁已被毁坏';
+      return '🔒 你的加固门锁挡住了蚀者噬灵！但门锁已被毁坏';
 
     // 其他
     case 'trait_trigger':
       return `✨ ${entry.trait || '特质'}: ${entry.effect || '触发'}`;
     case 'death':
       return `💀 ${entry.player || '?'} 死亡: ${entry.reason || '?'}`;
-    case 'poison_fog_triggered':
-      return `🌫️ 毒雾陷阱触发!`;
+    case 'corrosion_mist_triggered':
+      return `🌫️ 蚀雾陷阱触发!`;
 
     default:
       return entry.msg || entry.type || '未知情报';

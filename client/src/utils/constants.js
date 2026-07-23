@@ -3,69 +3,69 @@
 // ============================================================
 
 export const ROLES = {
-  WEREWOLF: 'WEREWOLF',
-  ALPHA_WOLF: 'ALPHA_WOLF',
-  SEER: 'SEER',
-  POISON_WITCH: 'POISON_WITCH',
-  HEAL_WITCH: 'HEAL_WITCH',
-  VILLAGER: 'VILLAGER',
-  GUARD: 'GUARD',
-  HUNTER: 'HUNTER',
+  CORRUPTED: 'CORRUPTED',
+  NETHER_MONK: 'NETHER_MONK',
+  VEIL_SCHOLAR: 'VEIL_SCHOLAR',
+  HERBAL_SAGE: 'HERBAL_SAGE',
+  SPIRIT_MENDER: 'SPIRIT_MENDER',
+  SPIRIT_WEAVER: 'SPIRIT_WEAVER',
+  VEIL_GUARDIAN: 'VEIL_GUARDIAN',
+  FLAME_TRACKER: 'FLAME_TRACKER',
 };
 
-export const VILLAGER_TYPES = {
-  OLD_HUNTER: 'OLD_HUNTER',
-  MERCHANT: 'MERCHANT',
-  HERBALIST: 'HERBALIST',
-  STORYTELLER: 'STORYTELLER',
-  NIGHT_WATCHER: 'NIGHT_WATCHER',
-  BAKER: 'BAKER',
-  BLACKSMITH: 'BLACKSMITH',
-  WEAVER: 'WEAVER',
+export const SPIRIT_WEAVER_TYPES = {
+  OLD_VETERAN: 'OLD_VETERAN',
+  WANDERING_TRADER: 'WANDERING_TRADER',
+  SPIRIT_APPRENTICE: 'SPIRIT_APPRENTICE',
+  CHRONICLER: 'CHRONICLER',
+  NIGHT_SENTINEL: 'NIGHT_SENTINEL',
+  HEARTH_KEEPER: 'HEARTH_KEEPER',
+  ARMOR_SMITH: 'ARMOR_SMITH',
+  VEIL_WEAVER: 'VEIL_WEAVER',
 };
 
 export const VILLAGER_TYPE_NAMES = {
-  OLD_HUNTER: '老猎人',
-  MERCHANT: '旅行商人',
-  HERBALIST: '草药师',
-  STORYTELLER: '说书人',
-  NIGHT_WATCHER: '守夜人',
-  BAKER: '面包师',
-  BLACKSMITH: '铁匠',
-  WEAVER: '织布女',
+  OLD_HUNTER: '老兵灵织者',
+  MERCHANT: '行路灵织者',
+  HERBALIST: '学徒灵织者',
+  STORYTELLER: '记述灵织者',
+  NIGHT_WATCHER: '守夜灵织者',
+  BAKER: '炊火灵织者',
+  BLACKSMITH: '锻甲灵织者',
+  WEAVER: '织幕灵织者',
 };
 
-export const VILLAGER_NAMES = {
-  1: { name: '老杰克', title: '退休猎人', type: 'OLD_HUNTER', quote: '"我可能老了，但这双眼睛，还看得清谁是野兽。"' },
-  2: { name: '玛丽安', title: '旅行商人', type: 'MERCHANT', quote: '"在这个村子里，消息比武器更值钱。"' },
-  3: { name: '艾米丽', title: '草药师', type: 'HERBALIST', quote: '"大自然给了我们一切解药，只是大多数人不知道去哪里找。"' },
-  4: { name: '托马斯', title: '说书人', type: 'STORYTELLER', quote: '"给我三分钟，我能让狼人自己投自己一票。"' },
-  5: { name: '卡莱布', title: '守夜人', type: 'NIGHT_WATCHER', quote: '"黑暗里的一切动静，都逃不过我的耳朵。"' },
-  6: { name: '艾拉', title: '面包师', type: 'BAKER', quote: '"最好的情报来源？当然是排队买面包的队伍。"' },
-  7: { name: '老彼得', title: '铁匠', type: 'BLACKSMITH', quote: '"我的门，比某些人的胆子还硬。"' },
-  8: { name: '莉莉安', title: '织布女', type: 'WEAVER', quote: '"每一根线都有它的去向，每一个人也是。"' },
+export const SPIRIT_WEAVER_NAMES = {
+  1: { name: '老杰克', title: '暮色老兵', type: 'OLD_HUNTER', quote: '"我可能老了，但这双眼睛，还看得清谁被蚀痕沾染。"' },
+  2: { name: '玛丽安', title: '行路灵织者', type: 'MERCHANT', quote: '"在这个村子里，灵焰的频率比武器更可靠。"' },
+  3: { name: '艾米丽', title: '学徒灵织者', type: 'HERBALIST', quote: '"大自然给了我们一切解药，只是大多数人不知道去哪里找。"' },
+  4: { name: '托马斯', title: '记述灵织者', type: 'STORYTELLER', quote: '"给我三分钟，我能让蚀者自己走出庇护所。"' },
+  5: { name: '卡莱布', title: '守夜灵织者', type: 'NIGHT_WATCHER', quote: '"黑暗里的一切动静，都逃不过我的耳朵。"' },
+  6: { name: '艾拉', title: '炊火灵织者', type: 'BAKER', quote: '"最好的情报来源？当然是排队买面包的队伍。"' },
+  7: { name: '老彼得', title: '锻甲灵织者', type: 'BLACKSMITH', quote: '"我的门，比某些人的胆子还硬。"' },
+  8: { name: '莉莉安', title: '织幕灵织者', type: 'WEAVER', quote: '"每一根线都有它的去向，每一个人也是。"' },
 };
 
 export const ROLE_NAMES = {
-  [ROLES.WEREWOLF]: '狼人',
-  [ROLES.ALPHA_WOLF]: '种狼',
-  [ROLES.SEER]: '预言家',
-  [ROLES.POISON_WITCH]: '毒巫',
-  [ROLES.HEAL_WITCH]: '药巫',
-  [ROLES.VILLAGER]: '村民',
-  [ROLES.GUARD]: '守卫',
-  [ROLES.HUNTER]: '猎人',
+  [ROLES.CORRUPTED]: '蚀者',
+  [ROLES.NETHER_MONK]: '冥僧人',
+  [ROLES.VEIL_SCHOLAR]: '帷幕学者',
+  [ROLES.HERBAL_SAGE]: '草药学者',
+  [ROLES.SPIRIT_MENDER]: '愈灵师',
+  [ROLES.SPIRIT_WEAVER]: '灵织者',
+  [ROLES.VEIL_GUARDIAN]: '帷幕守卫',
+  [ROLES.FLAME_TRACKER]: '灵痕追猎者',
 };
 
 export const ROLE_ICONS = {
-  [ROLES.WEREWOLF]: '🐺',
-  [ROLES.ALPHA_WOLF]: '👑🐺',
-  [ROLES.SEER]: '🔮',
-  [ROLES.POISON_WITCH]: '☠️🧪',
-  [ROLES.HEAL_WITCH]: '💚🧪',
-  [ROLES.VILLAGER]: '👨‍🌾',
-  [ROLES.GUARD]: '🛡️',
-  [ROLES.HUNTER]: '🔫',
+  [ROLES.CORRUPTED]: '🌑',
+  [ROLES.NETHER_MONK]: '🕯️',
+  [ROLES.VEIL_SCHOLAR]: '👁️',
+  [ROLES.HERBAL_SAGE]: '🌿📜',
+  [ROLES.SPIRIT_MENDER]: '💫',
+  [ROLES.SPIRIT_WEAVER]: '🧵',
+  [ROLES.VEIL_GUARDIAN]: '🛡️✨',
+  [ROLES.FLAME_TRACKER]: '🎯',
 };
 
 export const CHARACTER_IDENTITIES = {
@@ -91,8 +91,8 @@ export const MYTH_ORIGIN_NAMES = {
   FOLK: '民间故事',
 };
 
-export const TEAMS = { WOLF: 'WOLF', VILLAGE: 'VILLAGE' };
-export const TEAM_NAMES = { WOLF: '狼人阵营', VILLAGE: '好人阵营' };
+export const TEAMS = { CORRUPTED: 'CORRUPTED', VEIL_KEEPERS: 'VEIL_KEEPERS' };
+export const TEAM_NAMES = { WOLF: '蚀者阵营', VILLAGE: '守幕者阵营' };
 
 export const PHASES = {
   LOBBY: 'LOBBY', NIGHT: 'NIGHT', DAY: 'DAY', VOTE: 'VOTE',
@@ -101,22 +101,22 @@ export const PHASES = {
 };
 
 export const NIGHT_STEPS = {
-  HUNTER: 'HUNTER', ALPHA_WOLF: 'ALPHA_WOLF', GUARD: 'GUARD',
-  WEREWOLF: 'WEREWOLF', SEER: 'SEER', POISON_WITCH: 'POISON_WITCH',
-  HEAL_WITCH: 'HEAL_WITCH', VILLAGER: 'VILLAGER', RESOLUTION: 'RESOLUTION',
+  FLAME_TRACKER: 'FLAME_TRACKER', NETHER_MONK: 'NETHER_MONK', VEIL_GUARDIAN: 'VEIL_GUARDIAN',
+  CORRUPTED: 'CORRUPTED', VEIL_SCHOLAR: 'VEIL_SCHOLAR', HERBAL_SAGE: 'HERBAL_SAGE',
+  SPIRIT_MENDER: 'SPIRIT_MENDER', SPIRIT_WEAVER: 'SPIRIT_WEAVER', RESOLUTION: 'RESOLUTION',
 };
 
 export const NIGHT_STEP_NAMES = {
-  HUNTER: '猎人', ALPHA_WOLF: '种狼', GUARD: '守卫', WEREWOLF: '狼人',
-  SEER: '预言家', POISON_WITCH: '毒巫', HEAL_WITCH: '药巫',
-  VILLAGER: '村民', RESOLUTION: '结算',
+  FLAME_TRACKER: '追猎者', ALPHA_WOLF: '冥僧人', VEIL_GUARDIAN: '帷幕守卫', CORRUPTED: '蚀者',
+  VEIL_SCHOLAR: '帷幕学者', POISON_WITCH: '草药学者', HEAL_WITCH: '愈灵师',
+  VILLAGER: '灵织者', RESOLUTION: '结算',
 };
 
 export const NIGHT_ACTIONS = {
   GO_OUT: 'GO_OUT', USE_ABILITY: 'USE_ABILITY', SLEEP: 'SLEEP',
   EAVESDROP: 'EAVESDROP', HOWL: 'HOWL', DISGUISE: 'DISGUISE',
   PUBLIC_PROPHECY: 'PUBLIC_PROPHECY', SPIRIT_VISION: 'SPIRIT_VISION',
-  POISON_FOG: 'POISON_FOG', BATTLEFIELD_AID: 'BATTLEFIELD_AID',
+  CORROSION_MIST: 'CORROSION_MIST', BATTLEFIELD_AID: 'BATTLEFIELD_AID',
   DIAGNOSE: 'DIAGNOSE', PATROL: 'PATROL', FORTIFY: 'FORTIFY',
   SACRIFICE: 'SACRIFICE', TRAP_SET: 'TRAP_SET', REVENGE: 'REVENGE',
   TRADE_INFO: 'TRADE_INFO', HERBAL_REMEDY: 'HERBAL_REMEDY',

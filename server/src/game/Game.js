@@ -15,7 +15,7 @@ import {
   ROLES, ROLE_NAMES, TEAMS, ROLE_TEAM,
   PHASES, NIGHT_STEPS, NIGHT_STEPS_NIGHT1, NIGHT_STEPS_FULL,
   NIGHT_ACTIONS,
-  getRoleConfig, getVillagerName, CHARACTER_IDENTITIES,
+  getRoleConfig, getWeaverName, CHARACTER_IDENTITIES,
 } from './constants.js';
 
 export class Game {
@@ -42,7 +42,7 @@ export class Game {
     this.nightLog = [];
     this.privateLogs = {};           // { playerId: [log entries] }
 
-    // 日间猎人开枪
+    // 日间追猎者射击
     this.hunterDayShoot = null;
     this.dayLog = [];              // 白天日志（不会在夜晚被清除）
 
@@ -133,11 +133,11 @@ export class Game {
     this.players.forEach((player, i) => {
       player.role = shuffled[i];
       player.team = ROLE_TEAM[shuffled[i]];
-      if (shuffled[i] === ROLES.VILLAGER) {
-        player.villagerIndex = villagerIdx++;
+      if (shuffled[i] === ROLES.SPIRIT_WEAVER) {
+        player.weaverIndex = villagerIdx++;
       }
       // 初始化猎人：第二晚才能行动，携带全部武器
-      if (shuffled[i] === ROLES.HUNTER) {
+      if (shuffled[i] === ROLES.FLAME_TRACKER) {
         player.canAct = false;
         player.hasRifle = true;
         player.hasBlunderbuss = true;
@@ -145,13 +145,13 @@ export class Game {
         player.blunderbussUsable = true;
       }
       // 药巫有两瓶药
-      if (shuffled[i] === ROLES.HEAL_WITCH) {
-        player.hasPotion = true;
-        player.hasPoison = true;
+      if (shuffled[i] === ROLES.SPIRIT_MENDER) {
+        player.hasHealTalisman = true;
+        player.hasSealTalisman = true;
       }
-      if (shuffled[i] === ROLES.POISON_WITCH) {
-        player.hasPotion = true;
-        player.hasPoison = true;
+      if (shuffled[i] === ROLES.HERBAL_SAGE) {
+        player.hasHealTalisman = true;
+        player.hasSealTalisman = true;
       }
     });
 
@@ -210,23 +210,23 @@ export class Game {
   _getPlayersForStep(step) {
     const alive = this.players.filter(p => p.alive && !p.disconnected);
     switch (step) {
-      case NIGHT_STEPS.HUNTER:
-        return alive.filter(p => p.role === ROLES.HUNTER && p.canAct);
-      case NIGHT_STEPS.ALPHA_WOLF:
-        return alive.filter(p => p.role === ROLES.ALPHA_WOLF);
-      case NIGHT_STEPS.GUARD:
-        return alive.filter(p => p.role === ROLES.GUARD);
-      case NIGHT_STEPS.WEREWOLF:
-        return alive.filter(p => p.role === ROLES.WEREWOLF ||
-          (p.role === ROLES.ALPHA_WOLF && (p.isTransformed || p.hasUsedInfect)));
-      case NIGHT_STEPS.SEER:
-        return alive.filter(p => p.role === ROLES.SEER);
-      case NIGHT_STEPS.POISON_WITCH:
-        return alive.filter(p => p.role === ROLES.POISON_WITCH);
-      case NIGHT_STEPS.HEAL_WITCH:
-        return alive.filter(p => p.role === ROLES.HEAL_WITCH);
-      case NIGHT_STEPS.VILLAGER:
-        return alive.filter(p => p.role === ROLES.VILLAGER);
+      case NIGHT_STEPS.FLAME_TRACKER:
+        return alive.filter(p => p.role === ROLES.FLAME_TRACKER && p.canAct);
+      case NIGHT_STEPS.NETHER_MONK:
+        return alive.filter(p => p.role === ROLES.NETHER_MONK);
+      case NIGHT_STEPS.VEIL_GUARDIAN:
+        return alive.filter(p => p.role === ROLES.VEIL_GUARDIAN);
+      case NIGHT_STEPS.CORRUPTED:
+        return alive.filter(p => p.role === ROLES.CORRUPTED ||
+          (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedInfect)));
+      case NIGHT_STEPS.VEIL_SCHOLAR:
+        return alive.filter(p => p.role === ROLES.VEIL_SCHOLAR);
+      case NIGHT_STEPS.HERBAL_SAGE:
+        return alive.filter(p => p.role === ROLES.HERBAL_SAGE);
+      case NIGHT_STEPS.SPIRIT_MENDER:
+        return alive.filter(p => p.role === ROLES.SPIRIT_MENDER);
+      case NIGHT_STEPS.SPIRIT_WEAVER:
+        return alive.filter(p => p.role === ROLES.SPIRIT_WEAVER);
       default:
         return [];
     }
@@ -441,21 +441,21 @@ export class Game {
       player.role = role;
       player.team = ROLE_TEAM[role];
 
-      if (role === ROLES.VILLAGER) {
-        player.villagerIndex = villagerIdx;
-        const nameData = getVillagerName(villagerIdx);
-        player.villagerName = nameData.name;
-        player.villagerTitle = nameData.title;
-        player.villagerType = nameData.villagerType;
+      if (role === ROLES.SPIRIT_WEAVER) {
+        player.weaverIndex = villagerIdx;
+        const nameData = getWeaverName(villagerIdx);
+        player.weaverName = nameData.name;
+        player.weaverTitle = nameData.title;
+        player.weaverType = nameData.weaverType;
         villagerIdx++;
       }
 
-      if (role === ROLES.HUNTER) {
+      if (role === ROLES.FLAME_TRACKER) {
         player.canAct = false; player.hasRifle = true; player.hasBlunderbuss = true;
         player.rifleUsable = true; player.blunderbussUsable = true;
       }
-      if (role === ROLES.HEAL_WITCH || role === ROLES.POISON_WITCH) {
-        player.hasPotion = true; player.hasPoison = true;
+      if (role === ROLES.SPIRIT_MENDER || role === ROLES.HERBAL_SAGE) {
+        player.hasHealTalisman = true; player.hasSealTalisman = true;
       }
 
       this.storyManager.recordNarrativeEvent(player.id, 'role_assigned', {
@@ -573,7 +573,7 @@ export class Game {
     });
   }
 
-  /** 3D模式: 狼人攻击目标 */
+  /** 3D模式: 蚀者噬灵目标 */
   submit3DAttack(wolfId, targetId) {
     if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return null;
 
@@ -590,8 +590,8 @@ export class Game {
 
     wolf._lastAttackTime = now;
 
-    // 检查目标是否有短火铳反击
-    if (target.role === 'HUNTER' && target.blunderbussUsable) {
+    // 检查目标是否有短铳反击
+    if (target.role === 'FLAME_TRACKER' && target.blunderbussUsable) {
       wolf.alive = false;
       wolf._killedBy = targetId;
       target.blunderbussUsable = false;
@@ -671,11 +671,11 @@ export class Game {
 
     // 检查猎人第二晚起可以行动
     if (this.round >= 2) {
-      const hunter = this.players.find(p => p.role === ROLES.HUNTER && p.alive);
+      const hunter = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
       if (hunter) hunter.canAct = true;
     }
 
-    // 推送每个玩家的私有状态（确保预言家等角色看到夜间反馈）
+    // 推送每个玩家的私有状态（确保察灵家等角色看到夜间反馈）
     for (const player of this.players) {
       if (player.alive) {
         const privateState = this.getPrivateState(player.id);
@@ -891,7 +891,7 @@ export class Game {
     // P0修复: 只能在DAY阶段开枪 + 猎人必须在世 + 未开过枪
     if (this.phase !== PHASES.DAY) return false;
     if (this.hunterDayShoot) return false; // 已开过枪
-    const hunter = this.players.find(p => p.role === ROLES.HUNTER && p.alive);
+    const hunter = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
     if (!hunter || !hunter.hasRifle || !hunter.rifleUsable) return false;
 
     const target = this.getPlayer(targetId);
@@ -902,7 +902,7 @@ export class Game {
     hunter.rifleUsable = false;
     this.hunterDayShoot = targetId;
     // 记录到 dayLog（不会在夜晚被清除）
-    this.dayLog.push({ type: 'hunter_day_shoot', player: hunter.id, target: targetId, msg: `猎人开枪击杀了 ${target.name}` });
+    this.dayLog.push({ type: 'hunter_day_shoot', player: hunter.id, target: targetId, msg: `追猎者射击击杀了 ${target.name}` });
 
     this.checkWinCondition();
     return true;
@@ -912,19 +912,19 @@ export class Game {
 
   checkWinCondition() {
     const aliveWolves = this.players.filter(p =>
-      p.alive && (p.role === ROLES.WEREWOLF ||
-        (p.role === ROLES.ALPHA_WOLF && (p.isTransformed || p.hasUsedInfect)))
+      p.alive && (p.role === ROLES.CORRUPTED ||
+        (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedInfect)))
     );
     // 未变身/未感染种狼算作村方
     const aliveVillage = this.players.filter(p =>
-      p.alive && (p.team === TEAMS.VILLAGE ||
-        (p.role === ROLES.ALPHA_WOLF && !p.isTransformed && !p.hasUsedInfect))
+      p.alive && (p.team === TEAMS.VEIL_KEEPERS ||
+        (p.role === ROLES.NETHER_MONK && !p.isTransformed && !p.hasUsedInfect))
     );
 
     if (aliveWolves.length === 0) {
-      this.endGame(TEAMS.VILLAGE, '所有狼人已出局');
+      this.endGame(TEAMS.VEIL_KEEPERS, '所有狼人已出局');
     } else if (aliveWolves.length >= aliveVillage.length) {
-      this.endGame(TEAMS.WOLF, '狼人数量不少于好人，狼人获胜');
+      this.endGame(TEAMS.CORRUPTED, '狼人数量不少于好人，狼人获胜');
     }
   }
 
@@ -1024,9 +1024,9 @@ export class Game {
       p.observedTarget = null;
       p.observedTargetWentOut = false;
       p.canShootNextNight = null;
-      p.hasPotion = true;
-      p.hasPoison = true;
-      p.potionTarget = null;
+      p.hasHealTalisman = true;
+      p.hasSealTalisman = true;
+      p.talismanTarget = null;
       p.poisonTarget = null;
       p.checkTarget = null;
       p.checkResult = null;
@@ -1161,7 +1161,7 @@ export class Game {
         team: this.phase === PHASES.GAME_OVER ? p.team : undefined,
         heavyInjury: p.heavyInjury,
         isGuarding: p.isGuarding,
-        villagerIndex: p.villagerIndex,
+        weaverIndex: p.weaverIndex,
         // v2.0: 表层身份（选人完成后公开）
         characterId: this.phase !== PHASES.LOBBY ? p.characterId : undefined,
       })),
@@ -1180,7 +1180,7 @@ export class Game {
     const player = this.getPlayer(playerId);
     if (!player) return null;
 
-    // 从私密日志中提取预言家查验结果 { targetId: 'GOOD'|'WOLF' }
+    // 从私密日志中提取帷幕学者察灵结果 { targetId: 'GOOD'|'WOLF' }
     const seerCheckResults = {};
     const myLogs = this.privateLogs[playerId] || [];
     for (const entry of myLogs) {
@@ -1268,7 +1268,7 @@ export class Game {
     const count = visitors.length;
     // 如果是村民因人多被赶回家，只告诉"很多人"
     const requestor = this.getPlayer(requestingPlayerId);
-    if (requestor && requestor.role === 'VILLAGER' && count >= 3) {
+    if (requestor && requestor.role === 'SPIRIT_WEAVER' && count >= 3) {
       return { count: -1, desc: '很多人（≥3人）' }; // -1表示很多人
     }
     return { count, desc: `${count}人` };

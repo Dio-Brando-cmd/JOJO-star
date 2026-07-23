@@ -1,5 +1,5 @@
 // ============================================================
-// 狼人杀官网 —— 联系我们页面
+// 帷幕之地官网 —— 联系我们页面
 // ============================================================
 
 import React, { useState } from 'react';
@@ -175,7 +175,7 @@ export default function ContactPage({ onNavigate }) {
         <div className="footer-content">
           <div className="footer-brand">
             <span>🐺</span>
-            <strong>狼人杀 在线联机版</strong>
+            <strong>帷幕之地 在线联机版</strong>
           </div>
           <div className="footer-links">
             <a onClick={() => onNavigate('home')}>首页</a>

@@ -122,7 +122,7 @@ export default function Lobby({ socket, playerName, bgm, onJoined, onChangeName 
       <div className="lobby-card lobby-card-wide">
         <div className="lobby-header">
           <span className="logo-icon">🐺</span>
-          <h1>狼人杀</h1>
+          <h1>帷幕之地</h1>
           <p className="player-name-display">
             玩家: <strong>{playerName}</strong>
             <button className="btn-link" onClick={onChangeName}>改名</button>

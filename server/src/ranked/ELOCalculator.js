@@ -75,26 +75,26 @@ export class ELOCalculator {
     if (!perf) return bonus;
 
     switch (role) {
-      case ROLES.WEREWOLF:
-      case ROLES.ALPHA_WOLF:
+      case ROLES.CORRUPTED:
+      case ROLES.NETHER_MONK:
         bonus += (perf.kills || 0) * 0.02;
         if (perf.survived) bonus += 0.02;
         break;
-      case ROLES.SEER:
+      case ROLES.VEIL_SCHOLAR:
         bonus += (perf.correctChecks || 0) * 0.03;
         break;
-      case ROLES.GUARD:
+      case ROLES.VEIL_GUARDIAN:
         bonus += (perf.livesSaved || 0) * 0.04;
         break;
-      case ROLES.HUNTER:
+      case ROLES.FLAME_TRACKER:
         bonus += (perf.kills || 0) * 0.04;
         break;
-      case ROLES.POISON_WITCH:
-      case ROLES.HEAL_WITCH:
+      case ROLES.HERBAL_SAGE:
+      case ROLES.SPIRIT_MENDER:
         bonus += (perf.kills || 0) * 0.03;
         bonus += (perf.livesSaved || 0) * 0.03;
         break;
-      case ROLES.VILLAGER:
+      case ROLES.SPIRIT_WEAVER:
         bonus += (perf.correctVotes || 0) * 0.02;
         break;
     }

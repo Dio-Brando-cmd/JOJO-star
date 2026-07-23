@@ -274,14 +274,14 @@ function PhaseIndicator({ phase, nightStep }) {
   };
 
   const stepNames = {
-    HUNTER: '猎人行动',
-    ALPHA_WOLF: '种狼行动',
-    GUARD: '守卫行动',
-    WEREWOLF: '狼人行动',
-    SEER: '预言家行动',
-    POISON_WITCH: '毒巫行动',
-    HEAL_WITCH: '药巫行动',
-    VILLAGER: '村民行动',
+    FLAME_TRACKER: '追猎行动',
+    NETHER_MONK: '冥僧入定',
+    VEIL_GUARDIAN: '帷幕庇护',
+    CORRUPTED: '蚀者噬灵',
+    VEIL_SCHOLAR: '学者察灵',
+    HERBAL_SAGE: '草药炼剂',
+    SPIRIT_MENDER: '愈灵修复',
+    VILLAGER: '灵织守夜',
     RESOLUTION: '结算中',
   };
 
@@ -319,21 +319,21 @@ function formatLogEntry(entry, players) {
     case 'death':
       return <span>💀 <strong>{getName(entry.player)}</strong> 死亡（{entry.reason}）</span>;
     case 'wolf_kill':
-      return <span>🐺 狼人袭击了某个目标</span>;
-    case 'lethal_poison':
-      return <span>☠️ 某间屋子被烈性毒药覆盖</span>;
+      return <span>🐺 蚀者噬灵了某个目标</span>;
+    case 'mass_seal':
+      return <span>☠️ 某间屋子被蚀灭符阵覆盖</span>;
     case 'hunter_shoot':
       return <span>🔫 猎人扣动了扳机</span>;
-    case 'potion_save':
-      return <span>💚 有人被解药救活</span>;
+    case 'talisman_save':
+      return <span>💚 有人被愈灵符救回</span>;
     case 'heal_save':
-      return <span>💚 万能药救活了一人</span>;
-    case 'poison_transferred':
-      return <span>🧪 毒药转移到了别人身上</span>;
+      return <span>💚 灵焰修复救回了一人</span>;
+    case 'seal_transferred':
+      return <span>🧪 蚀痕净化转移到了别人身上</span>;
     case 'hunter_defend':
       return <span>💥 猎人的短火铳击杀了攻击者</span>;
     case 'became_wolf':
-      return <span>🐺 有人变成了狼人</span>;
+      return <span>🐺 有人蚀变为蚀者</span>;
     case 'house_visit':
       return <span>🏠 你去了 <strong>{getName(entry.target)}</strong> 的家 — {entry.desc || (entry.count === -1 ? '很多人' : `${entry.count}人`)}</span>;
     default:

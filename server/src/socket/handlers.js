@@ -106,15 +106,15 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   // ==================== 版本检查（自动更新） ====================
 
   socket.on('app:checkVersion', (callback) => {
-    const currentVersion = process.env.APP_VERSION || '2.12.1';
-    const downloadUrl = '/download/狼人杀_Setup.exe';
+    const currentVersion = process.env.APP_VERSION || '2.13.1';
+    const downloadUrl = '/download/帷幕之地_Setup.exe';
     const apkDownloadUrl = '/download/werewolf.apk';
     callback?.({
       version: currentVersion,
       downloadUrl,
       apkDownloadUrl,
       releaseDate: '2026-06-26',
-      releaseNotes: 'v1.5.4 👂村民偷听改为基于屋内实际成员推断线索、🛡️夜晚行动白名单防作弊、💀遗言系统、🔒JSON写入保护',
+      releaseNotes: 'v2.13.1 🌑 帷幕之地·灵焰纪元 — 全面品牌重塑：蚀者/冥僧人/帷幕学者/草药学者/愈灵师/帷幕守卫/灵痕追猎者/灵织者、灵符体系、灵焰猎枪、全新世界观',
       fileSize: 113 * 1024 * 1024,
     });
   });
@@ -200,7 +200,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
       if (roleConfig && game.hostId === socket.id) {
         game.customRoleConfig = validateRoleConfig(roleConfig, game.maxPlayers);
         if (!game.customRoleConfig) {
-          callback({ success: false, error: '角色配置不合法：必须包含至少1狼人、至少1好人，且不能全狼人' });
+          callback({ success: false, error: '角色配置不合法：必须包含至少1蚀者、至少1守幕者，且不能全蚀者' });
           return;
         }
       }
@@ -314,7 +314,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 
     const validated = validateRoleConfig(roleConfig, game.maxPlayers);
     if (!validated) {
-      callback?.({ success: false, error: '角色配置不合法：必须包含至少1狼人、至少1好人，且不能全狼人' });
+      callback?.({ success: false, error: '角色配置不合法：必须包含至少1蚀者、至少1守幕者，且不能全蚀者' });
       return;
     }
 
@@ -591,7 +591,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 
     const player = game.getPlayer(socket.id);
     // P0修复: 必须存活 + 必须是猎人 + 必须尚未开过枪
-    if (!player || !player.alive || player.role !== ROLES.HUNTER) return;
+    if (!player || !player.alive || player.role !== ROLES.FLAME_TRACKER) return;
     if (game.hunterDayShoot) return; // 已经开过枪，拒绝第二次
 
     game.hunterDayShootTarget(targetId);
@@ -608,20 +608,20 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     io.to(game.id).emit('game:state', game.getPublicState());
   });
 
-  // 种狼告知被感染者
+  // 冥僧人告知被堕化者
   socket.on('alpha:notifyInfected', () => {
     const game = gameManager.getGameByPlayer(socket.id);
     if (!game || game.phase !== PHASES.NIGHT) return;
     const player = game.getPlayer(socket.id);
-    if (!player || player.role !== ROLES.ALPHA_WOLF) return;
+    if (!player || player.role !== ROLES.NETHER_MONK) return;
 
-    // 找到所有被种狼感染的存活玩家
+    // 找到所有被冥僧人堕化的存活玩家
     const infected = game.players.filter(p => p.alive && p.infectedByAlpha);
     for (const p of infected) {
       if (!game.privateLogs[p.id]) game.privateLogs[p.id] = [];
-      const msg = p.role === ROLES.SEER
-        ? { type: 'alpha_revealed', player: p.id, alphaId: player.id, alphaName: player.name, msg: `种狼 ${player.name} 告知：你已被感染！种狼是 ${player.name}。你的预言结果已被反转。` }
-        : { type: 'infected_notified', player: p.id, alphaId: player.id, alphaName: player.name, msg: `种狼 ${player.name} 告知：你已被感染，下个夜晚将变为狼人。` };
+      const msg = p.role === ROLES.VEIL_SCHOLAR
+        ? { type: 'alpha_revealed', player: p.id, alphaId: player.id, alphaName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化！种狼是 ${player.name}。你的察灵结果已被反转。` }
+        : { type: 'infected_notified', player: p.id, alphaId: player.id, alphaName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化，下个夜晚将蚀变为蚀者。` };
       game.privateLogs[p.id].push(msg);
       io.to(p.id).emit('game:privateState', game.getPrivateState(p.id));
     }
@@ -682,7 +682,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 
   // ==================== 3D追逃模式专用事件 ====================
 
-  // 狼人攻击
+  // 蚀者噬灵
   socket.on('3d:attack', ({ targetId }, callback) => {
     const game = gameManager.getGameByPlayer(socket.id);
     if (!game || game.gameMode !== 'THIRD_PERSON') {
@@ -825,9 +825,9 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 /**
  * 验证自定义角色配置是否合法
  * 规则：
- *  - 至少包含1个狼人阵营角色（ALPHA_WOLF 或 WEREWOLF）
- *  - 不能全是狼人
- *  - 至少1个好人阵营角色
+ *  - 至少包含1个蚀者阵营角色（ALPHA_WOLF 或 WEREWOLF）
+ *  - 不能全是蚀者
+ *  - 至少1个守幕者阵营角色
  *  - 总数不能超过最大玩家数
  */
 function validateRoleConfig(roleConfig, maxPlayers) {
@@ -838,11 +838,11 @@ function validateRoleConfig(roleConfig, maxPlayers) {
     return null;
   }
 
-  const hasWolf = roleConfig.some(r => r === ROLES.ALPHA_WOLF || r === ROLES.WEREWOLF);
+  const hasWolf = roleConfig.some(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
   const hasVillage = roleConfig.some(r =>
-    [ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.VILLAGER, ROLES.GUARD, ROLES.HUNTER].includes(r)
+    [ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(r)
   );
-  const allWolves = roleConfig.every(r => r === ROLES.ALPHA_WOLF || r === ROLES.WEREWOLF);
+  const allWolves = roleConfig.every(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
 
   if (!hasWolf || !hasVillage || allWolves) {
     return null;
@@ -869,43 +869,43 @@ function _validateNightAction(player, currentStep, action, target, ability, game
 
   // 按步骤+角色校验合法行动
   const stepActionMap = {
-    HUNTER: {
-      roles: ['HUNTER'],
+    FLAME_TRACKER: {
+      roles: ['FLAME_TRACKER'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
       allowedAbilities: ['useRifle', 'rifleTarget', 'hasRifle', 'hasBlunderbuss', 'observeTarget', 'useTrap', 'trapTarget', 'markRevenge'],
     },
-    ALPHA_WOLF: {
-      roles: ['ALPHA_WOLF'],
+    NETHER_MONK: {
+      roles: ['NETHER_MONK'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
       allowedAbilities: ['transform', 'infect', 'kill', 'killTarget', 'fakeIdentity', 'fakeIdentityRole'],
     },
-    GUARD: {
-      roles: ['GUARD'],
+    VEIL_GUARDIAN: {
+      roles: ['VEIL_GUARDIAN'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'PATROL', 'FORTIFY', 'SACRIFICE'],
       allowedAbilities: ['guard', 'fortify', 'patrol', 'sacrifice'],
     },
-    WEREWOLF: {
-      roles: ['WEREWOLF', 'ALPHA_WOLF'],
+    CORRUPTED: {
+      roles: ['CORRUPTED', 'NETHER_MONK'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'HOWL', 'DISGUISE'],
       allowedAbilities: ['kill', 'trackScent', 'howl', 'disguise'],
     },
-    SEER: {
-      roles: ['SEER'],
+    VEIL_SCHOLAR: {
+      roles: ['VEIL_SCHOLAR'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
       allowedAbilities: ['check', 'dreamFragment', 'spiritVision', 'spiritVisionTarget'],
     },
-    POISON_WITCH: {
-      roles: ['POISON_WITCH'],
+    HERBAL_SAGE: {
+      roles: ['HERBAL_SAGE'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
-      allowedAbilities: ['lethalPoison', 'lethalPoisonTarget', 'potion', 'potionTarget', 'poisonFog', 'poisonFogTarget', 'singlePoison'],
+      allowedAbilities: ['massSeal', 'massSealTarget', 'talisman', 'talismanTarget', 'corrosionMist', 'corrosionMistTarget', 'singlePoison'],
     },
-    HEAL_WITCH: {
-      roles: ['HEAL_WITCH'],
+    SPIRIT_MENDER: {
+      roles: ['SPIRIT_MENDER'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'BATTLEFIELD_AID', 'DIAGNOSE'],
       allowedAbilities: ['heal', 'healTarget', 'poison', 'poisonTarget', 'battlefieldAid', 'plantHerbGarden', 'diagnose'],
     },
-    VILLAGER: {
-      roles: ['VILLAGER'],
+    SPIRIT_WEAVER: {
+      roles: ['SPIRIT_WEAVER'],
       actions: ['SLEEP', 'GO_OUT', 'EAVESDROP', 'TRAP_SET', 'NIGHT_WATCH', 'FORTIFY_DOOR', 'HERBAL_REMEDY', 'TRADE_INFO'],
       allowedAbilities: ['secondVisit', 'secondTarget'],
     },
@@ -931,19 +931,19 @@ function _validateNightAction(player, currentStep, action, target, ability, game
     }
   }
 
-  // 特殊限制：狼人嚎叫和伪装不能同时刀人
+  // 特殊限制：蚀者裂隙共鸣和灵焰遮蔽不能同时噬灵
   if ((action === 'HOWL' || action === 'DISGUISE') && ability?.kill) return false;
 
-  // 特殊限制：毒巫药水不能自己用自己（毒巫不能自救）
-  if (action === 'USE_ABILITY' && ability?.potion && ability?.potionTarget === player.id) return false;
+  // 特殊限制：毒巫灵符不能自己用自己（毒巫不能自救）
+  if (action === 'USE_ABILITY' && ability?.talisman && ability?.talismanTarget === player.id) return false;
 
-  // 特殊限制：村民的某些行动需要特定villagerType
-  if (player.role === 'VILLAGER') {
-    if (action === 'TRAP_SET' && player.villagerType !== 'OLD_HUNTER') return false;
-    if (action === 'NIGHT_WATCH' && player.villagerType !== 'NIGHT_WATCHER') return false;
-    if (action === 'FORTIFY_DOOR' && player.villagerType !== 'BLACKSMITH') return false;
-    if (action === 'HERBAL_REMEDY' && player.villagerType !== 'HERBALIST') return false;
-    if (action === 'TRADE_INFO' && player.villagerType !== 'MERCHANT') return false;
+  // 特殊限制：村民的某些行动需要特定weaverType
+  if (player.role === 'SPIRIT_WEAVER') {
+    if (action === 'TRAP_SET' && player.weaverType !== 'OLD_VETERAN') return false;
+    if (action === 'NIGHT_WATCH' && player.weaverType !== 'NIGHT_SENTINEL') return false;
+    if (action === 'FORTIFY_DOOR' && player.weaverType !== 'ARMOR_SMITH') return false;
+    if (action === 'HERBAL_REMEDY' && player.weaverType !== 'SPIRIT_APPRENTICE') return false;
+    if (action === 'TRADE_INFO' && player.weaverType !== 'WANDERING_TRADER') return false;
   }
 
   return true;

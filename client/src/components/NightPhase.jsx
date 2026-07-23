@@ -155,7 +155,7 @@ export default function NightPhase({ socket }) {
       )}
 
       {/* 种狼特殊：告知被感染者 */}
-      {myRole === ROLES.ALPHA_WOLF && myPrivate?.hasUsedInfect && (
+      {myRole === ROLES.NETHER_MONK && myPrivate?.hasUsedInfect && (
         <div className="alpha-notify-section">
           <button
             className="btn btn-secondary alpha-notify-btn"
@@ -177,7 +177,7 @@ export default function NightPhase({ socket }) {
 // ==================== 行动类型选择 ====================
 
 function ActionSelector({ myRole, myPrivate, round, onSelect }) {
-  const isVillager = isVillagerRole(myRole);
+  const isWeaver = isWeaverRole(myRole);
 
   return (
     <div className="action-selector">
@@ -189,7 +189,7 @@ function ActionSelector({ myRole, myPrivate, round, onSelect }) {
       </button>
 
       {/* 使用能力（非村民角色） */}
-      {!isVillager && (
+      {!isWeaver && (
         <button className="action-card" onClick={() => onSelect(NIGHT_ACTIONS.USE_ABILITY)}>
           <span className="action-icon">✨</span>
           <span className="action-name">使用能力</span>
@@ -197,12 +197,12 @@ function ActionSelector({ myRole, myPrivate, round, onSelect }) {
         </button>
       )}
 
-      {/* 偷听（村民专属） */}
-      {isVillager && (
+      {/* 帷幕低语（村民专属） */}
+      {isWeaver && (
         <button className="action-card eavesdrop-card" onClick={() => onSelect(NIGHT_ACTIONS.EAVESDROP)}>
           <span className="action-icon">👂</span>
-          <span className="action-name">偷听</span>
-          <span className="action-desc">在目标屋子外偷听，获取模糊情报（不精确）</span>
+          <span className="action-name">帷幕低语</span>
+          <span className="action-desc">在目标屋子外帷幕低语，获取模糊情报（不精确）</span>
         </button>
       )}
 
@@ -225,7 +225,7 @@ function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, tar
   const ownHouseId = myPlayerId;
 
   // 守卫特殊处理：守护需要选目标，单纯出门不需要
-  const canSubmit = action === NIGHT_ACTIONS.SLEEP || target || (action === NIGHT_ACTIONS.GO_OUT && myRole !== ROLES.GUARD);
+  const canSubmit = action === NIGHT_ACTIONS.SLEEP || target || (action === NIGHT_ACTIONS.GO_OUT && myRole !== ROLES.VEIL_GUARDIAN);
 
   return (
     <div className="action-detail">
@@ -288,19 +288,19 @@ function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, tar
 
 function AbilityOptions({ myRole, myPrivate, ability, setAbility, target, alivePlayers, nightStep }) {
   switch (myRole) {
-    case ROLES.ALPHA_WOLF:
+    case ROLES.NETHER_MONK:
       return <AlphaWolfOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} nightStep={nightStep} />;
-    case ROLES.GUARD:
+    case ROLES.VEIL_GUARDIAN:
       return <p className="ability-note">🏠 前往该玩家家中进行守护（如对方出门则无效）</p>;
-    case ROLES.WEREWOLF:
+    case ROLES.CORRUPTED:
       return <WolfOptions ability={ability} setAbility={setAbility} />;
-    case ROLES.SEER:
+    case ROLES.VEIL_SCHOLAR:
       return <SeerOptions ability={ability} setAbility={setAbility} />;
-    case ROLES.POISON_WITCH:
+    case ROLES.HERBAL_SAGE:
       return <PoisonWitchOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} target={target} alivePlayers={alivePlayers} />;
-    case ROLES.HEAL_WITCH:
+    case ROLES.SPIRIT_MENDER:
       return <HealWitchOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} target={target} alivePlayers={alivePlayers} />;
-    case ROLES.HUNTER:
+    case ROLES.FLAME_TRACKER:
       return <HunterOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} />;
     default:
       return null;
@@ -310,8 +310,8 @@ function AbilityOptions({ myRole, myPrivate, ability, setAbility, target, aliveP
 function AlphaWolfOptions({ ability, setAbility, myPrivate, nightStep }) {
   const toggle = (key) => setAbility(prev => ({ ...prev, [key]: !prev[key] }));
   const canInfect = !myPrivate?.hasUsedInfect && !myPrivate?.hasKilled;
-  // 种狼步骤只能变身/感染；刀人在狼人步骤进行
-  const isWolfStep = nightStep === 'WEREWOLF';
+  // 冥僧步骤只能变身/感染；刀人在蚀者步骤进行
+  const isWolfStep = nightStep === 'CORRUPTED';
   const canKill = isWolfStep && myPrivate?.isTransformed && !myPrivate?.hasKilled;
 
   return (
@@ -319,7 +319,7 @@ function AlphaWolfOptions({ ability, setAbility, myPrivate, nightStep }) {
       {!isWolfStep && !myPrivate?.isTransformed && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.transform} onChange={() => toggle('transform')} />
-          <span>🐺 变狼（变狼后可在狼人步骤与同伴一起刀人）</span>
+          <span>🐺 变狼（变狼后可在蚀者步骤与同伴一起刀人）</span>
         </label>
       )}
       {!isWolfStep && canInfect && (
@@ -367,13 +367,13 @@ function PoisonWitchOptions({ ability, setAbility, myPrivate, target, alivePlaye
   return (
     <div className="ability-options">
       <label className="ability-check">
-        <input type="checkbox" checked={!!ability.lethalPoison} onChange={() => setAbility(prev => ({ ...prev, lethalPoison: !prev.lethalPoison, lethalPoisonTarget: target }))} />
-        <span>☠️ 使用烈性毒药（毒死目标屋子中所有人）</span>
+        <input type="checkbox" checked={!!ability.massSeal} onChange={() => setAbility(prev => ({ ...prev, massSeal: !prev.massSeal, massSealTarget: target }))} />
+        <span>☠️ 使用蚀灭符阵（毒死目标屋子中所有人）</span>
       </label>
-      {myPrivate?.hasPotion && (
+      {myPrivate?.hasHealTalisman && (
         <label className="ability-check">
-          <input type="checkbox" checked={!!ability.potion} onChange={() => setAbility(prev => ({ ...prev, potion: !prev.potion, potionTarget: target }))} />
-          <span>💊 使用药水救人（不能治疗守卫重伤）</span>
+          <input type="checkbox" checked={!!ability.talisman} onChange={() => setAbility(prev => ({ ...prev, talisman: !prev.talisman, talismanTarget: target }))} />
+          <span>💊 使用灵符愈灵（不能治疗灵蚀重伤）</span>
         </label>
       )}
     </div>
@@ -383,13 +383,13 @@ function PoisonWitchOptions({ ability, setAbility, myPrivate, target, alivePlaye
 function HealWitchOptions({ ability, setAbility, myPrivate, target, alivePlayers }) {
   return (
     <div className="ability-options">
-      {myPrivate?.hasPotion && (
+      {myPrivate?.hasHealTalisman && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.heal} onChange={() => setAbility(prev => ({ ...prev, heal: !prev.heal, healTarget: target }))} />
-          <span>💚 使用万能药（可治疗一切，包括守卫重伤）</span>
+          <span>💚 使用万能药（可治疗一切，包括灵蚀重伤）</span>
         </label>
       )}
-      {myPrivate?.hasPoison && (
+      {myPrivate?.hasSealTalisman && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.poison} onChange={() => setAbility(prev => ({ ...prev, poison: !prev.poison, poisonTarget: target }))} />
           <span>🧪 使用毒药（单目标；目标离开屋子则失效或转移）</span>
@@ -426,49 +426,49 @@ function HunterOptions({ ability, setAbility, myPrivate }) {
 
 function checkIsMyTurn(role, nightStep, myPrivate, round) {
   switch (nightStep) {
-    case NIGHT_STEPS.HUNTER:
-      return role === ROLES.HUNTER && round >= 2;
-    case NIGHT_STEPS.ALPHA_WOLF:
-      return role === ROLES.ALPHA_WOLF;
-    case NIGHT_STEPS.GUARD:
-      return role === ROLES.GUARD;
-    case NIGHT_STEPS.WEREWOLF:
+    case NIGHT_STEPS.FLAME_TRACKER:
+      return role === ROLES.FLAME_TRACKER && round >= 2;
+    case NIGHT_STEPS.NETHER_MONK:
+      return role === ROLES.NETHER_MONK;
+    case NIGHT_STEPS.VEIL_GUARDIAN:
+      return role === ROLES.VEIL_GUARDIAN;
+    case NIGHT_STEPS.CORRUPTED:
       // 普通狼人 + 种狼（种狼在变身/感染后算狼人群，私密状态可能尚未更新故一律放行）
-      return role === ROLES.WEREWOLF || role === ROLES.ALPHA_WOLF;
-    case NIGHT_STEPS.SEER:
-      return role === ROLES.SEER;
-    case NIGHT_STEPS.POISON_WITCH:
-      return role === ROLES.POISON_WITCH;
-    case NIGHT_STEPS.HEAL_WITCH:
-      return role === ROLES.HEAL_WITCH;
-    case NIGHT_STEPS.VILLAGER:
-      return role === ROLES.VILLAGER;
+      return role === ROLES.CORRUPTED || role === ROLES.NETHER_MONK;
+    case NIGHT_STEPS.VEIL_SCHOLAR:
+      return role === ROLES.VEIL_SCHOLAR;
+    case NIGHT_STEPS.HERBAL_SAGE:
+      return role === ROLES.HERBAL_SAGE;
+    case NIGHT_STEPS.SPIRIT_MENDER:
+      return role === ROLES.SPIRIT_MENDER;
+    case NIGHT_STEPS.SPIRIT_WEAVER:
+      return role === ROLES.SPIRIT_WEAVER;
     default:
       return false;
   }
 }
 
 function shouldBeAwake(role, nightStep) {
-  // 狼人在种狼步骤不醒，除非是种狼
-  if (nightStep === NIGHT_STEPS.ALPHA_WOLF && role === ROLES.WEREWOLF) return false;
+  // 狼人在冥僧步骤不醒，除非是种狼
+  if (nightStep === NIGHT_STEPS.NETHER_MONK && role === ROLES.CORRUPTED) return false;
   // 守卫在猎人步骤不醒
-  if (nightStep === NIGHT_STEPS.HUNTER && role === ROLES.GUARD) return false;
+  if (nightStep === NIGHT_STEPS.FLAME_TRACKER && role === ROLES.VEIL_GUARDIAN) return false;
   return true;
 }
 
-function isVillagerRole(role) {
-  return role === ROLES.VILLAGER;
+function isWeaverRole(role) {
+  return role === ROLES.SPIRIT_WEAVER;
 }
 
 function getAbilityDesc(role) {
   const descs = {
-    [ROLES.ALPHA_WOLF]: '变狼 / 感染 / 刀人',
-    [ROLES.GUARD]: '守护一个人（去其家中）',
-    [ROLES.WEREWOLF]: '刀人（锁定人，不锁定屋）',
-    [ROLES.SEER]: '查验一个人是否是好人',
-    [ROLES.POISON_WITCH]: '烈性毒药 / 药水',
-    [ROLES.HEAL_WITCH]: '万能药 / 毒药',
-    [ROLES.HUNTER]: '观察 + 猎枪 / 短火铳',
+    [ROLES.NETHER_MONK]: '变狼 / 感染 / 刀人',
+    [ROLES.VEIL_GUARDIAN]: '守护一个人（去其家中）',
+    [ROLES.CORRUPTED]: '刀人（锁定人，不锁定屋）',
+    [ROLES.VEIL_SCHOLAR]: '查验一个人是否是好人',
+    [ROLES.HERBAL_SAGE]: '蚀灭符阵 / 灵符',
+    [ROLES.SPIRIT_MENDER]: '万能药 / 毒药',
+    [ROLES.FLAME_TRACKER]: '观察 + 猎枪 / 短火铳',
   };
   return descs[role] || '';
 }
