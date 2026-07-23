@@ -545,7 +545,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     const participants = game._getPlayersForStep(currentStep);
     const isParticipant = participants.some(p => p.id === socket.id);
 
-    // 如果不是参与者，检查是否是无关角色的等待者（如村民在夜晚只是等待）
+    // 如果不是参与者，检查是否是无关角色的等待者（如灵织者在夜晚只是等待）
     // 非参与者不能跳过，防止跳过他人回合
     if (!isParticipant && participants.length > 0) {
       // 当前步骤有参与者但不是我 — 拒绝跳过
@@ -584,13 +584,13 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     }
   });
 
-  // 猎人在讨论阶段开枪
+  // 灵痕追猎者在讨论阶段开枪
   socket.on('hunter:dayShoot', ({ targetId }) => {
     const game = gameManager.getGameByPlayer(socket.id);
     if (!game || game.phase !== PHASES.DAY) return;
 
     const player = game.getPlayer(socket.id);
-    // P0修复: 必须存活 + 必须是猎人 + 必须尚未开过枪
+    // 必须存活 + 必须是灵痕追猎者 + 必须尚未开过枪
     if (!player || !player.alive || player.role !== ROLES.FLAME_TRACKER) return;
     if (game.hunterDayShoot) return; // 已经开过枪，拒绝第二次
 
@@ -620,7 +620,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     for (const p of infected) {
       if (!game.privateLogs[p.id]) game.privateLogs[p.id] = [];
       const msg = p.role === ROLES.VEIL_SCHOLAR
-        ? { type: 'alpha_revealed', player: p.id, alphaId: player.id, alphaName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化！种狼是 ${player.name}。你的察灵结果已被反转。` }
+        ? { type: 'alpha_revealed', player: p.id, alphaId: player.id, alphaName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化！冥僧人是 ${player.name}。你的察灵结果已被反转。` }
         : { type: 'infected_notified', player: p.id, alphaId: player.id, alphaName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化，下个夜晚将蚀变为蚀者。` };
       game.privateLogs[p.id].push(msg);
       io.to(p.id).emit('game:privateState', game.getPrivateState(p.id));
@@ -934,10 +934,10 @@ function _validateNightAction(player, currentStep, action, target, ability, game
   // 特殊限制：蚀者裂隙共鸣和灵焰遮蔽不能同时噬灵
   if ((action === 'HOWL' || action === 'DISGUISE') && ability?.kill) return false;
 
-  // 特殊限制：毒巫灵符不能自己用自己（毒巫不能自救）
+  // 特殊限制：草药学者灵符不能自己用自己
   if (action === 'USE_ABILITY' && ability?.talisman && ability?.talismanTarget === player.id) return false;
 
-  // 特殊限制：村民的某些行动需要特定weaverType
+  // 特殊限制：灵织者的某些行动需要特定weaverType
   if (player.role === 'SPIRIT_WEAVER') {
     if (action === 'TRAP_SET' && player.weaverType !== 'OLD_VETERAN') return false;
     if (action === 'NIGHT_WATCH' && player.weaverType !== 'NIGHT_SENTINEL') return false;
