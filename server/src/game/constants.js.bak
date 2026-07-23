@@ -1,183 +1,183 @@
 // ============================================================
-// 帷幕之地游戏常量定义 — v2.0 角色升级版
-// 新增：角色子类型、灵织者名字池、特质系统、神话标记、扩展能力
+// 狼人杀游戏常量定义 — v2.0 角色升级版
+// 新增：角色子类型、村民名字池、特质系统、神话标记、扩展能力
 // ============================================================
 
 // ---- 角色定义 ----
 export const ROLES = {
-  CORRUPTED: 'CORRUPTED',           // 蚀者
-  NETHER_MONK: 'NETHER_MONK',       // 冥僧人
-  VEIL_SCHOLAR: 'VEIL_SCHOLAR',                   // 帷幕学者
-  HERBAL_SAGE: 'HERBAL_SAGE',   // 草药学者（蚀灭符）
-  SPIRIT_MENDER: 'SPIRIT_MENDER',       // 愈灵师（灵焰修复）
-  SPIRIT_WEAVER: 'SPIRIT_WEAVER',           // 灵织者
-  VEIL_GUARDIAN: 'VEIL_GUARDIAN',                 // 守卫
-  FLAME_TRACKER: 'FLAME_TRACKER',               // 猎人
+  WEREWOLF: 'WEREWOLF',           // 普通狼人
+  ALPHA_WOLF: 'ALPHA_WOLF',       // 种狼
+  SEER: 'SEER',                   // 预言家
+  POISON_WITCH: 'POISON_WITCH',   // 毒巫（烈性毒药）
+  HEAL_WITCH: 'HEAL_WITCH',       // 药巫（万能药）
+  VILLAGER: 'VILLAGER',           // 村民
+  GUARD: 'GUARD',                 // 守卫
+  HUNTER: 'HUNTER',               // 猎人
 };
 
-// ---- 灵织者子类型（每个灵织者有独特定位） ----
-export const SPIRIT_WEAVER_TYPES = {
-  OLD_VETERAN: 'OLD_VETERAN',       // 老兵灵织者 — 直觉敏锐，有概率识别蚀者
-  WANDERING_TRADER: 'WANDERING_TRADER',           // 行路灵织者 — 可访问2个屋子，信息灵通
-  SPIRIT_APPRENTICE: 'SPIRIT_APPRENTICE',         // 学徒灵织者 — 可简单治疗，推迟死亡1回合
-  CHRONICLER: 'CHRONICLER',     // 记述灵织者 — 讨论发言时间翻倍
-  NIGHT_SENTINEL: 'NIGHT_SENTINEL', // 守夜灵织者 — 察觉门外经过者
-  HEARTH_KEEPER: 'HEARTH_KEEPER',                 // 炊火灵织者 — 人缘好，知道更多人的行踪
-  ARMOR_SMITH: 'ARMOR_SMITH',       // 锻甲灵织者 — 力大，可强化自家门锁
-  VEIL_WEAVER: 'VEIL_WEAVER',               // 织幕灵织者 — 心思缜密，帷幕低语线索更精确
+// ---- 村民子类型（每个村民有独特定位） ----
+export const VILLAGER_TYPES = {
+  OLD_HUNTER: 'OLD_HUNTER',       // 老猎人村民 — 直觉敏锐，有概率识别狼人
+  MERCHANT: 'MERCHANT',           // 旅行商人村民 — 可访问2个屋子，信息灵通
+  HERBALIST: 'HERBALIST',         // 草药师村民 — 可简单治疗，推迟死亡1回合
+  STORYTELLER: 'STORYTELLER',     // 说书人村民 — 讨论发言时间翻倍
+  NIGHT_WATCHER: 'NIGHT_WATCHER', // 守夜人村民 — 察觉门外经过者
+  BAKER: 'BAKER',                 // 面包师村民 — 人缘好，知道更多人的行踪
+  BLACKSMITH: 'BLACKSMITH',       // 铁匠村民 — 力大，可强化自家门锁
+  WEAVER: 'WEAVER',               // 织布女村民 — 心思缜密，偷听线索更精确
 };
 
-// 灵织者名字池（编号 → 名字+背景）
-export const SPIRIT_WEAVER_NAMES = {
+// 村民名字池（编号 → 名字+背景）
+export const VILLAGER_NAMES = {
   1: {
     name: '老杰克',
-    title: '暮色老兵',
-    weaverType: SPIRIT_WEAVER_TYPES.OLD_VETERAN,
+    title: '退休猎人',
+    villagerType: VILLAGER_TYPES.OLD_HUNTER,
     backstory: '年轻时是名震一方的猎人，如今年事已高，但那份猎人的直觉从未消失。他的屋子里挂满了年轻时的战利品。',
-    trait: '直觉敏锐 — 有概率识破进入自家的蚀者',
-    quote: '"我可能老了，但这双眼睛，还看得清谁被蚀痕沾染。"',
+    trait: '直觉敏锐 — 有概率识破进入自家的狼人',
+    quote: '"我可能老了，但这双眼睛，还看得清谁是野兽。"',
   },
   2: {
     name: '玛丽安',
-    title: '行路灵织者',
-    weaverType: SPIRIT_WEAVER_TYPES.WANDERING_TRADER,
+    title: '旅行商人',
+    villagerType: VILLAGER_TYPES.MERCHANT,
     backstory: '走南闯北的商人，帷幕之地的每条小路都刻在她脑子里。她认识所有人，也知道所有人的秘密。',
     trait: '消息灵通 — 每晚可访问2个屋子',
-    quote: '"在这个村子里，灵焰的频率比武器更可靠。"',
+    quote: '"在这个村子里，消息比武器更值钱。"',
   },
   3: {
     name: '艾米丽',
-    title: '学徒灵织者',
-    weaverType: SPIRIT_WEAVER_TYPES.SPIRIT_APPRENTICE,
-    backstory: '继承了祖母留下的灵符绘制，虽然医术比不上真正的女巫，但她的草药足够帮人撑过最难熬的夜晚。',
+    title: '草药师',
+    villagerType: VILLAGER_TYPES.HERBALIST,
+    backstory: '继承了祖母留下的药草园，虽然医术比不上真正的女巫，但她的草药足够帮人撑过最难熬的夜晚。',
     trait: '医术入门 — 可推迟目标死亡1回合',
     quote: '"大自然给了我们一切解药，只是大多数人不知道去哪里找。"',
   },
   4: {
     name: '托马斯',
-    title: '记述灵织者',
-    weaverType: SPIRIT_WEAVER_TYPES.CHRONICLER,
+    title: '说书人',
+    villagerType: VILLAGER_TYPES.STORYTELLER,
     backstory: '曾是宫廷的吟游诗人，因讲了一个不该讲的故事被流放到帷幕之地。他的舌头比刀子更锋利。',
-    trait: '能言善辩 — 聚落会议发言时间翻倍，可额外发言一次',
-    quote: '"给我三分钟，我能让蚀者自己走出庇护所。"',
+    trait: '能言善辩 — 讨论发言时间翻倍，可额外发言一次',
+    quote: '"给我三分钟，我能让狼人自己投自己一票。"',
   },
   5: {
     name: '卡莱布',
-    title: '守夜灵织者',
-    weaverType: SPIRIT_WEAVER_TYPES.NIGHT_SENTINEL,
+    title: '守夜人',
+    villagerType: VILLAGER_TYPES.NIGHT_WATCHER,
     backstory: '曾是城防军的哨兵，在城墙上度过了无数个不眠之夜。如今他把这份警觉带到了暮色村。',
     trait: '警惕性高 — 可察觉门外经过的人',
     quote: '"黑暗里的一切动静，都逃不过我的耳朵。"',
   },
   6: {
     name: '艾拉',
-    title: '炊火灵织者',
-    weaverType: SPIRIT_WEAVER_TYPES.HEARTH_KEEPER,
+    title: '面包师',
+    villagerType: VILLAGER_TYPES.BAKER,
     backstory: '村里唯一的烘焙师，每天清晨升起第一缕炊烟的人。所有人都来她这里买面包，所以她也听到了所有的闲言碎语。',
     trait: '人缘好 — 知道更多人的夜晚去向',
     quote: '"最好的情报来源？当然是排队买面包的队伍。"',
   },
   7: {
     name: '老彼得',
-    title: '锻甲灵织者',
-    weaverType: SPIRIT_WEAVER_TYPES.ARMOR_SMITH,
+    title: '铁匠',
+    villagerType: VILLAGER_TYPES.BLACKSMITH,
     backstory: '打了一辈子铁，两条手臂像树干一样粗壮。他的铁锤不仅能锻铁，也能敲碎骨头。',
-    trait: '力大无穷 — 可加固自家门锁，抵御一次蚀者噬灵',
+    trait: '力大无穷 — 可加固自家门锁，抵御一次狼人入侵',
     quote: '"我的门，比某些人的胆子还硬。"',
   },
   8: {
     name: '莉莉安',
-    title: '织幕灵织者',
-    weaverType: SPIRIT_WEAVER_TYPES.VEIL_WEAVER,
+    title: '织布女',
+    villagerType: VILLAGER_TYPES.WEAVER,
     backstory: '安静寡言的纺织女，手指在织机上飞舞时，耳朵却能捕捉到最细微的声响。她不说，但她都记得。',
-    trait: '心思缜密 — 帷幕低语线索更精确（排除干扰项）',
+    trait: '心思缜密 — 偷听线索更精确（排除干扰项）',
     quote: '"每一根线都有它的去向，每一个人也是。"',
   },
 };
 
 // ---- 角色阵营 ----
 export const TEAMS = {
-  CORRUPTED: 'CORRUPTED',       // 蚀者阵营
-  VEIL_KEEPERS: 'VEIL_KEEPERS', // 守幕者阵营
+  WOLF: 'WOLF',       // 狼人阵营
+  VILLAGE: 'VILLAGE', // 好人阵营
 };
 
 // 每个角色所属阵营
 export const ROLE_TEAM = {
-  [ROLES.CORRUPTED]: TEAMS.CORRUPTED,
-  [ROLES.NETHER_MONK]: TEAMS.CORRUPTED,
-  [ROLES.VEIL_SCHOLAR]: TEAMS.VEIL_KEEPERS,
-  [ROLES.HERBAL_SAGE]: TEAMS.VEIL_KEEPERS,
-  [ROLES.SPIRIT_MENDER]: TEAMS.VEIL_KEEPERS,
-  [ROLES.SPIRIT_WEAVER]: TEAMS.VEIL_KEEPERS,
-  [ROLES.VEIL_GUARDIAN]: TEAMS.VEIL_KEEPERS,
-  [ROLES.FLAME_TRACKER]: TEAMS.VEIL_KEEPERS,
+  [ROLES.WEREWOLF]: TEAMS.WOLF,
+  [ROLES.ALPHA_WOLF]: TEAMS.WOLF,
+  [ROLES.SEER]: TEAMS.VILLAGE,
+  [ROLES.POISON_WITCH]: TEAMS.VILLAGE,
+  [ROLES.HEAL_WITCH]: TEAMS.VILLAGE,
+  [ROLES.VILLAGER]: TEAMS.VILLAGE,
+  [ROLES.GUARD]: TEAMS.VILLAGE,
+  [ROLES.HUNTER]: TEAMS.VILLAGE,
 };
 
 // 角色中文名
 export const ROLE_NAMES = {
-  [ROLES.CORRUPTED]: '蚀者',
-  [ROLES.NETHER_MONK]: '冥僧人',
-  [ROLES.VEIL_SCHOLAR]: '帷幕学者',
-  [ROLES.HERBAL_SAGE]: '草药学者',
-  [ROLES.SPIRIT_MENDER]: '愈灵师',
-  [ROLES.SPIRIT_WEAVER]: '灵织者',
-  [ROLES.VEIL_GUARDIAN]: '帷幕守卫',
-  [ROLES.FLAME_TRACKER]: '灵痕追猎者',
+  [ROLES.WEREWOLF]: '狼人',
+  [ROLES.ALPHA_WOLF]: '种狼',
+  [ROLES.SEER]: '预言家',
+  [ROLES.POISON_WITCH]: '毒巫',
+  [ROLES.HEAL_WITCH]: '药巫',
+  [ROLES.VILLAGER]: '村民',
+  [ROLES.GUARD]: '守卫',
+  [ROLES.HUNTER]: '猎人',
 };
 
 // 角色图标
 export const ROLE_ICONS = {
-  [ROLES.CORRUPTED]: '🌑',
-  [ROLES.NETHER_MONK]: '🕯️',
-  [ROLES.VEIL_SCHOLAR]: '👁️',
-  [ROLES.HERBAL_SAGE]: '🌿📜',
-  [ROLES.SPIRIT_MENDER]: '💫',
-  [ROLES.SPIRIT_WEAVER]: '🧵',
-  [ROLES.VEIL_GUARDIAN]: '🛡️✨',
-  [ROLES.FLAME_TRACKER]: '🎯',
+  [ROLES.WEREWOLF]: '🐺',
+  [ROLES.ALPHA_WOLF]: '👑🐺',
+  [ROLES.SEER]: '🔮',
+  [ROLES.POISON_WITCH]: '☠️🧪',
+  [ROLES.HEAL_WITCH]: '💚🧪',
+  [ROLES.VILLAGER]: '👨‍🌾',
+  [ROLES.GUARD]: '🛡️',
+  [ROLES.HUNTER]: '🔫',
 };
 
 // ---- 角色能力描述（扩展版） ----
 export const ROLE_ABILITY_DESCRIPTIONS = {
-  [ROLES.CORRUPTED]: {
-    primary: '噬灵',
-    secondary: ['灵痕感知', '裂隙共鸣召集', '灵焰遮蔽'],
-    passive: '蚀者同伴相认：去另一蚀者庇护所则双方相认',
+  [ROLES.WEREWOLF]: {
+    primary: '刀人',
+    secondary: ['嗅觉追踪', '嚎叫召集', '伪装'],
+    passive: '狼人同伴相认：去另一狼人家中则双方相认',
   },
-  [ROLES.NETHER_MONK]: {
-    primary: '蚀变 / 堕化 / 噬灵',
-    secondary: ['裂隙引导', '灵焰遮蔽编织'],
-    passive: '未蚀变时帷幕学者察灵为好人；堕化帷幕学者结果反转',
+  [ROLES.ALPHA_WOLF]: {
+    primary: '变狼 / 感染 / 刀人',
+    secondary: ['狼群激素', '假身份编织'],
+    passive: '未变狼时预言家查验为好人；感染预言家结果反转',
   },
-  [ROLES.VEIL_SCHOLAR]: {
-    primary: '察灵辨蚀',
-    secondary: ['梦境碎片', '公开察灵', '灵视'],
-    passive: '察灵后白昼可看目标灵焰颜色',
+  [ROLES.SEER]: {
+    primary: '查验阵营',
+    secondary: ['梦境碎片', '公开预言', '灵视'],
+    passive: '查验后白天可看目标头像颜色',
   },
-  [ROLES.HERBAL_SAGE]: {
-    primary: '蚀灭符（灭门）+ 灵符愈灵',
-    secondary: ['蚀雾符阵', '抗蚀体质', '蚀痕净化配方'],
-    passive: '帷幕守卫灵蚀重伤时草药学者获知',
+  [ROLES.POISON_WITCH]: {
+    primary: '烈性毒药（灭门）+ 药水救人',
+    secondary: ['毒雾陷阱', '抗毒体质', '毒药配方'],
+    passive: '守卫重伤时毒巫获知',
   },
-  [ROLES.SPIRIT_MENDER]: {
-    primary: '灵焰修复 + 单目标蚀痕净化',
-    secondary: ['战场急救', '灵符绘制', '诊断'],
-    passive: '唯一能治疗灵蚀重伤的角色',
+  [ROLES.HEAL_WITCH]: {
+    primary: '万能药 + 单目标毒药',
+    secondary: ['战场急救', '药草园', '诊断'],
+    passive: '唯一能治疗守卫重伤的角色',
   },
-  [ROLES.VEIL_GUARDIAN]: {
+  [ROLES.GUARD]: {
     primary: '守护',
-    secondary: ['壁垒筑造', '巡逻', '舍身'],
+    secondary: ['筑垒', '巡逻', '舍身'],
     passive: '重伤机制：≤2人被攻→重伤挡刀；独自被袭→重伤暴露',
   },
-  [ROLES.FLAME_TRACKER]: {
-    primary: '灵焰猎枪追猎 + 噬灭短铳反击 + 白天开枪',
+  [ROLES.HUNTER]: {
+    primary: '猎枪追踪 + 短火铳反击 + 白天开枪',
     secondary: ['复仇', '陷阱射击'],
     passive: '第二晚起才能行动；同晚出门+开枪不冲突',
   },
-  [ROLES.SPIRIT_WEAVER]: {
-    primary: '出门观察 + 帷幕低语',
-    secondary: ['按灵织者类型不同的特技'],
-    passive: '在所有专业守幕者和蚀者之后行动',
+  [ROLES.VILLAGER]: {
+    primary: '出门观察 + 偷听',
+    secondary: ['按村民类型不同的特技'],
+    passive: '在所有神职和狼人之后行动',
   },
 };
 
@@ -196,37 +196,37 @@ export const PHASES = {
 
 // 夜晚子步骤
 export const NIGHT_STEPS = {
-  FLAME_TRACKER: 'FLAME_TRACKER',
-  NETHER_MONK: 'NETHER_MONK',
-  VEIL_GUARDIAN: 'VEIL_GUARDIAN',
-  CORRUPTED: 'CORRUPTED',
-  VEIL_SCHOLAR: 'VEIL_SCHOLAR',
-  HERBAL_SAGE: 'HERBAL_SAGE',
-  SPIRIT_MENDER: 'SPIRIT_MENDER',
-  SPIRIT_WEAVER: 'SPIRIT_WEAVER',
+  HUNTER: 'HUNTER',
+  ALPHA_WOLF: 'ALPHA_WOLF',
+  GUARD: 'GUARD',
+  WEREWOLF: 'WEREWOLF',
+  SEER: 'SEER',
+  POISON_WITCH: 'POISON_WITCH',
+  HEAL_WITCH: 'HEAL_WITCH',
+  VILLAGER: 'VILLAGER',
   RESOLUTION: 'RESOLUTION',
 };
 
 export const NIGHT_STEPS_NIGHT1 = [
-  NIGHT_STEPS.NETHER_MONK,
-  NIGHT_STEPS.VEIL_GUARDIAN,
-  NIGHT_STEPS.CORRUPTED,
-  NIGHT_STEPS.VEIL_SCHOLAR,
-  NIGHT_STEPS.HERBAL_SAGE,
-  NIGHT_STEPS.SPIRIT_MENDER,
-  NIGHT_STEPS.SPIRIT_WEAVER,
+  NIGHT_STEPS.ALPHA_WOLF,
+  NIGHT_STEPS.GUARD,
+  NIGHT_STEPS.WEREWOLF,
+  NIGHT_STEPS.SEER,
+  NIGHT_STEPS.POISON_WITCH,
+  NIGHT_STEPS.HEAL_WITCH,
+  NIGHT_STEPS.VILLAGER,
   NIGHT_STEPS.RESOLUTION,
 ];
 
 export const NIGHT_STEPS_FULL = [
-  NIGHT_STEPS.FLAME_TRACKER,
-  NIGHT_STEPS.NETHER_MONK,
-  NIGHT_STEPS.VEIL_GUARDIAN,
-  NIGHT_STEPS.CORRUPTED,
-  NIGHT_STEPS.VEIL_SCHOLAR,
-  NIGHT_STEPS.HERBAL_SAGE,
-  NIGHT_STEPS.SPIRIT_MENDER,
-  NIGHT_STEPS.SPIRIT_WEAVER,
+  NIGHT_STEPS.HUNTER,
+  NIGHT_STEPS.ALPHA_WOLF,
+  NIGHT_STEPS.GUARD,
+  NIGHT_STEPS.WEREWOLF,
+  NIGHT_STEPS.SEER,
+  NIGHT_STEPS.POISON_WITCH,
+  NIGHT_STEPS.HEAL_WITCH,
+  NIGHT_STEPS.VILLAGER,
   NIGHT_STEPS.RESOLUTION,
 ];
 
@@ -237,32 +237,32 @@ export const NIGHT_ACTIONS = {
   SLEEP: 'SLEEP',
   EAVESDROP: 'EAVESDROP',
   // 新增
-  HOWL: 'HOWL',                   // 蚀者裂隙共鸣
-  DISGUISE: 'DISGUISE',           // 蚀者灵焰遮蔽
-  PUBLIC_PROPHECY: 'PUBLIC_PROPHECY', // 帷幕学者公开察灵
-  SPIRIT_VISION: 'SPIRIT_VISION',     // 帷幕学者灵视
-  CORROSION_MIST: 'CORROSION_MIST',           // 草药学者蚀雾符阵
-  BATTLEFIELD_AID: 'BATTLEFIELD_AID', // 愈灵师战场急救
-  DIAGNOSE: 'DIAGNOSE',               // 愈灵师诊断
+  HOWL: 'HOWL',                   // 狼人嚎叫召集
+  DISGUISE: 'DISGUISE',           // 狼人伪装
+  PUBLIC_PROPHECY: 'PUBLIC_PROPHECY', // 预言家公开预言
+  SPIRIT_VISION: 'SPIRIT_VISION',     // 预言家灵视
+  POISON_FOG: 'POISON_FOG',           // 毒巫毒雾陷阱
+  BATTLEFIELD_AID: 'BATTLEFIELD_AID', // 药巫战场急救
+  DIAGNOSE: 'DIAGNOSE',               // 药巫诊断
   PATROL: 'PATROL',                   // 守卫巡逻
-  FORTIFY: 'FORTIFY',                 // 守卫壁垒筑造
-  SACRIFICE: 'SACRIFICE',             // 帷幕守卫舍身誓言
-  TRAP_SET: 'TRAP_SET',               // 猎人陷阱射击 / 老兵灵织者陷阱
+  FORTIFY: 'FORTIFY',                 // 守卫筑垒
+  SACRIFICE: 'SACRIFICE',             // 守卫舍身
+  TRAP_SET: 'TRAP_SET',               // 猎人陷阱射击 / 老猎人陷阱
   REVENGE: 'REVENGE',                 // 猎人复仇
-  TRADE_INFO: 'TRADE_INFO',           // 商人灵织者交易信息
-  HERBAL_REMEDY: 'HERBAL_REMEDY',     // 学徒灵织者草药
-  NIGHT_WATCH: 'NIGHT_WATCH',         // 守夜灵织者守夜
-  FORTIFY_DOOR: 'FORTIFY_DOOR',       // 锻甲灵织者加固门锁
-  TELL_STORY: 'TELL_STORY',           // 记述灵织者讲故事
+  TRADE_INFO: 'TRADE_INFO',           // 商人村民交易信息
+  HERBAL_REMEDY: 'HERBAL_REMEDY',     // 草药师村民草药
+  NIGHT_WATCH: 'NIGHT_WATCH',         // 守夜人村民守夜
+  FORTIFY_DOOR: 'FORTIFY_DOOR',       // 铁匠村民加固门锁
+  TELL_STORY: 'TELL_STORY',           // 说书人村民讲故事
 };
 
-// ---- 冥僧人能力 ----
+// ---- 种狼能力 ----
 export const ALPHA_ACTIONS = {
   TRANSFORM: 'TRANSFORM',
   INFECT: 'INFECT',
   KILL: 'KILL',
-  FAKE_IDENTITY: 'FAKE_IDENTITY',   // 灵焰遮蔽编织
-  PACK_HORMONE: 'PACK_HORMONE',     // 裂隙引导（被动）
+  FAKE_IDENTITY: 'FAKE_IDENTITY',   // 假身份编织
+  PACK_HORMONE: 'PACK_HORMONE',     // 狼群激素（被动）
 };
 
 // ---- 猎人武器 ----
@@ -277,8 +277,8 @@ export const MOVE_TYPES = {
   RESTRICTED: 'RESTRICTED',
 };
 
-export const NOT_COUNT_IN_HOUSE = [ROLES.CORRUPTED, ROLES.NETHER_MONK];
-export const FREE_MOVERS = [ROLES.FLAME_TRACKER, ROLES.CORRUPTED, ROLES.NETHER_MONK, ROLES.VEIL_GUARDIAN];
+export const NOT_COUNT_IN_HOUSE = [ROLES.WEREWOLF, ROLES.ALPHA_WOLF];
+export const FREE_MOVERS = [ROLES.HUNTER, ROLES.WEREWOLF, ROLES.ALPHA_WOLF, ROLES.GUARD];
 
 // ---- 外在特质类型 ----
 export const TRAIT_TYPES = {
@@ -302,7 +302,7 @@ export const MYTH_ORIGINS = {
   // 新增原始出处
   WILD: '铁森林荒野',
   MOUNTAIN: '永冬山脉',
-  LAB: '学徒灵织者行会故地',
+  LAB: '草药师行会故地',
   ASH: '灰烬高地',
   VEIL: '帷幕裂隙',
   MINE: '矿脉山脉',
@@ -353,7 +353,7 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '纤弱',
         type: TRAIT_TYPES.WEAKNESS,
-        effect: '被蚀者噬灵时无法自行逃脱（QTE难度大幅提高）',
+        effect: '被狼人攻击时无法自行逃脱（QTE难度大幅提高）',
         icon: '🦴',
       },
       {
@@ -411,7 +411,7 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '冥界视觉',
         type: TRAIT_TYPES.PASSIVE,
-        effect: '察灵类能力准确率+20%（对帷幕学者/猎人观察）',
+        effect: '查验类能力准确率+20%（对预言家/猎人观察）',
         icon: '👁️',
       },
       {
@@ -440,13 +440,13 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '英雄之躯',
         type: TRAIT_TYPES.SURVIVAL,
-        effect: '被蚀者噬灵时，若处于守护姿态，有25%概率不受重伤',
+        effect: '被狼人攻击时，若处于守护姿态，有25%概率不受重伤',
         icon: '🛡️',
       },
       {
         name: '荣誉枷锁',
         type: TRAIT_TYPES.WEAKNESS,
-        effect: '不能投票给已知的守幕者阵营玩家',
+        effect: '不能投票给已知的好人阵营玩家',
         icon: '⛓️',
       },
       {
@@ -464,12 +464,12 @@ export const CHARACTER_IDENTITIES = {
     title: '狼养之子',
     origin: MYTH_ORIGINS.ROMAN,
     gender: 'male',
-    story: '传说中由母狼养大的罗马聚落导师。在他体内，人性与狼性从未停止过争斗。帷幕之地的月亮，总让他听到血液中狼的呼唤。',
+    story: '传说中由母狼养大的罗马建城者。在他体内，人性与狼性从未停止过争斗。帷幕之地的月亮，总让他听到血液中狼的呼唤。',
     externalTraits: [
       {
         name: '双重血统',
         type: TRAIT_TYPES.PASSIVE,
-        effect: '无论里身份为何，始终能听到狼人的裂隙共鸣（获知裂隙共鸣发生但不知是谁）',
+        effect: '无论里身份为何，始终能听到狼人的嚎叫（获知嚎叫发生但不知是谁）',
         icon: '🌗',
       },
       {
@@ -485,7 +485,7 @@ export const CHARACTER_IDENTITIES = {
         icon: '🌕',
       },
     ],
-    recommendedHiddenRoles: ['CORRUPTED', 'NETHER_MONK'],
+    recommendedHiddenRoles: ['WEREWOLF', 'ALPHA_WOLF'],
   },
   FENRIR_KIN: {
     id: 'FENRIR_KIN',
@@ -510,11 +510,11 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '银之恐惧',
         type: TRAIT_TYPES.WEAKNESS,
-        effect: '被守卫壁垒筑造的屋子不能进入',
+        effect: '被守卫筑垒的屋子不能进入',
         icon: '🥈',
       },
     ],
-    recommendedHiddenRoles: ['NETHER_MONK', 'CORRUPTED'],
+    recommendedHiddenRoles: ['ALPHA_WOLF', 'WEREWOLF'],
   },
   SKADI: {
     id: 'SKADI',
@@ -568,7 +568,7 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '戒律',
         type: TRAIT_TYPES.WEAKNESS,
-        effect: '不能主动投票给第一晚察灵出的狼人（需等待更多证据）',
+        effect: '不能主动投票给第一晚查验出的狼人（需等待更多证据）',
         icon: '📿',
       },
     ],
@@ -597,7 +597,7 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '火焰恐惧',
         type: TRAIT_TYPES.WEAKNESS,
-        effect: '被草药学者的蚀灭符锁定后无法移动',
+        effect: '被毒巫的烈性毒药锁定后无法移动',
         icon: '😰',
       },
     ],
@@ -612,16 +612,16 @@ export const CHARACTER_IDENTITIES = {
     externalTraits: [
       { name: '千面', type: TRAIT_TYPES.ACTIVE, effect: '讨论中可模仿他人语气发言，混淆视听', icon: '🎭' },
       { name: '情报网', type: TRAIT_TYPES.PASSIVE, effect: '夜晚可获知一名随机出门玩家的去向', icon: '🕸️' },
-      { name: '暗影恐惧', type: TRAIT_TYPES.WEAKNESS, effect: '被直接目光注视(察灵)时，下一回合无法使用能力', icon: '👁️' },
+      { name: '暗影恐惧', type: TRAIT_TYPES.WEAKNESS, effect: '被直接目光注视(查验)时，下一回合无法使用能力', icon: '👁️' },
     ],
     recommendedHiddenRoles: ['SEER', 'VILLAGER', 'HEAL_WITCH'],
   },
   GOREN: {
-    id: 'GOREN', name: '格伦', title: '流浪锻甲灵织者',
+    id: 'GOREN', name: '格伦', title: '流浪铁匠',
     origin: MYTH_ORIGINS.MINE, gender: 'male',
-    story: '帷幕之地最好的锻甲灵织者。他打造过猎人的枪管、守卫的盾牌、女巫的药瓶架。狼人肆虐后他把铁砧搬到了暮色村。"如果我的铁能救一个人，这把锤子就没白抡。"',
+    story: '帷幕之地最好的铁匠。他打造过猎人的枪管、守卫的盾牌、女巫的药瓶架。狼人肆虐后他把铁砧搬到了暮色村。"如果我的铁能救一个人，这把锤子就没白抡。"',
     externalTraits: [
-      { name: '锻甲灵织者之力', type: TRAIT_TYPES.PASSIVE, effect: '加固自家门锁(抵御一次狼人)。被投出局时可带走一名投票者', icon: '🔨' },
+      { name: '铁匠之力', type: TRAIT_TYPES.PASSIVE, effect: '加固自家门锁(抵御一次狼人)。被投出局时可带走一名投票者', icon: '🔨' },
       { name: '自制装备', type: TRAIT_TYPES.ACTIVE, effect: '可打造一件临时护甲给他人(持续1晚)', icon: '⚒️' },
       { name: '笨重', type: TRAIT_TYPES.WEAKNESS, effect: '移动速度-10%，潜行等级-2', icon: '🏋️' },
     ],
@@ -654,7 +654,7 @@ export const CHARACTER_IDENTITIES = {
     origin: MYTH_ORIGINS.TOWER, gender: 'female',
     story: '在观测塔研究了三十年帷幕。她是唯一能"阅读"帷幕低语的人。她知道帷幕之外有什么——也知道帷幕正在变薄。来暮色村不是为了玩游戏——是为了找到最后的答案。',
     externalTraits: [
-      { name: '帷幕低语', type: TRAIT_TYPES.PASSIVE, effect: '察灵类能力准确率+25%，但每次使用帷幕低语都会向狼人泄露一条模糊信息', icon: '🌌' },
+      { name: '帷幕低语', type: TRAIT_TYPES.PASSIVE, effect: '查验类能力准确率+25%，但每次使用帷幕低语都会向狼人泄露一条模糊信息', icon: '🌌' },
       { name: '观测', type: TRAIT_TYPES.ACTIVE, effect: '可获知当前回合帷幕的"情绪"(随机事件预告)', icon: '🔭' },
       { name: '帷幕反噬', type: TRAIT_TYPES.WEAKNESS, effect: '使用能力后下一回合无法使用任何能力', icon: '⚡' },
     ],
@@ -664,31 +664,31 @@ export const CHARACTER_IDENTITIES = {
 
 // ---- 预设角色配置 ----
 export const ROLE_CONFIGS = {
-  5: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER],
-  6: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  7: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  8: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  9: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  10: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  11: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  12: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  13: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  14: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  15: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  16: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  17: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
-  18: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
+  5: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.HEAL_WITCH, ROLES.VILLAGER],
+  6: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.VILLAGER, ROLES.VILLAGER],
+  7: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.VILLAGER, ROLES.VILLAGER],
+  8: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.VILLAGER, ROLES.VILLAGER],
+  9: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.VILLAGER, ROLES.VILLAGER],
+  10: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER],
+  11: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+  12: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+  13: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+  14: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+  15: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+  16: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+  17: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+  18: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
 };
 
 export function getRoleConfig(playerCount) {
   return ROLE_CONFIGS[playerCount] || ROLE_CONFIGS[12];
 }
 
-// 获取灵织者名字（按编号循环分配）
-export function getWeaverName(index) {
-  const keys = Object.keys(SPIRIT_WEAVER_NAMES);
+// 获取村民名字（按编号循环分配）
+export function getVillagerName(index) {
+  const keys = Object.keys(VILLAGER_NAMES);
   const idx = ((index - 1) % keys.length) + 1;
-  return SPIRIT_WEAVER_NAMES[idx] || SPIRIT_WEAVER_NAMES[1];
+  return VILLAGER_NAMES[idx] || VILLAGER_NAMES[1];
 }
 
 // 获取所有可选的表层身份
@@ -788,7 +788,7 @@ export const GAME_MODE_NAMES = {
 };
 
 export const GAME_MODE_DESCRIPTIONS = {
-  BOARD_GAME: '回合制策略博弈——夜晚按顺序行动、白天讨论投票。经典帷幕之地桌游体验。',
+  BOARD_GAME: '回合制策略博弈——夜晚按顺序行动、白天讨论投票。经典狼人杀桌游体验。',
   THIRD_PERSON: '3D非对称竞技——夜晚自由移动、追逐击杀、藏匿逃脱。类似黎明杀机的沉浸式体验。',
 };
 
@@ -801,8 +801,8 @@ export const THIRD_PERSON_CONFIG = {
   STAMINA_MAX: 100,                  // 体力上限
   STAMINA_DRAIN_SPRINT: 20,          // 冲刺每秒消耗
   STAMINA_REGEN: 15,                 // 体力每秒恢复
-  ATTACK_RANGE: 2.0,                 // 蚀者噬灵距离(米)
-  ATTACK_COOLDOWN_SECONDS: 8,        // 蚀者噬灵冷却
+  ATTACK_RANGE: 2.0,                 // 狼人攻击距离(米)
+  ATTACK_COOLDOWN_SECONDS: 8,        // 狼人攻击冷却
   HIDE_SPOT_CHECK_RADIUS: 2.0,       // 藏匿点检测半径
   QTE_ESCAPE_WINDOW_MS: 500,         // QTE逃脱时间窗口
   QTE_ESCAPE_BASE_CHANCE: 0.30,      // 基础逃脱概率

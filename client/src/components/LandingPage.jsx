@@ -1,11 +1,11 @@
 // ============================================================
-// 狼人杀官网 —— 首页
+// 帷幕之地官网 —— 首页
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
 
 const HERO_TITLES = [
-  '月圆之夜，狼人出没',
+  '血月之夜，蚀者噬灵',
   '猜疑与信任的较量',
   '你，能活到最后吗？',
 ];
@@ -149,7 +149,7 @@ export default function LandingPage({ onNavigate }) {
         <div className="footer-content">
           <div className="footer-brand">
             <span>🐺</span>
-            <strong>狼人杀 在线联机版</strong>
+            <strong>帷幕之地 在线联机版</strong>
           </div>
           <div className="footer-links">
             <a onClick={() => onNavigate('download')}>下载PC端</a>

@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 
 // 客户端版本号（与服务端比较）
-const CLIENT_VERSION = '2.12.1';
+const CLIENT_VERSION = '2.13.1';
 
 // 检测运行环境
 function getPlatform() {
@@ -62,7 +62,7 @@ export default function UpdatePrompt({ show, onClose, updateInfo }) {
     if (updateInfo.downloadUrl) {
       const a = document.createElement('a');
       a.href = updateInfo.downloadUrl;
-      a.download = '狼人杀_Setup.exe';
+      a.download = '帷幕之地_Setup.exe';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

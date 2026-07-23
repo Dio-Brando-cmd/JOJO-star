@@ -1,11 +1,11 @@
 // ============================================================
-// 狼人杀官网 —— 下载PC端页面
+// 帷幕之地官网 —— 下载PC端页面
 // ============================================================
 
 import React, { useState } from 'react';
 
 const DOWNLOAD_INFO = {
-  version: '2.12.1',
+  version: '2.13.1',
   releaseDate: '2026-07-21',
   fileSize: '约 117 MB',
   platform: 'Windows 10/11 (64位)',
@@ -47,7 +47,7 @@ export default function DownloadPage({ onNavigate }) {
     // 触发浏览器下载（从服务器下载 EXE 文件）
     const link = document.createElement('a');
     link.href = '/download/Werewolf_Setup_2.12.1.exe';
-    link.download = `狼人杀_Werewolf_Setup_${DOWNLOAD_INFO.version}.exe`;
+    link.download = `帷幕之地_VeilLand_Setup_${DOWNLOAD_INFO.version}.exe`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -151,7 +151,7 @@ export default function DownloadPage({ onNavigate }) {
               <span className="step-badge">1</span>
               <div>
                 <h4>下载安装包</h4>
-                <p>点击上方按钮下载 Werewolf_Setup_{DOWNLOAD_INFO.version}.exe</p>
+                <p>点击上方按钮下载 VeilLand_Setup_{DOWNLOAD_INFO.version}.exe</p>
               </div>
             </div>
             <div className="install-step">
@@ -208,7 +208,7 @@ export default function DownloadPage({ onNavigate }) {
         <div className="footer-content">
           <div className="footer-brand">
             <span>🐺</span>
-            <strong>狼人杀 在线联机版</strong>
+            <strong>帷幕之地 在线联机版</strong>
           </div>
           <div className="footer-links">
             <a onClick={() => onNavigate('home')}>首页</a>

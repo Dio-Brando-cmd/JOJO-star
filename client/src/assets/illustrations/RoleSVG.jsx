@@ -7,35 +7,35 @@ import React from 'react';
 import { ROLES } from '../../utils/constants';
 
 const ROLE_DEFS = {
-  [ROLES.WEREWOLF]: {
+  [ROLES.CORRUPTED]: {
     colors: { primary: '#8b0c0c', glow: '#c41e3a', accent: '#e94560', dark: '#3a0404' },
     size: 0.82,
   },
-  [ROLES.ALPHA_WOLF]: {
+  [ROLES.NETHER_MONK]: {
     colors: { primary: '#6b0808', glow: '#8b0000', accent: '#c9a96e', dark: '#2a0202' },
     size: 0.9,
   },
-  [ROLES.SEER]: {
+  [ROLES.VEIL_SCHOLAR]: {
     colors: { primary: '#3a1a5c', glow: '#7d3c98', accent: '#c9a96e', dark: '#1a0a2e' },
     size: 0.8,
   },
-  [ROLES.POISON_WITCH]: {
+  [ROLES.HERBAL_SAGE]: {
     colors: { primary: '#1a3a2a', glow: '#2d8a1e', accent: '#4ae04a', dark: '#0a1a10' },
     size: 0.78,
   },
-  [ROLES.HEAL_WITCH]: {
+  [ROLES.SPIRIT_MENDER]: {
     colors: { primary: '#1a3a2e', glow: '#27ae60', accent: '#5ef0a0', dark: '#0a1a12' },
     size: 0.78,
   },
-  [ROLES.VILLAGER]: {
+  [ROLES.SPIRIT_WEAVER]: {
     colors: { primary: '#3a3a4a', glow: '#5d6d7e', accent: '#8a9bb5', dark: '#1a1a28' },
     size: 0.75,
   },
-  [ROLES.GUARD]: {
+  [ROLES.VEIL_GUARDIAN]: {
     colors: { primary: '#1a2a4a', glow: '#2980b9', accent: '#5aa0e0', dark: '#0a1a2a' },
     size: 0.82,
   },
-  [ROLES.HUNTER]: {
+  [ROLES.FLAME_TRACKER]: {
     colors: { primary: '#4a2a1a', glow: '#d35400', accent: '#e87040', dark: '#2a1008' },
     size: 0.8,
   },
@@ -47,7 +47,7 @@ const ROLE_DEFS = {
  * @param {number} size - 视图框大小
  */
 export default function RoleSVG({ role, size = 160 }) {
-  const def = ROLE_DEFS[role] || ROLE_DEFS[ROLES.VILLAGER];
+  const def = ROLE_DEFS[role] || ROLE_DEFS[ROLES.SPIRIT_WEAVER];
   const { primary, glow, accent, dark } = def.colors;
   const s = def.size;
   const cx = size / 2, cy = size / 2;
@@ -60,23 +60,23 @@ export default function RoleSVG({ role, size = 160 }) {
 
   const renderSilhouette = () => {
     switch (role) {
-      case ROLES.WEREWOLF:
+      case ROLES.CORRUPTED:
         return <WerewolfSilhouette cx={cx} cy={cy} r={r} />;
-      case ROLES.ALPHA_WOLF:
+      case ROLES.NETHER_MONK:
         return <AlphaWolfSilhouette cx={cx} cy={cy} r={r} />;
-      case ROLES.SEER:
+      case ROLES.VEIL_SCHOLAR:
         return <SeerSilhouette cx={cx} cy={cy} r={r} />;
-      case ROLES.POISON_WITCH:
+      case ROLES.HERBAL_SAGE:
         return <PoisonWitchSilhouette cx={cx} cy={cy} r={r} />;
-      case ROLES.HEAL_WITCH:
+      case ROLES.SPIRIT_MENDER:
         return <HealWitchSilhouette cx={cx} cy={cy} r={r} />;
-      case ROLES.GUARD:
+      case ROLES.VEIL_GUARDIAN:
         return <GuardSilhouette cx={cx} cy={cy} r={r} />;
-      case ROLES.HUNTER:
+      case ROLES.FLAME_TRACKER:
         return <HunterSilhouette cx={cx} cy={cy} r={r} />;
-      case ROLES.VILLAGER:
+      case ROLES.SPIRIT_WEAVER:
       default:
-        return <VillagerSilhouette cx={cx} cy={cy} r={r} />;
+        return <WeaverSilhouette cx={cx} cy={cy} r={r} />;
     }
   };
 
@@ -241,7 +241,7 @@ function PoisonWitchSilhouette({ cx, cy, r }) {
       <rect x="30" y="48" width="16" height="22" rx="4" fill="#1a3a2a" stroke="#4ae04a" strokeWidth="0.8" opacity="0.7" />
       <rect x="34" y="44" width="8" height="6" rx="1" fill="none" stroke="#4ae04a" strokeWidth="0.6" opacity="0.5" />
       <circle cx="38" cy="56" r="3" fill="#4ae04a" opacity="0.35" />
-      {/* 毒雾 */}
+      {/* 蚀雾 */}
       {[30, 38, 46].map((x, i) => (
         <circle key={i} cx={x} cy={72 + i * 4} r={3 + i} fill="none" stroke="#4ae04a" strokeWidth="0.4" opacity={0.3 - i * 0.08} />
       ))}
@@ -314,7 +314,7 @@ function HunterSilhouette({ cx, cy, r }) {
   );
 }
 
-function VillagerSilhouette({ cx, cy, r }) {
+function WeaverSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 36 * scale}, ${cy - 48 * scale}) scale(${scale})`} opacity="0.85">

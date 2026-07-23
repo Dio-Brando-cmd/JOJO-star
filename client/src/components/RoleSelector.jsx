@@ -8,27 +8,27 @@ import { ROLES, ROLE_NAMES, ROLE_ICONS } from '../utils/constants';
 
 // 所有可选角色（带推荐最大数量）
 const ALL_ROLES = [
-  { id: ROLES.ALPHA_WOLF, name: '种狼', icon: '👑🐺', team: 'WOLF', desc: '可变狼/感染/刀人', max: 1 },
-  { id: ROLES.WEREWOLF, name: '狼人', icon: '🐺', team: 'WOLF', desc: '夜晚刀人，锁定人而非屋', max: 5 },
-  { id: ROLES.SEER, name: '预言家', icon: '🔮', team: 'VILLAGE', desc: '查验好人/狼人', max: 1 },
-  { id: ROLES.POISON_WITCH, name: '毒巫', icon: '☠️🧪', team: 'VILLAGE', desc: '烈性毒药+药水', max: 1 },
-  { id: ROLES.HEAL_WITCH, name: '药巫', icon: '💚🧪', team: 'VILLAGE', desc: '万能药+单目标毒药', max: 1 },
-  { id: ROLES.GUARD, name: '守卫', icon: '🛡️', team: 'VILLAGE', desc: '守护一人，可重伤', max: 1 },
-  { id: ROLES.HUNTER, name: '猎人', icon: '🔫', team: 'VILLAGE', desc: '猎枪+短火铳', max: 1 },
-  { id: ROLES.VILLAGER, name: '村民', icon: '👨‍🌾', team: 'VILLAGE', desc: '普通村民', max: 8 },
+  { id: ROLES.NETHER_MONK, name: '种狼', icon: '👑🐺', team: 'CORRUPTED', desc: '可堕化/蚀变/噬灵', max: 1 },
+  { id: ROLES.CORRUPTED, name: '狼人', icon: '🐺', team: 'CORRUPTED', desc: '夜晚噬灵，锁定灵焰而非庇护所', max: 5 },
+  { id: ROLES.VEIL_SCHOLAR, name: '察灵家', icon: '🔮', team: 'VEIL_KEEPERS', desc: '察灵辨识纯净/蚀痕', max: 1 },
+  { id: ROLES.HERBAL_SAGE, name: '毒巫', icon: '☠️🧪', team: 'VEIL_KEEPERS', desc: '蚀灭符阵+灵符', max: 1 },
+  { id: ROLES.SPIRIT_MENDER, name: '药巫', icon: '💚🧪', team: 'VEIL_KEEPERS', desc: '灵焰修复+蚀痕净化', max: 1 },
+  { id: ROLES.VEIL_GUARDIAN, name: '守卫', icon: '🛡️', team: 'VEIL_KEEPERS', desc: '灵焰庇护一人，可灵蚀重伤', max: 1 },
+  { id: ROLES.FLAME_TRACKER, name: '猎人', icon: '🔫', team: 'VEIL_KEEPERS', desc: '灵焰猎枪+噬灭短铳', max: 1 },
+  { id: ROLES.SPIRIT_WEAVER, name: '村民', icon: '👨‍🌾', team: 'VEIL_KEEPERS', desc: '普通村民', max: 8 },
 ];
 
 // 默认推荐配置
 function getDefaultConfig(playerCount) {
   const configs = {
-    5: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.HEAL_WITCH, ROLES.VILLAGER],
-    6: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.VILLAGER],
-    7: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.VILLAGER, ROLES.VILLAGER],
-    8: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.VILLAGER, ROLES.VILLAGER],
-    9: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.VILLAGER, ROLES.VILLAGER],
-    10: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER],
-    11: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
-    12: [ROLES.ALPHA_WOLF, ROLES.WEREWOLF, ROLES.WEREWOLF, ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.GUARD, ROLES.HUNTER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER, ROLES.VILLAGER],
+    5: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER],
+    6: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER],
+    7: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
+    8: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
+    9: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
+    10: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
+    11: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
+    12: [ROLES.NETHER_MONK, ROLES.CORRUPTED, ROLES.CORRUPTED, ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER, ROLES.SPIRIT_WEAVER],
   };
   return configs[playerCount] || [];
 }
@@ -129,13 +129,13 @@ export default function RoleSelector({ isHost, playerCount, currentConfig, onUpd
     const config = buildConfig();
     if (config.length === 0) return '请选择至少一个角色';
     if (config.length !== playerCount) return `角色数量(${config.length})与玩家数量(${playerCount})不匹配`;
-    const hasWolf = config.some(r => r === ROLES.ALPHA_WOLF || r === ROLES.WEREWOLF);
-    if (!hasWolf) return '必须至少有一个狼人阵营角色';
+    const hasWolf = config.some(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
+    if (!hasWolf) return '必须至少有一个蚀者阵营角色';
     const hasVillage = config.some(r =>
-      [ROLES.SEER, ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.VILLAGER, ROLES.GUARD, ROLES.HUNTER].includes(r)
+      [ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(r)
     );
-    if (!hasVillage) return '必须至少有一个好人阵营角色';
-    const wolves = config.filter(r => r === ROLES.WEREWOLF || r === ROLES.ALPHA_WOLF).length;
+    if (!hasVillage) return '必须至少有一个守幕者阵营角色';
+    const wolves = config.filter(r => r === ROLES.CORRUPTED || r === ROLES.NETHER_MONK).length;
     const village = config.length - wolves;
     if (wolves >= village) return '狼人数量不能≥好人数量';
     return null;
@@ -172,7 +172,7 @@ export default function RoleSelector({ isHost, playerCount, currentConfig, onUpd
     );
   }
 
-  const wolfCount = (roleCounts[ROLES.ALPHA_WOLF] || 0) + (roleCounts[ROLES.WEREWOLF] || 0);
+  const wolfCount = (roleCounts[ROLES.NETHER_MONK] || 0) + (roleCounts[ROLES.CORRUPTED] || 0);
   const villageCount = totalSelected - wolfCount;
   const validationError = totalSelected > 0 ? validate() : null;
 

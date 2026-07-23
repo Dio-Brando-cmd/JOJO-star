@@ -1,6 +1,6 @@
 {
   "name": "werewolf-online",
-  "version": "2.12.1",
+  "version": "2.13.1",
   "description": "狼人杀在线联机版 - PC桌面多人联机游戏",
   "private": true,
   "main": "electron/main.js",
@@ -21,8 +21,8 @@
     "install:all": "npm install && cd server && npm install && cd ../client && npm install"
   },
   "build": {
-    "appId": "com.werewolf.online",
-    "productName": "狼人杀",
+    "appId": "com.veilland.online",
+    "productName": "帷幕之地",
     "directories": {
       "output": "release"
     },

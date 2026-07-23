@@ -57,13 +57,13 @@ export class StoryManager {
    */
   _getRoleHint(role) {
     const hints = {
-      WEREWOLF: '你感觉到体内有一种难以控制的饥渴。月亮在呼唤。',
-      ALPHA_WOLF: '你比他们更强。你可以选择变化——或者传播变化。',
-      SEER: '你的眼睛在黑暗中看见别人看不见的东西。真相是一把双刃剑。',
-      POISON_WITCH: '你的手指间藏着死亡与救赎。使用哪一个，取决于你的心。',
-      HEAL_WITCH: '你的使命是治愈——但治愈有时意味着伤害那些伤害他人的人。',
-      GUARD: '你的存在本身就是一堵墙。但每堵墙都有裂缝。',
-      HUNTER: '你的武器已经上膛。耐心——猎人在黑暗中等待。',
+      CORRUPTED: '你感觉到体内有一种难以控制的饥渴。月亮在呼唤。',
+      NETHER_MONK: '你比他们更强。你可以选择变化——或者传播变化。',
+      VEIL_SCHOLAR: '你的眼睛在黑暗中看见别人看不见的东西。真相是一把双刃剑。',
+      HERBAL_SAGE: '你的手指间藏着死亡与救赎。使用哪一个，取决于你的心。',
+      SPIRIT_MENDER: '你的使命是治愈——但治愈有时意味着伤害那些伤害他人的人。',
+      VEIL_GUARDIAN: '你的存在本身就是一堵墙。但每堵墙都有裂缝。',
+      FLAME_TRACKER: '你的武器已经上膛。耐心——猎人在黑暗中等待。',
       VILLAGER: '你是普通人。但在这片土地上，普通人也有活下去的办法。',
     };
     return hints[role] || '你的命运还在迷雾之中。';
@@ -120,7 +120,7 @@ export class StoryManager {
     if (winner === 'VILLAGE') {
       return {
         title: '曙光',
-        subtitle: '好人阵营胜利',
+        subtitle: '守幕者阵营胜利',
         text: `经过${round}个夜晚，最后一只狼倒下了。帷幕暂时平静下来——但没人知道下一次它何时会再次变薄。幸存者们互相看着对方，眼中既有庆幸，也有愧疚。他们为了活下来，牺牲了太多人。而明天，太阳还是会照常升起。帷幕之外，混沌仍在呼吸。但至少在帷幕之内，今天，人类赢了。`,
         mood: 'bittersweet',
       };
@@ -128,7 +128,7 @@ export class StoryManager {
 
     return {
       title: '永夜',
-      subtitle: '狼人阵营胜利',
+      subtitle: '蚀者阵营胜利',
       text: `狼嚎在帷幕之地回荡，最后一个反抗者倒下了。但这并不是狼人想要的胜利——他们只是变回了自己的本质。芬里尔的血脉、吕卡翁的诅咒、罗慕路斯的宿命——所有这些在今晚汇合。帷幕之外，有什么东西在发出满足的叹息。也许这场游戏从来就不是人类的游戏。也许它从来就是一场——狩猎。`,
       mood: 'dark',
     };
@@ -140,11 +140,11 @@ export class StoryManager {
   generateDeathNarrative(player, causeOfDeath) {
     const charName = player.characterId
       ? CHARACTER_IDENTITIES[player.characterId]?.name
-      : (player.villagerName || player.name);
+      : (player.weaverName || player.name);
 
     const deathTexts = {
       wolf_kill: `${charName}的尸体在清晨被发现——喉咙被撕开，屋子里的血迹已经干了。`,
-      lethal_poison: `${charName}的屋子里弥漫着毒药的气味。整个屋子的人都死了。`,
+      mass_seal: `${charName}的屋子里弥漫着毒药的气味。整个屋子的人都死了。`,
       heal_witch_poison: `${charName}死了。毒药精确地击中了他。`,
       hunter_rifle: `一声枪响惊醒了村庄。${charName}倒在了血泊中——子弹穿过心脏。`,
       hunter_blunderbuss: `${charName}试图攻击不该攻击的人。短火铳的响声就是他的丧钟。`,
@@ -165,7 +165,7 @@ export class StoryManager {
   generateAbilityNarrative(player, abilityType, target) {
     const charName = player.characterId
       ? CHARACTER_IDENTITIES[player.characterId]?.name
-      : (player.villagerName || player.name);
+      : (player.weaverName || player.name);
 
     const abilityTexts = {
       seer_check: `${charName}闭上眼睛，在黑暗中看到了幻象——关于某个人的真相。`,
@@ -192,9 +192,9 @@ export class StoryManager {
     const descriptions = {
       [MYTH_ORIGINS.NORSE]: '来自北方冻土的传说——诸神、巨人、与世界树。',
       [MYTH_ORIGINS.CELTIC]: '来自翡翠岛的古老信仰——德鲁伊、圣林、与自然之灵。',
-      [MYTH_ORIGINS.GREEK]: '来自爱琴海岸的神话——英雄、命运、与不可违抗的预言。',
+      [MYTH_ORIGINS.GREEK]: '来自爱琴海岸的神话——英雄、命运、与不可违抗的察灵。',
       [MYTH_ORIGINS.EGYPTIAN]: '来自尼罗河畔的智慧——冥界、审判、与永恒的真理。',
-      [MYTH_ORIGINS.ROMAN]: '来自七丘之城的传奇——文明、狼、与建城者的宿命。',
+      [MYTH_ORIGINS.ROMAN]: '来自七丘之城的传奇——文明、狼、与聚落导师的宿命。',
       [MYTH_ORIGINS.EASTERN]: '来自东方大地的智慧——禅意、俳句、与沉默的力量。',
       [MYTH_ORIGINS.FOLK]: '来自民间的故事——普通人身上藏着不普通的勇气。',
     };
@@ -256,7 +256,7 @@ export class StoryManager {
     const player = this.game.getPlayer(playerId);
     const charName = player?.characterId
       ? CHARACTER_IDENTITIES[player.characterId]?.name
-      : (player?.villagerName || player?.name || '未知');
+      : (player?.weaverName || player?.name || '未知');
 
     return {
       playerId,

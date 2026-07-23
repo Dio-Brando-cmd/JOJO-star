@@ -65,7 +65,7 @@ function PlayerItem({ player, isSelf, showRole, dead, votedFor, voters, checkRes
   const icon = ROLE_ICONS[player.role] || '❓';
   const hasVoters = voters && voters.length > 0;
 
-  // 预言家查验反馈：金色=好人，银白=狼人
+  // 帷幕学者察灵反馈：金色=好人，银白=狼人
   let avatarStyle = {};
   if (checkResult === 'GOOD') {
     avatarStyle = { background: 'linear-gradient(135deg, #FFD700, #FFA500)', boxShadow: '0 0 10px rgba(255, 215, 0, 0.6)' };
@@ -87,7 +87,7 @@ function PlayerItem({ player, isSelf, showRole, dead, votedFor, voters, checkRes
           {player.isGuarding && <span className="guard-tag">守护中</span>}
         </span>
         {showRole && player.role && (
-          <span className="player-role-tag">{player.role === 'VILLAGER' ? `村民${player.villagerIndex || ''}` : ''}</span>
+          <span className="player-role-tag">{player.role === 'SPIRIT_WEAVER' ? `村民${player.weaverIndex || ''}` : ''}</span>
         )}
       </div>
       {dead && <span className="dead-mark">💀</span>}

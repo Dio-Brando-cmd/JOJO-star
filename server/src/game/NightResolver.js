@@ -2,7 +2,7 @@
 // 夜晚行动结算器 —— 按固定顺序处理所有夜间行动
 // ============================================================
 
-import { ROLES, NIGHT_STEPS, VILLAGER_TYPES, TRAIT_TYPES } from './constants.js';
+import { ROLES, NIGHT_STEPS, SPIRIT_WEAVER_TYPES, TRAIT_TYPES } from './constants.js';
 
 export class NightResolver {
   constructor(game) {
@@ -10,7 +10,7 @@ export class NightResolver {
     this.players = game.players;
     this.log = [];           // 夜晚日志（公开）
     this.privateLog = [];    // 夜晚日志（仅相关角色可见）
-    this.wolfKills = new Map(); // 狼人击杀目标 Map<targetId, wolfIds[]>
+    this.wolfKills = new Map(); // 蚀者噬灵目标 Map<targetId, wolfIds[]>
   }
 
   // ---- 主入口：结算整晚 ----
@@ -41,7 +41,7 @@ export class NightResolver {
   collectHouseVisitInfo() {
     for (const p of this.players) {
       if (!p.alive || p.nightAction === 'SLEEP') continue;
-      // 通过 currentHouse 判断是否出门（种狼的 nightAction 可能已被重置）
+      // 通过 currentHouse 判断是否出门（冥僧人的 nightAction 可能已被重置）
       const leftHome = p.nightAction === 'GO_OUT' || (!p.atHome && p.currentHouse !== p.id);
       if (leftHome && p.currentHouse && p.currentHouse !== p.id) {
         const targetHouse = p.currentHouse;
@@ -53,7 +53,7 @@ export class NightResolver {
 
         // 村民因人数过多被赶回家时只显示"很多人"
         let countDisplay;
-        if (p.role === 'VILLAGER' && count >= 3) {
+        if (p.role === 'SPIRIT_WEAVER' && count >= 3) {
           countDisplay = -1; // 代表"很多人"
           this.privateLog.push({
             type: 'house_visit',
@@ -82,14 +82,14 @@ export class NightResolver {
   // ---- 按步骤分发 ----
   async processStep(step) {
     const handlers = {
-      [NIGHT_STEPS.HUNTER]: () => this.resolveHunter(),
-      [NIGHT_STEPS.ALPHA_WOLF]: () => this.resolveAlphaWolf(),
-      [NIGHT_STEPS.GUARD]: () => this.resolveGuard(),
-      [NIGHT_STEPS.WEREWOLF]: () => this.resolveWerewolves(),
-      [NIGHT_STEPS.SEER]: () => this.resolveSeer(),
-      [NIGHT_STEPS.POISON_WITCH]: () => this.resolvePoisonWitch(),
-      [NIGHT_STEPS.HEAL_WITCH]: () => this.resolveHealWitch(),
-      [NIGHT_STEPS.VILLAGER]: () => this.resolveVillager(),
+      [NIGHT_STEPS.FLAME_TRACKER]: () => this.resolveHunter(),
+      [NIGHT_STEPS.NETHER_MONK]: () => this.resolveAlphaWolf(),
+      [NIGHT_STEPS.VEIL_GUARDIAN]: () => this.resolveGuard(),
+      [NIGHT_STEPS.CORRUPTED]: () => this.resolveWerewolves(),
+      [NIGHT_STEPS.VEIL_SCHOLAR]: () => this.resolveSeer(),
+      [NIGHT_STEPS.HERBAL_SAGE]: () => this.resolvePoisonWitch(),
+      [NIGHT_STEPS.SPIRIT_MENDER]: () => this.resolveHealWitch(),
+      [NIGHT_STEPS.SPIRIT_WEAVER]: () => this.resolveWeaver(),
     };
 
     const handler = handlers[step];
@@ -100,7 +100,7 @@ export class NightResolver {
   //  1. 猎人（第二晚起第一个行动）
   // ==========================================
   resolveHunter() {
-    const hunter = this.players.find(p => p.role === ROLES.HUNTER && p.alive);
+    const hunter = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
     if (!hunter || !hunter.nightAction) return;
 
     if (hunter.nightAction === 'SLEEP') return;
@@ -124,13 +124,13 @@ export class NightResolver {
       const targetId = hunter.nightAbility.rifleTarget;
       if (targetId) {
         this.markForDeath(targetId, 'hunter_rifle');
-        this.log.push({ type: 'hunter_shoot', target: targetId, msg: '猎人开枪了！' });
+        this.log.push({ type: 'hunter_shoot', target: targetId, msg: '追猎者射击了！' });
         hunter.rifleUsable = false; // 开枪消耗猎枪
         hunter.canShootNextNight = null;
       }
     }
 
-    // 猎枪追踪：上一晚观察到的出门目标
+    // 猎枪追猎：上一晚观察到的出门目标
     if (hunter.canShootNextNight && hunter.rifleUsable) {
       this.markForDeath(hunter.canShootNextNight, 'hunter_rifle');
       this.log.push({ type: 'hunter_shoot', target: hunter.canShootNextNight, msg: '猎人追踪射杀！' });
@@ -180,7 +180,7 @@ export class NightResolver {
   //  2. 种狼
   // ==========================================
   resolveAlphaWolf() {
-    const alpha = this.players.find(p => p.role === ROLES.ALPHA_WOLF && p.alive);
+    const alpha = this.players.find(p => p.role === ROLES.NETHER_MONK && p.alive);
     if (!alpha || alpha.nightAction === 'SLEEP') return;
 
     const ability = alpha.nightAbility || {};
@@ -196,19 +196,19 @@ export class NightResolver {
       const targetId = alpha.nightTarget;
       const target = this.players.find(p => p.id === targetId && p.alive);
       if (target) {
-        // 感染预言家的特殊处理：预言家被感染但不变成狼人，种狼保持狼人阵营
-        if (target.role === ROLES.SEER) {
+        // 感染察灵家的特殊处理：察灵家被感染但不变成狼人，种狼保持蚀者阵营
+        if (target.role === ROLES.VEIL_SCHOLAR) {
           target.infectedByAlpha = true;
-          target.willBecomeWolf = false; // 预言家保留能力，不变狼
-          // 种狼仍属于狼人阵营，身份不变，行动次序不变
-          this.privateLog.push({ type: 'seer_infected', player: target.id, alphaId: alpha.id, msg: '预言家被种狼感染，但保留预言能力' });
+          target.willBecomeWolf = false; // 察灵家保留能力，不变狼
+          // 种狼仍属于蚀者阵营，身份不变，行动次序不变
+          this.privateLog.push({ type: 'seer_infected', player: target.id, alphaId: alpha.id, msg: '察灵家被冥僧人堕化，但保留察灵能力' });
         } else {
           target.infectedByAlpha = true;
           target.willBecomeWolf = true;
-          this.privateLog.push({ type: 'infected', player: target.id, msg: '被种狼感染，下个夜晚变为狼人' });
+          this.privateLog.push({ type: 'infected', player: target.id, msg: '被冥僧人堕化，下个夜晚蚀变为蚀者' });
         }
         alpha.hasUsedInfect = true;
-        // 使用了感染后，当前夜晚种狼算作狼人（可被预言家查出）
+        // 使用了感染后，当前夜晚种狼算作狼人（可被察灵家查出）
         this.privateLog.push({ type: 'alpha_infected_visible', player: alpha.id });
       }
     }
@@ -219,7 +219,7 @@ export class NightResolver {
     // 新增：假身份编织（变狼前可伪装成神职）
     if (ability.fakeIdentity && !alpha.isTransformed && !alpha.hasUsedInfect) {
       const fakeRole = ability.fakeIdentityRole;
-      if (fakeRole && [ROLES.SEER, ROLES.GUARD, ROLES.HUNTER].includes(fakeRole)) {
+      if (fakeRole && [ROLES.VEIL_SCHOLAR, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(fakeRole)) {
         alpha.fakeIdentity = fakeRole;
         this.privateLog.push({
           type: 'alpha_fake_identity',
@@ -230,13 +230,13 @@ export class NightResolver {
       }
     }
 
-    // 更新种狼的所在屋子（不计入人数）
+    // 更新冥僧人的所在屋子（不计入人数）
     if (alpha.nightAction === 'GO_OUT' && alpha.nightTarget) {
       alpha.currentHouse = alpha.nightTarget;
       alpha.atHome = false;
     }
 
-    // 重置种狼行动状态，使其能在狼人步骤重新提交刀人
+    // 重置冥僧入定状态，使其能在蚀者步骤重新提交刀人
     // 出门信息已保存在 currentHouse/atHome，collectHouseVisitInfo 用这些判断
     alpha.nightAction = null;
     alpha.nightTarget = null;
@@ -247,7 +247,7 @@ export class NightResolver {
   //  3. 守卫
   // ==========================================
   resolveGuard() {
-    const guard = this.players.find(p => p.role === ROLES.GUARD && p.alive);
+    const guard = this.players.find(p => p.role === ROLES.VEIL_GUARDIAN && p.alive);
     if (!guard || guard.nightAction === 'SLEEP') return;
 
     if (guard.nightAbility?.guard) {
@@ -318,16 +318,16 @@ export class NightResolver {
   //  4. 狼人群（随机顺序）
   // ==========================================
   resolveWerewolves() {
-    // 所有狼人阵营：普通狼人 + 已变狼/已感染的种狼（参与协同）
+    // 所有蚀者阵营：普通狼人 + 已变狼/已感染的种狼（参与协同）
     const wolves = this.players.filter(p =>
       p.alive &&
-      (p.role === ROLES.WEREWOLF ||
-       (p.role === ROLES.ALPHA_WOLF && (p.isTransformed || p.hasUsedInfect)))
+      (p.role === ROLES.CORRUPTED ||
+       (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedInfect)))
     );
 
     if (wolves.length === 0) return;
 
-    // 随机打乱狼人行动顺序
+    // 随机打乱蚀者噬灵顺序
     this.shuffleArray(wolves);
 
     // 收集所有狼人的击杀目标
@@ -465,10 +465,10 @@ export class NightResolver {
   }
 
   // ==========================================
-  //  5. 预言家
+  //  5. 察灵家
   // ==========================================
   resolveSeer() {
-    const seer = this.players.find(p => p.role === ROLES.SEER && p.alive);
+    const seer = this.players.find(p => p.role === ROLES.VEIL_SCHOLAR && p.alive);
     if (!seer || seer.nightAction === 'SLEEP' || !seer.nightTarget) return;
 
     const targetId = seer.nightTarget;
@@ -488,9 +488,9 @@ export class NightResolver {
       // - 种狼：变狼后是狼；使用感染后是狼；未变狼未感染 → 好人
       // - 假身份：种狼有fakeIdentity时显示为该神职
       let isGood = true;
-      if (target.role === ROLES.WEREWOLF) {
+      if (target.role === ROLES.CORRUPTED) {
         isGood = false;
-      } else if (target.role === ROLES.ALPHA_WOLF) {
+      } else if (target.role === ROLES.NETHER_MONK) {
         const isWolf = target.isTransformed || target.hasUsedInfect;
         if (!isWolf && target.fakeIdentity) {
           // 假身份编织：查验结果显示为伪装的神职
@@ -508,7 +508,7 @@ export class NightResolver {
       }
       // 被感染但尚未生效的不算狼人
 
-      // 被感染预言家：查验结果反转（狼→好人，好人→狼）
+      // 被感染察灵家：查验结果反转（狼→好人，好人→狼）
       if (seer.infectedByAlpha) {
         isGood = !isGood;
       }
@@ -555,10 +555,10 @@ export class NightResolver {
   }
 
   // ==========================================
-  //  6. 毒巫（烈性毒药 + 药水）
+  //  6. 毒巫（蚀灭符阵 + 灵符）
   // ==========================================
   resolvePoisonWitch() {
-    const pw = this.players.find(p => p.role === ROLES.POISON_WITCH && p.alive);
+    const pw = this.players.find(p => p.role === ROLES.HERBAL_SAGE && p.alive);
     if (!pw || pw.nightAction === 'SLEEP') return;
 
     const ability = pw.nightAbility || {};
@@ -569,64 +569,64 @@ export class NightResolver {
       pw.atHome = false;
     }
 
-    // 烈性毒药：毒死一个屋子中所有人
-    if (ability.lethalPoison) {
-      const targetHouse = ability.lethalPoisonTarget; // 目标屋子（玩家ID）
+    // 蚀灭符阵：毒死一个屋子中所有人
+    if (ability.massSeal) {
+      const targetHouse = ability.massSealTarget; // 目标屋子（玩家ID）
       const peopleInHouse = this.getPeopleInHouse(targetHouse);
 
-      // 检查守卫是否在屋子里（3人及以上且守卫在其中→守卫重伤）
-      const guard = peopleInHouse.find(p => p.role === ROLES.GUARD);
+      // 检查守卫是否在屋子里（3人及以上且守卫在其中→灵蚀重伤）
+      const guard = peopleInHouse.find(p => p.role === ROLES.VEIL_GUARDIAN);
       if (peopleInHouse.length >= 3 && guard) {
         guard.heavyInjury = true;
         guard.whoKnowsGuardHeavyInjury = [guard.id, pw.id];
-        this.privateLog.push({ type: 'guard_heavy_injury', player: guard.id, source: 'lethal_poison' });
-        // 守卫重伤，其余人被毒死
+        this.privateLog.push({ type: 'guard_heavy_injury', player: guard.id, source: 'mass_seal' });
+        // 灵蚀重伤，其余人被毒死
         for (const p of peopleInHouse) {
           if (p.id !== guard.id && p.alive) {
-            this.markForDeath(p.id, 'lethal_poison');
+            this.markForDeath(p.id, 'mass_seal');
           }
         }
       } else {
         // 全部毒死
         for (const p of peopleInHouse) {
           if (p.alive) {
-            this.markForDeath(p.id, 'lethal_poison');
+            this.markForDeath(p.id, 'mass_seal');
           }
         }
       }
-      this.log.push({ type: 'lethal_poison', house: targetHouse });
+      this.log.push({ type: 'mass_seal', house: targetHouse });
     }
 
-    // 毒巫的药水（不能治疗守卫重伤）
-    if (ability.potion) {
-      const targetId = ability.potionTarget;
+    // 毒巫的灵符（不能治疗灵蚀重伤）
+    if (ability.talisman) {
+      const targetId = ability.talismanTarget;
       const target = this.players.find(p => p.id === targetId);
       const isMarkedForDeath = this.deathMarks.has(targetId);
-      if (target && isMarkedForDeath && !(target.role === ROLES.GUARD && target.heavyInjury)) {
+      if (target && isMarkedForDeath && !(target.role === ROLES.VEIL_GUARDIAN && target.heavyInjury)) {
         this.reviveFromDeath(targetId);
-        this.log.push({ type: 'potion_save', target: targetId });
+        this.log.push({ type: 'talisman_save', target: targetId });
       }
-      pw.hasPotion = false;
+      pw.hasHealTalisman = false;
     }
 
-    // 新增：毒雾陷阱（在目标屋子释放延迟毒雾）
-    if (ability.poisonFog) {
-      const fogTarget = ability.poisonFogTarget;
-      pw.poisonFogTarget = fogTarget;
-      pw.poisonFogActive = true;
+    // 新增：蚀雾符阵（在目标屋子释放延迟蚀雾）
+    if (ability.corrosionMist) {
+      const fogTarget = ability.corrosionMistTarget;
+      pw.corrosionMistTarget = fogTarget;
+      pw.corrosionMistActive = true;
       this.privateLog.push({
-        type: 'poison_fog_set',
+        type: 'corrosion_mist_set',
         player: pw.id,
         target: fogTarget,
-        msg: '毒巫在目标屋子释放了毒雾——下一晚进入的人将中毒',
+        msg: '毒巫在目标屋子释放了蚀雾——下一晚进入的人将中毒',
       });
     }
 
-    // 新增：毒药材料管理（2材料→1烈性毒药，1材料→1普通毒药）
-    if (ability.lethalPoison) {
-      pw.poisonMaterials = Math.max(0, (pw.poisonMaterials || 2) - 2);
+    // 新增：毒药材料管理（2材料→1蚀灭符阵，1材料→1普通毒药）
+    if (ability.massSeal) {
+      pw.talismanMaterials = Math.max(0, (pw.talismanMaterials || 2) - 2);
     } else if (ability.singlePoison) {
-      pw.poisonMaterials = Math.max(0, (pw.poisonMaterials || 2) - 1);
+      pw.talismanMaterials = Math.max(0, (pw.talismanMaterials || 2) - 1);
     }
   }
 
@@ -634,7 +634,7 @@ export class NightResolver {
   //  7. 药巫（万能药 + 单目标毒药）
   // ==========================================
   resolveHealWitch() {
-    const hw = this.players.find(p => p.role === ROLES.HEAL_WITCH && p.alive);
+    const hw = this.players.find(p => p.role === ROLES.SPIRIT_MENDER && p.alive);
     if (!hw || hw.nightAction === 'SLEEP') return;
 
     const ability = hw.nightAbility || {};
@@ -645,7 +645,7 @@ export class NightResolver {
       hw.atHome = false;
     }
 
-    // 万能药（可以治疗一切，包括守卫重伤）
+    // 万能药（可以治疗一切，包括灵蚀重伤）
     if (ability.heal) {
       const targetId = ability.healTarget;
       const target = this.players.find(p => p.id === targetId);
@@ -662,7 +662,7 @@ export class NightResolver {
           this.privateLog.push({ type: 'heal_injury', player: targetId });
         }
       }
-      hw.hasPotion = false;
+      hw.hasHealTalisman = false;
     }
 
     // 单目标毒药
@@ -676,13 +676,13 @@ export class NightResolver {
           const firstEntrant = this.getFirstEntrant(target.id);
           if (firstEntrant) {
             this.markForDeath(firstEntrant.id, 'heal_witch_poison');
-            this.log.push({ type: 'poison_transferred', original: targetId, actual: firstEntrant.id });
+            this.log.push({ type: 'seal_transferred', original: targetId, actual: firstEntrant.id });
           }
         } else {
           this.markForDeath(targetId, 'heal_witch_poison');
         }
       }
-      hw.hasPoison = false;
+      hw.hasSealTalisman = false;
     }
 
     // 新增：战场急救（去被攻击的屋子，有概率急救重伤者）
@@ -706,8 +706,8 @@ export class NightResolver {
 
     // 新增：药草园（留守家中种植，获得额外解药）
     if (hw.nightAbility?.plantHerbGarden) {
-      hw.herbGardenPlanted = true;
-      hw.herbGardenReady = true;
+      hw.talismanChargeStarted = true;
+      hw.talismanCharged = true;
       this.privateLog.push({
         type: 'herb_garden',
         player: hw.id,
@@ -739,9 +739,9 @@ export class NightResolver {
   // ==========================================
   //  8. 村民（所有神和狼行动完后行动）
   // ==========================================
-  resolveVillager() {
+  resolveWeaver() {
     const villagers = this.players.filter(p =>
-      p.role === ROLES.VILLAGER && p.alive
+      p.role === ROLES.SPIRIT_WEAVER && p.alive
     );
     if (villagers.length === 0) return;
 
@@ -755,7 +755,7 @@ export class NightResolver {
       }
 
       // 老猎人村民：直觉 + 陷阱
-      if (villager.villagerType === VILLAGER_TYPES.OLD_HUNTER) {
+      if (villager.weaverType === SPIRIT_WEAVER_TYPES.OLD_VETERAN) {
         if (villager.nightAction === 'TRAP_SET') {
           villager.doorFortified = true;
           this.privateLog.push({
@@ -767,7 +767,7 @@ export class NightResolver {
       }
 
       // 旅行商人村民：双访问
-      if (villager.villagerType === VILLAGER_TYPES.MERCHANT) {
+      if (villager.weaverType === SPIRIT_WEAVER_TYPES.WANDERING_TRADER) {
         if (villager.nightAbility?.secondVisit && villager.nightAbility.secondTarget) {
           // 第二个访问目标（不触发额外效果，仅收集信息）
           this.privateLog.push({
@@ -790,7 +790,7 @@ export class NightResolver {
       }
 
       // 草药师村民：草药
-      if (villager.villagerType === VILLAGER_TYPES.HERBALIST) {
+      if (villager.weaverType === SPIRIT_WEAVER_TYPES.SPIRIT_APPRENTICE) {
         if (villager.nightAction === 'HERBAL_REMEDY' && villager.nightTarget) {
           villager.herbalRemedyUsed = true;
           villager.herbalRemedyTarget = villager.nightTarget;
@@ -804,7 +804,7 @@ export class NightResolver {
       }
 
       // 守夜人村民：守夜
-      if (villager.villagerType === VILLAGER_TYPES.NIGHT_WATCHER) {
+      if (villager.weaverType === SPIRIT_WEAVER_TYPES.NIGHT_SENTINEL) {
         if (villager.nightAction === 'NIGHT_WATCH') {
           // 获知今晚出门的总人数
           const outCount = this.players.filter(p => p.alive && p.nightAction === 'GO_OUT').length;
@@ -813,25 +813,25 @@ export class NightResolver {
             type: 'night_watch',
             player: villager.id,
             outCount,
-            msg: `守夜人：今晚有 ${outCount} 人出门`,
+            msg: `守夜灵织者：今晚有 ${outCount} 人出门`,
           });
         }
       }
 
       // 铁匠村民：加固门锁
-      if (villager.villagerType === VILLAGER_TYPES.BLACKSMITH) {
+      if (villager.weaverType === SPIRIT_WEAVER_TYPES.ARMOR_SMITH) {
         if (villager.nightAction === 'FORTIFY_DOOR') {
           villager.doorFortified = true;
           this.privateLog.push({
             type: 'blacksmith_fortify',
             player: villager.id,
-            msg: '铁匠加固了自家门锁——可抵御一次狼人入侵',
+            msg: '铁匠加固了自家门锁——可抵御一次蚀者噬灵',
           });
         }
       }
 
-      // 织布女村民：偷听更精确
-      if (villager.villagerType === VILLAGER_TYPES.WEAVER) {
+      // 织幕灵织者：帷幕低语更精确
+      if (villager.weaverType === SPIRIT_WEAVER_TYPES.VEIL_WEAVER) {
         if (villager.nightAction === 'EAVESDROP' && villager.nightTarget) {
           // 织网：排除干扰项（50%概率给出精确信息而非模糊线索）
           const accurateResult = this._accurateEavesdrop(villager.nightTarget);
@@ -840,13 +840,13 @@ export class NightResolver {
             player: villager.id,
             target: villager.nightTarget,
             result: accurateResult,
-            msg: `精确偷听: ${accurateResult}`,
+            msg: `精确帷幕低语: ${accurateResult}`,
           });
           continue;
         }
       }
 
-      // 村民偷听（通用逻辑，非织布女）
+      // 灵织低语（通用逻辑，非织布女）
       if (villager.nightAction === 'EAVESDROP' && villager.nightTarget) {
         const result = this._eavesdropResult(villager.nightTarget);
         this.privateLog.push({
@@ -854,13 +854,13 @@ export class NightResolver {
           player: villager.id,
           target: villager.nightTarget,
           result,
-          msg: `偷听结果: ${result}`,
+          msg: `帷幕低语结果: ${result}`,
         });
       }
     }
   }
 
-  // 织布女精确偷听（排除干扰项）
+  // 织布女精确帷幕低语（排除干扰项）
   _accurateEavesdrop(targetHouseId) {
     const peopleInHouse = this.players.filter(p => {
       if (!p.alive) return false;
@@ -869,12 +869,12 @@ export class NightResolver {
 
     const hasWolf = peopleInHouse.some(p => p.isWolf());
     const hasGod = peopleInHouse.some(p => p.isGod());
-    const hasVillager = peopleInHouse.some(p => p.isVillager());
+    const hasWeaver = peopleInHouse.some(p => p.isWeaver());
 
     const clues = [];
     if (hasWolf) clues.push(`你清楚地听到了狼的呼吸声——屋里有狼人`);
     if (hasGod) clues.push(`你听到了法器碰撞的声音——屋里有神职`);
-    if (hasVillager) clues.push(`你听到了平常人的脚步声——屋里有村民`);
+    if (hasWeaver) clues.push(`你听到了平常人的脚步声——屋里有村民`);
     if (peopleInHouse.length === 0) clues.push('屋里空无一人，只有风声');
     if (peopleInHouse.length >= 2) clues.push(`你能分辨出至少${peopleInHouse.length}个人`);
 
@@ -893,7 +893,7 @@ export class NightResolver {
     // 分类屋内成员
     const hasWolf = peopleInHouse.some(p => p.isWolf());
     const hasGod = peopleInHouse.some(p => p.isGod());
-    const hasVillager = peopleInHouse.some(p => p.isVillager());
+    const hasWeaver = peopleInHouse.some(p => p.isWeaver());
     const total = peopleInHouse.length;
 
     // 根据屋内实际成员构建候选结果池
@@ -907,7 +907,7 @@ export class NightResolver {
       candidates.push('听到祈祷的低语...');
       candidates.push('听到法器碰撞的声响...');
     }
-    if (hasVillager || total > 0) {
+    if (hasWeaver || total > 0) {
       candidates.push('听到有人在小声交谈...');
       candidates.push('听到轻微的脚步声...');
     }
@@ -931,10 +931,10 @@ export class NightResolver {
   //  最终结算：处理所有死亡 + 重伤
   // ==========================================
   resolveAllDeaths() {
-    // --- 处理狼人击杀 ---
+    // --- 处理蚀者噬灵 ---
     // 守卫查找提前到循环外，避免每次迭代重复查找
-    const guard = this.players.find(p => p.role === ROLES.GUARD && p.alive);
-    const poisonWitch = this.players.find(p => p.role === ROLES.POISON_WITCH && p.alive);
+    const guard = this.players.find(p => p.role === ROLES.VEIL_GUARDIAN && p.alive);
+    const poisonWitch = this.players.find(p => p.role === ROLES.HERBAL_SAGE && p.alive);
 
     if (this.wolfKills) {
       for (const [targetId, killers] of this.wolfKills) {
@@ -950,7 +950,7 @@ export class NightResolver {
           const peopleCount = peopleInHouse.length;
 
           if (peopleInHouse.includes(guard) && peopleCount >= 1 && peopleCount <= 2) {
-            // 守卫守护的屋子有1-2人且被狼人攻击 → 守卫重伤
+            // 守卫守护的屋子有1-2人且被蚀者噬灵 → 灵蚀重伤
             guard.heavyInjury = true;
             guard.whoKnowsGuardHeavyInjury = [guard.id];
             if (poisonWitch) guard.whoKnowsGuardHeavyInjury.push(poisonWitch.id);
@@ -959,7 +959,7 @@ export class NightResolver {
             continue;
           }
           if (peopleInHouse.includes(guard) && peopleCount >= 3 && killers.length >= 1) {
-            // 人多时守卫重伤但目标可能还是死
+            // 人多时灵蚀重伤但目标可能还是死
             guard.heavyInjury = true;
             guard.whoKnowsGuardHeavyInjury = [guard.id];
             if (poisonWitch) guard.whoKnowsGuardHeavyInjury.push(poisonWitch.id);
@@ -967,7 +967,7 @@ export class NightResolver {
           }
         }
 
-        // 检查守卫独自在家被一位狼人攻击
+        // 检查守卫独自在家被一位蚀者噬灵
         if (guard && guard.nightAction === 'SLEEP' && targetId === guard.id && killers.length === 1) {
           guard.heavyInjury = true;
           guard.whoKnowsGuardHeavyInjury = [guard.id];
@@ -976,11 +976,11 @@ export class NightResolver {
           const killer = this.players.find(p => p.id === killers[0]);
           if (killer) killer.knownGuard = guard.id;
           this.privateLog.push({ type: 'guard_heavy_injury_alone', player: guard.id, wolf: killers[0] });
-          continue; // 守卫重伤但没死
+          continue; // 灵蚀重伤但没死
         }
 
-        // 检查猎人的短火铳反击
-        if (target.role === ROLES.HUNTER && target.blunderbussUsable) {
+        // 检查猎人的短铳反击
+        if (target.role === ROLES.FLAME_TRACKER && target.blunderbussUsable) {
           // 猎人用短火铳反杀攻击者
           for (const wolfId of killers) {
             this.markForDeath(wolfId, 'hunter_blunderbuss');
@@ -993,7 +993,7 @@ export class NightResolver {
         // 正常击杀
         this.markForDeath(targetId, 'wolf_kill');
 
-        // 新增：铁匠加固门锁——抵御一次狼人入侵
+        // 新增：铁匠加固门锁——抵御一次蚀者噬灵
         if (target.doorFortified && target.alive) {
           target.doorFortified = false; // 门锁被破坏
           this.reviveFromDeath(targetId);
@@ -1005,7 +1005,7 @@ export class NightResolver {
         }
 
         // 新增：老猎人陷阱——狼人进入时有20%概率被发现
-        if (target.villagerType === 'OLD_HUNTER' && target.doorFortified && Math.random() < 0.20) {
+        if (target.weaverType === 'OLD_VETERAN' && target.doorFortified && Math.random() < 0.20) {
           for (const wolfId of killers) {
             if (!target.knownWolves) target.knownWolves = [];
             target.knownWolves.push(wolfId);
@@ -1023,7 +1023,7 @@ export class NightResolver {
     // 新增：守卫舍身——替目标死亡
     for (const [targetId, reason] of this.deathMarks) {
       const guard = this.players.find(p =>
-        p.role === ROLES.GUARD && p.alive && p.sacrificeTarget === targetId
+        p.role === ROLES.VEIL_GUARDIAN && p.alive && p.sacrificeTarget === targetId
       );
       if (guard) {
         this.reviveFromDeath(targetId);
@@ -1043,27 +1043,27 @@ export class NightResolver {
       }
     }
 
-    // 新增：毒雾延迟结算——上一晚设下的毒雾本晚触发
+    // 新增：蚀雾延迟结算——上一晚设下的蚀雾本晚触发
     for (const p of this.players) {
       if (!p.alive) continue;
-      // 找到毒巫的毒雾
+      // 找到毒巫的蚀雾
       const poisonWitch = this.players.find(pw =>
-        pw.role === ROLES.POISON_WITCH && pw.poisonFogActive && pw.poisonFogTarget
+        pw.role === ROLES.HERBAL_SAGE && pw.corrosionMistActive && pw.corrosionMistTarget
       );
-      if (poisonWitch && poisonWitch.poisonFogTarget) {
-        const peopleInFog = this.getPeopleInHouse(poisonWitch.poisonFogTarget);
+      if (poisonWitch && poisonWitch.corrosionMistTarget) {
+        const peopleInFog = this.getPeopleInHouse(poisonWitch.corrosionMistTarget);
         for (const victim of peopleInFog) {
           if (victim.id !== poisonWitch.id && !this.deathMarks.has(victim.id)) {
-            this.markForDeath(victim.id, 'poison_fog');
+            this.markForDeath(victim.id, 'corrosion_mist');
             this.log.push({
-              type: 'poison_fog_triggered',
+              type: 'corrosion_mist_triggered',
               target: victim.id,
-              msg: '毒雾陷阱触发——进入者中毒身亡',
+              msg: '蚀雾陷阱触发——进入者中毒身亡',
             });
           }
         }
-        poisonWitch.poisonFogTarget = null;
-        poisonWitch.poisonFogActive = false;
+        poisonWitch.corrosionMistTarget = null;
+        poisonWitch.corrosionMistActive = false;
       }
     }
 
@@ -1074,7 +1074,7 @@ export class NightResolver {
     for (const p of this.players) {
       if (!p.alive && p.herbalRemedyUsed) continue; // 已经是死亡+已使用草药的情况
       const herbalist = this.players.find(h =>
-        h.alive && h.villagerType === 'HERBALIST' &&
+        h.alive && h.weaverType === 'SPIRIT_APPRENTICE' &&
         h.herbalRemedyTarget === p.id && h.herbalRemedyUsed
       );
       if (herbalist && !p.alive) {
@@ -1112,11 +1112,11 @@ export class NightResolver {
     // --- 应用感染效果（延迟一晚上） ---
     for (const p of this.players) {
       if (p.willBecomeWolf && p.alive) {
-        if (p.role === ROLES.SEER) {
-          // 预言家保留能力不变狼，已在种狼步骤中处理
+        if (p.role === ROLES.VEIL_SCHOLAR) {
+          // 察灵家保留能力不变狼，已在冥僧步骤中处理
           p.willBecomeWolf = false;
         } else {
-          p.role = ROLES.WEREWOLF;
+          p.role = ROLES.CORRUPTED;
           p.team = 'WOLF';
           p.willBecomeWolf = false;
           p.infectedByAlpha = false;
@@ -1127,7 +1127,7 @@ export class NightResolver {
 
     // --- 处理狼人相认（下回合共同睁眼） ---
     for (const p of this.players) {
-      if (p.role === ROLES.WEREWOLF && p.wolvesOpenEyesTogether.length > 0) {
+      if (p.role === ROLES.CORRUPTED && p.wolvesOpenEyesTogether.length > 0) {
         this.privateLog.push({
           type: 'wolves_united',
           wolves: [p.id, ...p.wolvesOpenEyesTogether],

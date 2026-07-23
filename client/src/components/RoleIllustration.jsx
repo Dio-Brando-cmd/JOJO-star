@@ -36,9 +36,9 @@ export default function RoleIllustration({ role, size = 'medium', showLabel = tr
  */
 export function RoleGallery() {
   const allRoles = [
-    ROLES.WEREWOLF, ROLES.ALPHA_WOLF, ROLES.SEER,
-    ROLES.POISON_WITCH, ROLES.HEAL_WITCH, ROLES.VILLAGER,
-    ROLES.GUARD, ROLES.HUNTER,
+    ROLES.CORRUPTED, ROLES.NETHER_MONK, ROLES.VEIL_SCHOLAR,
+    ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER,
+    ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER,
   ];
 
   return (

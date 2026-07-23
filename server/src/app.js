@@ -58,7 +58,7 @@ export function createServer(options = {}) {
     res.json({
       success: true,
       online: true,
-      version: process.env.APP_VERSION || '2.12.1',
+      version: process.env.APP_VERSION || '2.13.1',
       rooms: gameManager.games.size,
       players: Array.from(gameManager.playerRooms.keys()).length,
       timestamp: Date.now(),
@@ -103,11 +103,11 @@ export function createServer(options = {}) {
   // REST API: 版本信息
   app.get('/api/version', (req, res) => {
     res.json({
-      version: process.env.APP_VERSION || '2.12.1',
-      downloadUrl: '/download/狼人杀_Setup.exe',
+      version: process.env.APP_VERSION || '2.13.1',
+      downloadUrl: '/download/帷幕之地_Setup.exe',
       apkDownloadUrl: '/download/werewolf.apk',
       releaseDate: '2026-07-20',
-      releaseNotes: 'v1.5.4 👂村民偷听改为基于屋内实际成员推断线索、🛡️夜晚行动白名单防作弊、💀遗言系统、🔒JSON写入保护',
+      releaseNotes: 'v2.13.1 🌑 帷幕之地·灵焰纪元 — 全面品牌重塑：蚀者/冥僧人/帷幕学者/草药学者/愈灵师/帷幕守卫/灵痕追猎者/灵织者、灵符体系、灵焰猎枪、全新世界观',
       fileSize: 113 * 1024 * 1024, // ~113MB
     });
   });
@@ -184,7 +184,7 @@ export function startServer(port) {
 
   return new Promise((resolve) => {
     server.listen(PORT, () => {
-      console.log(`🐺 狼人杀服务器运行在端口 ${PORT}`);
+      console.log(`🌑 帷幕之地服务器运行在端口 ${PORT}`);
       console.log(`   客户端地址: http://localhost:${PORT}`);
       resolve({ server, port: PORT });
     });
