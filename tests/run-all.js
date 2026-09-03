@@ -110,7 +110,7 @@ async function main() {
       (filter === 'game' && (t.category === 'game' || t.category === 'two-rooms')));
   }
 
-  console.log(color('cyan', `\n🐺 狼人杀性能测试 — ${filter}模式`));
+  console.log(color('cyan', `\n🌑 帷幕之地性能测试 — ${filter}模式`));
   console.log(color('cyan', `   共 ${testsToRun.length} 个测试\n`));
 
   const totalStart = Date.now();

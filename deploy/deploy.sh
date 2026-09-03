@@ -43,8 +43,8 @@ set -e
 
 # 解压
 cd /root
-mkdir -p /opt/werewolf
-cd /opt/werewolf
+mkdir -p /opt/veilland
+cd /opt/veilland
 tar -xzf /root/veilland-deploy.tar.gz
 rm /root/veilland-deploy.tar.gz
 
@@ -54,21 +54,21 @@ if command -v ufw >/dev/null 2>&1; then
 fi
 
 # 停止旧容器
-docker stop werewolf 2>/dev/null || true
-docker rm werewolf 2>/dev/null || true
+docker stop veilland 2>/dev/null || true
+docker rm veilland 2>/dev/null || true
 
 # 构建并启动
-docker build -t werewolf -f deploy/Dockerfile .
+docker build -t veilland -f deploy/Dockerfile .
 docker run -d \
   --name veilland \
   --restart=unless-stopped \
   -p 4000:4000 \
   -e PORT=4000 \
-  werewolf
+  veilland
 
 echo ""
 echo "✅ 部署完成！"
-docker ps --filter name=werewolf --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+docker ps --filter name=veilland --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 EOF
 
 # 5. 清理本地打包文件
@@ -76,10 +76,10 @@ rm veilland-deploy.tar.gz
 
 echo ""
 echo "════════════════════════════════════════════════"
-echo "  🎉 狼人杀已部署！"
+echo "  🎉 帷幕之地已部署！"
 echo "  游戏地址: http://$SERVER_IP:4000"
 echo "  把地址发给朋友，浏览器打开即可联机"
 echo "════════════════════════════════════════════════"
 echo ""
-echo "日志查看: ssh root@$SERVER_IP 'docker logs -f werewolf'"
-echo "重启服务: ssh root@$SERVER_IP 'docker restart werewolf'"
+echo "日志查看: ssh root@$SERVER_IP 'docker logs -f veilland'"
+echo "重启服务: ssh root@$SERVER_IP 'docker restart veilland'"

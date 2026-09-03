@@ -182,7 +182,7 @@ export class SimPlayer {
     this.socket.emit('vote:submit', { targetId });
   }
 
-  async hunterDayShoot(targetId) {
+  async flameTrackerDayShoot(targetId) {
     this.socket.emit('hunter:dayShoot', { targetId });
   }
 
@@ -347,14 +347,14 @@ export class StatsCollector {
 
 // ===== 游戏协议常量（与服务器保持一致） =====
 export const ROLES = {
-  CORRUPTED: 'WEREWOLF',
-  NETHER_MONK: 'ALPHA_WOLF',
-  VEIL_SCHOLAR: 'SEER',
-  HERBAL_SAGE: 'POISON_WITCH',
-  SPIRIT_MENDER: 'HEAL_WITCH',
-  VILLAGER: 'VILLAGER',
-  VEIL_GUARDIAN: 'GUARD',
-  FLAME_TRACKER: 'HUNTER',
+  CORRUPTED: 'CORRUPTED',
+  NETHER_MONK: 'NETHER_MONK',
+  VEIL_SCHOLAR: 'VEIL_SCHOLAR',
+  HERBAL_SAGE: 'HERBAL_SAGE',
+  SPIRIT_MENDER: 'SPIRIT_MENDER',
+  SPIRIT_WEAVER: 'SPIRIT_WEAVER',
+  VEIL_GUARDIAN: 'VEIL_GUARDIAN',
+  FLAME_TRACKER: 'FLAME_TRACKER',
 };
 
 export const PHASES = {

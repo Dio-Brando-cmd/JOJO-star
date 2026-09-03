@@ -285,6 +285,8 @@ export default function Lobby({ socket, playerName, bgm, onJoined, onChangeName 
 function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
   const { gameState } = socket;
   const playerCount = gameState.players?.length || 0;
+  // 本局总座位数（人类 + 人机）——角色池按此人数随机分配
+  const effectivePlayerCount = gameState.effectivePlayerCount ?? playerCount;
   const maxPlayers = gameState.maxPlayers || 12;
   const minPlayers = gameState.minPlayers || 2;
   // 房主检测：hostId 匹配 或 是首位玩家（兜底）
@@ -402,7 +404,7 @@ function LobbyRoom({ socket, playerName, bgm, onLeave, onShowSettings }) {
         {/* 房主角色选择 */}
         <RoleSelector
           isHost={isHost}
-          playerCount={playerCount}
+          playerCount={effectivePlayerCount}
           currentConfig={gameState.customRoleConfig}
           onUpdate={handleRoleConfigUpdate}
           disabled={false}

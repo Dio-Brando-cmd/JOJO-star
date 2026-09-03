@@ -38,7 +38,7 @@
 打开Blender，加载你生成的角色FBX（以芙蕾雅为例）：
 
 ```
-1. File → Import → FBX → 选择 C:/Users/Lenovo/Desktop/Werewolf_Models/Freyja.fbx
+1. File → Import → FBX → 选择 C:/Users/Lenovo/Desktop/Veilland_Models/Freyja.fbx
 2. 选中模型 → Tab进入Edit Mode → 确认网格是三角形还是四边形
    - 如果从generate_characters.py生成，应该是四边形(quads)的Skin Modifier产物
 3. 应用所有Modifier：Object Mode → 右侧Modifier面板 → Apply All
@@ -280,7 +280,7 @@
 | 草药学者 | 多口袋外套、灵植染色的手指 | 皮革粗糙、灵液瓶光滑 | 符纸上的金色符文Emissive |
 | 愈灵师 | 普通衣着、半透明掌心 | 皮肤正常、手心发亮 | 掌心微弱的金色Subsurface Scattering |
 | 帷幕守卫 | 灵质轻甲、旧伤裂纹臂 | 金属粗糙、皮肤正常 | 盾面微弱审判符文Emissive |
-| 灵痕追猎者 | 深色猎装、白色狼皮短斗篷 | 猎装粗糙、枪管光滑 | 猎枪管口微弱的灵焰Emissive |
+| 灵痕追猎者 | 深色猎装、白色蚀者皮短斗篷 | 猎装粗糙、枪管光滑 | 猎枪管口微弱的灵焰Emissive |
 | 灵织者 | 朴素日常衣、腰间灵质织机 | 布料粗糙、织机金属 | 织机上金/银/灰/黑四色微光 |
 
 ---

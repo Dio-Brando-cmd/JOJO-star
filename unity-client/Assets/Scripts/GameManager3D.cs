@@ -1,27 +1,24 @@
 // ============================================================
-// GameManager3D.cs — 3D游戏主控制器
-// 挂在Unity场景的GameManager GameObject上
-// 管理: 场景切换、角色生成、阶段逻辑、摄像机
+// GameManager3D.cs — 3D游戏主控制器 (v2 — 鲁棒测试模式)
 // ============================================================
 
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 
 public class GameManager3D : MonoBehaviour
 {
     public static GameManager3D Instance { get; private set; }
 
     [Header("Prefabs")]
-    public GameObject playerPrefab;          // 玩家占位模型
-    public GameObject localPlayerPrefab;      // 本地玩家模型（带摄像机）
-    public GameObject housePrefab;            // 房屋预制件
+    public GameObject playerPrefab;
+    public GameObject localPlayerPrefab;
+    public GameObject housePrefab;
 
     [Header("Scene References")]
-    public Transform villageCenter;           // 村庄中心点
-    public Transform[] housePositions;        // 12个房屋位置
-    public Light moonLight;                   // 月光
-    public Light sunLight;                    // 日光
+    public Transform villageCenter;
+    public Transform[] housePositions;
+    public Light moonLight;
+    public Light sunLight;
 
     [Header("Game State")]
     public string currentPhase = "LOBBY";
@@ -29,10 +26,18 @@ public class GameManager3D : MonoBehaviour
     public int currentRound;
     public float nightTimeLeft;
 
-    private GameState lastGameState;
+    [Header("Test Mode")]
+    public bool testMode = true;
+    public Transform testSpawnPoint;
+
+    // ==================== 内部状态 ====================
+
     private Dictionary<string, PlayerController3D> remotePlayers = new();
     private PlayerController3D localPlayer;
     private string myPlayerId;
+    private bool networkAvailable = false;
+
+    // ==================== Awake / Start ====================
 
     void Awake()
     {
@@ -42,180 +47,172 @@ public class GameManager3D : MonoBehaviour
 
     void Start()
     {
-        // 订阅网络事件
-        NetworkManager.Instance.OnGameStateReceived += HandleGameState;
-        NetworkManager.Instance.OnPrivateStateReceived += HandlePrivateState;
-        NetworkManager.Instance.OnPhaseChange += HandlePhaseChange;
-        NetworkManager.Instance.OnGameStarted += HandleGameStarted;
+        Debug.Log("══════════════════════════════════");
+        Debug.Log("  🎮 GameManager3D Starting...");
+        Debug.Log("══════════════════════════════════");
 
-        // 默认：大厅光照
-        SetLightingMode("LOBBY");
-    }
-
-    // ==================== 状态处理 ====================
-
-    void HandleGameState(GameState state)
-    {
-        lastGameState = state;
-        currentPhase = state.phase;
-        currentNightStep = state.nightStep;
-        currentRound = state.round;
-
-        switch (state.phase)
+        // 安全订阅网络事件
+        if (NetworkManager.Instance != null)
         {
-            case "LOBBY":
-                SetLightingMode("LOBBY");
-                break;
-            case "CHARACTER_SELECT":
-                // 选人界面由UI层处理
-                break;
-            case "NIGHT":
-                SetLightingMode("NIGHT");
-                HandleNightPhase(state);
-                break;
-            case "DAY":
-            case "DISCUSSION":
-            case "VOTE":
-                SetLightingMode("DAY");
-                HandleDayPhase(state);
-                break;
-            case "GAME_OVER":
-                SetLightingMode("DAY");
-                break;
-        }
-
-        // 同步远程玩家
-        SyncPlayers(state.players);
-    }
-
-    void HandlePrivateState(PrivateState pvt)
-    {
-        Debug.Log($"[Game3D] My role: {pvt.myRole}, team: {pvt.myTeam}");
-    }
-
-    void HandlePhaseChange(string phase, string nightStep)
-    {
-        Debug.Log($"[Game3D] Phase: {phase}, Step: {nightStep}");
-        currentPhase = phase;
-        currentNightStep = nightStep;
-
-        if (phase == "NIGHT" && localPlayer != null)
-        {
-            // 进入夜晚——显示当前步骤的UI提示
-            ShowNightStepUI(nightStep);
-        }
-    }
-
-    void HandleGameStarted(string _)
-    {
-        Debug.Log("[Game3D] Game started!");
-        // 生成所有玩家模型
-        SpawnAllPlayers();
-    }
-
-    // ==================== 玩家管理 ====================
-
-    void SpawnAllPlayers()
-    {
-        if (lastGameState == null) return;
-
-        for (int i = 0; i < lastGameState.players.Length; i++)
-        {
-            var p = lastGameState.players[i];
-            if (!p.alive) continue;
-
-            Vector3 spawnPos = GetHousePosition(i);
-            GameObject playerObj;
-
-            if (p.id == myPlayerId)
-            {
-                // 本地玩家 — 完整控制
-                playerObj = Instantiate(localPlayerPrefab, spawnPos, Quaternion.identity);
-                localPlayer = playerObj.GetComponent<PlayerController3D>();
-                localPlayer.isLocal = true;
-            }
-            else
-            {
-                // 远程玩家 — 网络同步
-                playerObj = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
-                var remoteCtrl = playerObj.GetComponent<PlayerController3D>();
-                remoteCtrl.isLocal = false;
-                remoteCtrl.playerId = p.id;
-                remotePlayers[p.id] = remoteCtrl;
-            }
-
-            // 设置玩家名字标签
-            var nameTag = playerObj.GetComponentInChildren<PlayerNameTag>();
-            if (nameTag != null) nameTag.SetName(p.name);
-        }
-    }
-
-    void SyncPlayers(PlayerState[] players)
-    {
-        foreach (var p in players)
-        {
-            if (p.id == myPlayerId) continue;
-            if (remotePlayers.TryGetValue(p.id, out var ctrl))
-            {
-                // 平滑插值到目标位置
-                Vector3 targetPos = new Vector3(p.posX, p.posY, p.posZ);
-                ctrl.SetTargetPosition(targetPos, p.rotY);
-                ctrl.gameObject.SetActive(p.alive);
-            }
-        }
-    }
-
-    // ==================== 夜晚/白天逻辑 ====================
-
-    void HandleNightPhase(GameState state)
-    {
-        nightTimeLeft = state.timeLeft;
-
-        // 如果是我该行动的步骤
-        if (CanIActNow(state))
-        {
-            // 允许本地玩家出门移动
-            if (localPlayer != null)
-            {
-                localPlayer.canMove = true;
-                localPlayer.currentAction = state.nightStep;
-            }
+            networkAvailable = true;
+            NetworkManager.Instance.OnGameStateReceived += HandleGameState;
+            NetworkManager.Instance.OnPrivateStateReceived += HandlePrivateState;
+            NetworkManager.Instance.OnPhaseChange += HandlePhaseChange;
+            NetworkManager.Instance.OnGameStarted += HandleGameStarted;
+            Debug.Log("[Game3D] ✅ Network events subscribed");
         }
         else
         {
-            // 不是我的步骤——锁定在家
-            if (localPlayer != null)
-            {
-                localPlayer.canMove = false;
-            }
+            Debug.LogWarning("[Game3D] ⚠️  NetworkManager not found — running in OFFLINE test mode");
         }
 
-        // 更新月光强度（随夜晚时间变化）
-        if (moonLight != null)
+        // 光照（安全调用）
+        SetLightingMode("LOBBY");
+
+        // 测试模式
+        if (testMode)
         {
-            moonLight.intensity = 0.5f + 0.3f * Mathf.Sin(state.round * 0.5f);
+            Debug.Log("[Game3D] 🧪 Test mode ON — spawning player in 0.5s...");
+            Invoke(nameof(SpawnTestPlayer), 0.5f);
+        }
+        else
+        {
+            Debug.Log("[Game3D] Test mode OFF — waiting for network game start");
         }
     }
 
-    void HandleDayPhase(GameState state)
+    // ==================== 测试玩家生成 ====================
+
+    void SpawnTestPlayer()
     {
-        // 白天所有人可以在村庄中自由走动（但不能进入别人家）
-        if (localPlayer != null)
+        Debug.Log("[Game3D] 🏗️  SpawnTestPlayer...");
+
+        Vector3 spawnPos = Vector3.zero;
+        if (testSpawnPoint != null)
+            spawnPos = testSpawnPoint.position;
+        else if (villageCenter != null)
+            spawnPos = villageCenter.position;
+        else
+            Debug.LogWarning("[Game3D] No spawn point set — spawning at origin");
+
+        GameObject playerObj = null;
+        bool usingFreyjaModel = false;
+
+        // —— 尝试加载芙蕾雅动画模型 ——
+        var freyjaPrefab = Resources.Load<GameObject>("Characters/Freyja_Animated");
+        if (freyjaPrefab != null)
         {
-            localPlayer.canMove = true;
-            localPlayer.movementRestricted = true; // 有限制区域
+            playerObj = Instantiate(freyjaPrefab, spawnPos, Quaternion.identity);
+            playerObj.name = "Freyja_Player";
+            usingFreyjaModel = true;
+            Debug.Log("[Game3D] 🌿 Loaded Freyja animated model!");
         }
-    }
+        else
+        {
+            Debug.LogWarning("[Game3D] ⚠️  Freyja model not found in Resources — using capsule fallback");
+            // —— 回退：胶囊体 ——
+            playerObj = new GameObject("TestPlayer_Freyja");
+            playerObj.transform.position = spawnPos;
 
-    bool CanIActNow(GameState state)
-    {
-        // 检查当前夜晚步骤是否包含我的角色
-        var myPlayer = System.Array.Find(state.players, p => p.id == myPlayerId);
-        if (myPlayer == null || !myPlayer.alive) return false;
+            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.transform.SetParent(playerObj.transform);
+            body.transform.localPosition = new Vector3(0, 1, 0);
+            body.transform.localScale = new Vector3(0.5f, 1, 0.5f);
+            body.name = "Body";
 
-        // 简化判断：通过nightStep确定
-        // 实际应该由服务端_validateNightAction来最终决定
-        return true; // 客户端先允许发送，服务端校验
+            var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+            if (urpLit == null) urpLit = Shader.Find("Standard");
+            var bodyRenderer = body.GetComponent<MeshRenderer>();
+            bodyRenderer.sharedMaterial = new Material(urpLit != null ? urpLit : Shader.Find("Standard"));
+            bodyRenderer.sharedMaterial.color = new Color(0.2f, 0.6f, 0.3f);
+
+            var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            head.transform.SetParent(playerObj.transform);
+            head.transform.localPosition = new Vector3(0, 2.2f, 0);
+            head.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
+            head.name = "Head";
+            var headRenderer = head.GetComponent<MeshRenderer>();
+            headRenderer.sharedMaterial = new Material(urpLit != null ? urpLit : Shader.Find("Standard"));
+            headRenderer.sharedMaterial.color = new Color(0.95f, 0.85f, 0.75f);
+        }
+
+        // —— CharacterController ——
+        var existingCC = playerObj.GetComponent<CharacterController>();
+        if (existingCC == null)
+        {
+            var cc = playerObj.AddComponent<CharacterController>();
+            cc.height = 2f;
+            cc.radius = 0.4f;
+            cc.center = new Vector3(0, 1, 0);
+            cc.slopeLimit = 45f;
+            cc.stepOffset = 0.3f;
+        }
+
+        // —— PlayerController3D ——
+        var existingCtrl = playerObj.GetComponent<PlayerController3D>();
+        var controller = existingCtrl != null ? existingCtrl : playerObj.AddComponent<PlayerController3D>();
+        controller.isLocal = true;
+        controller.canMove = true;
+        controller.characterId = "FREYJA";
+
+        // —— Animator ——
+        var animator = playerObj.GetComponent<Animator>();
+        if (animator == null)
+            animator = playerObj.AddComponent<Animator>();
+        controller.animator = animator;
+
+        // 加载 Animator Controller（如果有）
+        var freyjaController = Resources.Load<RuntimeAnimatorController>("Animations/Freyja");
+        if (freyjaController != null)
+        {
+            animator.runtimeAnimatorController = freyjaController;
+            Debug.Log("[Game3D] 🎬 Freyja Animator Controller loaded!");
+        }
+
+        // —— 摄像机 ——
+        var camInModel = playerObj.GetComponentInChildren<Camera>();
+        if (camInModel != null)
+        {
+            // 模型自带摄像机，用它
+            camInModel.tag = "MainCamera";
+        }
+        else
+        {
+            var camObj = new GameObject("PlayerCamera");
+            camObj.transform.SetParent(playerObj.transform);
+            camObj.transform.localPosition = new Vector3(0, 1.7f, 0);
+            var cam = camObj.AddComponent<Camera>();
+            cam.fieldOfView = 70f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 500f;
+        }
+
+        localPlayer = controller;
+        myPlayerId = "test_player_freyja";
+
+        // 禁用场景主摄像机
+        var mainCam = Camera.main;
+        if (mainCam != null && mainCam.gameObject != playerObj)
+        {
+            mainCam.gameObject.SetActive(false);
+            Debug.Log("[Game3D] Scene Main Camera disabled");
+        }
+
+        Debug.Log("══════════════════════════════════");
+        if (usingFreyjaModel)
+        {
+            Debug.Log("  🌿 Freyja 动画模型已生成！");
+            Debug.Log("  🎮 WASD=Move  🖱️ Mouse=Look");
+            Debug.Log("  🏃 Shift=Sprint  🥷 Ctrl=Crouch");
+            Debug.Log("  🎬 Animator 已连接（需运行 Setup Freyja Animations）");
+        }
+        else
+        {
+            Debug.Log("  ⚠️ 胶囊体回退模式");
+            Debug.Log("  🎮 WASD=Move  🖱️ Mouse=Look");
+            Debug.Log("  💡 首次导入需等 Unity 完成 FBX 导入");
+        }
+        Debug.Log("══════════════════════════════════");
     }
 
     // ==================== 光照 ====================
@@ -225,53 +222,62 @@ public class GameManager3D : MonoBehaviour
         switch (phase)
         {
             case "LOBBY":
-                sunLight.intensity = 1.5f;
-                moonLight.intensity = 0f;
+                if (sunLight != null) sunLight.intensity = 1.5f;
+                if (moonLight != null) moonLight.intensity = 0f;
                 RenderSettings.ambientIntensity = 1.2f;
                 break;
             case "NIGHT":
-                sunLight.intensity = 0f;
-                moonLight.intensity = 0.8f;
+                if (sunLight != null) sunLight.intensity = 0f;
+                if (moonLight != null) moonLight.intensity = 0.8f;
                 RenderSettings.ambientIntensity = 0.3f;
-                RenderSettings.fog = true;
-                RenderSettings.fogDensity = 0.02f;
                 break;
             case "DAY":
-                sunLight.intensity = 1.2f;
-                moonLight.intensity = 0f;
+                if (sunLight != null) sunLight.intensity = 1.2f;
+                if (moonLight != null) moonLight.intensity = 0f;
                 RenderSettings.ambientIntensity = 1.0f;
-                RenderSettings.fog = false;
                 break;
         }
     }
 
-    // ==================== UI Hooks ====================
+    // ==================== 网络事件处理 ====================
 
-    void ShowNightStepUI(string step)
+    void HandleGameState(GameState state)
     {
-        // 由UI层显示当前步骤的行动选项
-        // 例如：狼人步骤显示"刀人/嚎叫/伪装/出门"按钮
+        if (state == null) return;
+        currentPhase = state.phase;
+        currentNightStep = state.nightStep;
+        currentRound = state.round;
+
+        switch (state.phase)
+        {
+            case "LOBBY":    SetLightingMode("LOBBY"); break;
+            case "NIGHT":    SetLightingMode("NIGHT"); break;
+            case "DAY":
+            case "DISCUSSION":
+            case "VOTE":     SetLightingMode("DAY"); break;
+            case "GAME_OVER": SetLightingMode("DAY"); break;
+        }
     }
 
-    // ==================== 辅助 ====================
+    void HandlePrivateState(PrivateState pvt) { }
 
-    Vector3 GetHousePosition(int index)
+    void HandlePhaseChange(string phase, string nightStep) { }
+
+    void HandleGameStarted(string _)
     {
-        if (housePositions != null && index < housePositions.Length)
-            return housePositions[index].position;
-        // 默认环形分布
-        float angle = index * (360f / 12f) * Mathf.Deg2Rad;
-        float radius = 30f;
-        return villageCenter.position + new Vector3(
-            Mathf.Cos(angle) * radius, 0, Mathf.Sin(angle) * radius);
+        Debug.Log("[Game3D] Network game started!");
     }
+
+    // ==================== 清理 ====================
 
     void OnDestroy()
     {
-        if (NetworkManager.Instance != null)
+        if (networkAvailable && NetworkManager.Instance != null)
         {
             NetworkManager.Instance.OnGameStateReceived -= HandleGameState;
             NetworkManager.Instance.OnPrivateStateReceived -= HandlePrivateState;
+            NetworkManager.Instance.OnPhaseChange -= HandlePhaseChange;
+            NetworkManager.Instance.OnGameStarted -= HandleGameStarted;
         }
     }
 }

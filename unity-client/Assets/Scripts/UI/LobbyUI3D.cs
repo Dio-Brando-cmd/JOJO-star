@@ -74,17 +74,26 @@ public class LobbyUI3D : MonoBehaviour
 
     void Awake()
     {
+        // Auto-create any missing panel references to avoid UnassignedReferenceException
+        if (characterSelectPanel == null)
+            characterSelectPanel = CreateHiddenPanel("CharacterSelectPanel", transform);
+        if (notificationPopup == null)
+            notificationPopup = CreateHiddenPanel("NotificationPopup", transform);
+
         if (Instance == null) Instance = this;
         else { Destroy(gameObject); return; }
     }
 
     void Start()
     {
-        // 订阅网络事件
-        NetworkManager.Instance.OnGameStateReceived += HandleGameState;
-        NetworkManager.Instance.OnCharacterSelect += HandleCharacterSelect;
-        NetworkManager.Instance.OnGameStarted += HandleGameStarted;
-        NetworkManager.Instance.OnGameOver += HandleGameOver;
+        // 安全订阅网络事件
+        if (NetworkManager.Instance != null)
+        {
+            NetworkManager.Instance.OnGameStateReceived += HandleGameState;
+            NetworkManager.Instance.OnCharacterSelect += HandleCharacterSelect;
+            NetworkManager.Instance.OnGameStarted += HandleGameStarted;
+            NetworkManager.Instance.OnGameOver += HandleGameOver;
+        }
 
         // 绑定按钮
         connectButton?.onClick.AddListener(OnConnectClicked);
@@ -142,16 +151,19 @@ public class LobbyUI3D : MonoBehaviour
         myPlayerName = playerNameInput?.text?.Trim() ?? "Player";
         if (string.IsNullOrEmpty(myPlayerName)) myPlayerName = "Player_" + Random.Range(1000, 9999);
 
-        NetworkManager.Instance.playerName = myPlayerName;
-        NetworkManager.Instance.QuickLogin(myPlayerName);
+        if (NetworkManager.Instance != null)
+        {
+            NetworkManager.Instance.playerName = myPlayerName;
+            NetworkManager.Instance.QuickLogin(myPlayerName);
+        }
         ShowNotification($"已连接，欢迎 {myPlayerName}");
 
-        // 连接后显示房间面板
         Invoke(nameof(ShowRoomPanel), 1f);
     }
 
     void OnCreateRoomClicked()
     {
+        if (NetworkManager.Instance == null) return;
         string roomName = createRoomNameInput?.text?.Trim();
         int maxPlayers = 12;
         if (maxPlayersInput != null && int.TryParse(maxPlayersInput.text, out int mp))
@@ -169,6 +181,7 @@ public class LobbyUI3D : MonoBehaviour
 
     void OnJoinRoomClicked()
     {
+        if (NetworkManager.Instance == null) return;
         string code = roomCodeInput?.text?.Trim();
         if (string.IsNullOrEmpty(code))
         {
@@ -194,7 +207,7 @@ public class LobbyUI3D : MonoBehaviour
 
     void OnQuickMatchClicked()
     {
-        // 快速匹配：先创建房间，如果没有合适的就自动创建
+        if (NetworkManager.Instance == null) return;
         NetworkManager.Instance.CreateRoom(12, (roomCode) =>
         {
             currentRoomCode = roomCode;
@@ -218,7 +231,8 @@ public class LobbyUI3D : MonoBehaviour
             ShowNotification("只有房主可以开始游戏");
             return;
         }
-        NetworkManager.Instance.StartGame();
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.StartGame();
     }
 
     void OnLeaveRoomClicked()
@@ -233,7 +247,10 @@ public class LobbyUI3D : MonoBehaviour
         string msg = chatInput?.text?.Trim();
         if (string.IsNullOrEmpty(msg)) return;
 
-        NetworkManager.Instance.SendChat(msg);
+        if (NetworkManager.Instance != null)
+        {
+            NetworkManager.Instance.SendChat(msg);
+        }
         if (chatInput != null) chatInput.text = "";
     }
 
@@ -253,7 +270,8 @@ public class LobbyUI3D : MonoBehaviour
         if (selectedCharacterIndex >= cachedCharacterData.availableCharacters.Length) return;
 
         string charId = cachedCharacterData.availableCharacters[selectedCharacterIndex];
-        NetworkManager.Instance.SelectCharacter(charId);
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.SelectCharacter(charId);
         ShowNotification($"已选择: {charId}");
         confirmCharacterButton.interactable = false;
     }
@@ -420,6 +438,17 @@ public class LobbyUI3D : MonoBehaviour
     public bool IsInLobby()
     {
         return mainPanel?.activeSelf == true || roomPanel?.activeSelf == true || waitingPanel?.activeSelf == true;
+    }
+
+    GameObject CreateHiddenPanel(string name, Transform parent)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent);
+        var rect = go.AddComponent<RectTransform>();
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = Vector2.zero;
+        go.SetActive(false);
+        return go;
     }
 
     void OnDestroy()

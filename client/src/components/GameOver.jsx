@@ -16,13 +16,20 @@ export default function GameOver({ gameState, privateState, playerName, onBackTo
     <div className="screen gameover-screen">
       <div className="gameover-card">
         <div className={`gameover-banner ${won ? 'won' : 'lost'}`}>
-          <span className="gameover-icon">{won ? '🎉' : '💀'}</span>
-          <h2>{won ? '你赢了！' : '你输了'}</h2>
+          <span className="gameover-icon">{won ? '🌑' : '💀'}</span>
+          <h2>{won ? '你赢了。' : '你输了。'}</h2>
           <p className="gameover-reason">{result?.reason}</p>
           <p className="winner-team">
             🏆 {TEAM_NAMES[result?.winner]} 获胜
           </p>
         </div>
+
+        {result?.ending && (
+          <div className="gameover-ending">
+            <h3>{result.ending.title} · {result.ending.subtitle}</h3>
+            <p>{result.ending.text}</p>
+          </div>
+        )}
 
         {/* 所有玩家角色展示 */}
         <div className="role-reveal">
@@ -51,6 +58,12 @@ export default function GameOver({ gameState, privateState, playerName, onBackTo
               );
             })}
           </div>
+        </div>
+
+        <div className="gameover-omen">
+          {won
+            ? '你赢了。只是，你赢得的那一刻，已经和当初想赢的那个你，不是同一个人了。'
+            : '你输了。可帷幕之外，那东西连你的输，也一起吞了下去。'}
         </div>
 
         <button className="btn btn-primary btn-large" onClick={onBackToLobby}>

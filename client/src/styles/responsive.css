@@ -1,10 +1,11 @@
 /* === 响应式 — 移动端 / 平板 === */
 
-/* ---- 响应式 ---- */
+/* ---- 平板 (≤900px) ---- */
 @media (max-width: 900px) {
   .game-body {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
+    height: calc(100dvh - 56px);
   }
   .game-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
   .game-rightbar { border-left: none; border-top: 1px solid var(--border); }
@@ -13,4 +14,272 @@
   .role-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
   .role-cards-grid { grid-template-columns: 1fr; }
   .role-intro-modal { max-width: 100%; margin: 10px; }
+}
+
+/* ---- 手机横屏/小平板 (≤768px) ---- */
+@media (max-width: 768px) {
+  /* 游戏头部 */
+  .game-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .header-left, .header-center, .header-right {
+    gap: 6px;
+  }
+  .header-center {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+  .room-badge, .round-badge, .player-badge {
+    font-size: 0.75em;
+    padding: 3px 6px;
+  }
+  .status-badge { font-size: 0.75em; }
+
+  /* 游戏主体 */
+  .game-body {
+    height: calc(100dvh - 80px);
+  }
+  .game-sidebar {
+    max-height: 25vh;
+    overflow-y: auto;
+  }
+  .game-main {
+    padding: 12px;
+  }
+  .game-rightbar {
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+
+  /* 玩家列表紧凑 */
+  .player-item {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .player-avatar { font-size: 1.1em; width: 26px; }
+
+  /* 夜晚面板 */
+  .night-panel {
+    max-width: 100%;
+  }
+  .action-selector {
+    gap: 10px;
+  }
+  .action-card {
+    width: 100%;
+    max-width: 280px;
+    padding: 14px 12px;
+  }
+  .target-btn {
+    padding: 8px 12px;
+    font-size: 0.85em;
+  }
+  .player-targets {
+    gap: 6px;
+  }
+
+  /* 投票面板 */
+  .vote-btn {
+    padding: 10px 14px;
+    font-size: 0.85em;
+  }
+
+  /* 讨论阶段 */
+  .discussion-panel {
+    padding: 12px;
+  }
+  .discussion-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .discussion-btn {
+    width: 100%;
+  }
+
+  /* 聊天框 */
+  .chat-box {
+    max-height: 200px;
+  }
+
+  /* 角色选择 */
+  .char-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  .char-select-container {
+    width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .char-select-header {
+    padding: 14px 16px 10px;
+  }
+  .char-select-header h2 {
+    font-size: 1.2rem;
+  }
+  .char-select-body {
+    padding: 12px 14px;
+  }
+  .char-select-footer {
+    padding: 12px 14px;
+  }
+  .btn-confirm {
+    min-width: unset;
+    width: 100%;
+  }
+
+  /* 设置面板 */
+  .settings-modal {
+    max-width: 100%;
+    margin: 10px;
+  }
+}
+
+/* ---- 手机竖屏 (≤480px) ---- */
+@media (max-width: 480px) {
+  /* 游戏头部更紧凑 */
+  .game-header {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+  .header-left, .header-right {
+    gap: 4px;
+  }
+  .room-badge, .round-badge, .player-badge {
+    font-size: 0.7em;
+    padding: 2px 4px;
+  }
+  .btn-small {
+    padding: 4px 8px;
+    font-size: 0.75em;
+  }
+  .phase-name {
+    font-size: 0.9em;
+  }
+
+  /* 游戏主体 */
+  .game-body {
+    height: calc(100dvh - 70px);
+  }
+  .game-sidebar {
+    max-height: 20vh;
+  }
+  .game-rightbar {
+    max-height: 25vh;
+  }
+  .game-main {
+    padding: 8px;
+  }
+
+  /* 夜晚面板 */
+  .night-header h3 {
+    font-size: 1.1em;
+  }
+  .action-card {
+    width: 100%;
+    max-width: unset;
+    padding: 12px 10px;
+    flex-direction: row;
+    gap: 10px;
+  }
+  .action-icon {
+    font-size: 1.5em;
+  }
+  .action-name {
+    font-size: 0.9em;
+  }
+  .action-desc {
+    font-size: 0.72em;
+  }
+
+  /* 投票 */
+  .vote-targets {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .vote-btn {
+    width: 100%;
+    padding: 12px;
+  }
+
+  /* 角色选择 */
+  .char-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .char-card {
+    min-height: 80px;
+    padding: 10px 8px;
+  }
+  .char-name {
+    font-size: 0.8rem;
+  }
+  .char-title {
+    font-size: 0.65rem;
+  }
+  .char-select-header h2 {
+    font-size: 1.1rem;
+  }
+
+  /* 死亡公告 */
+  .death-announcement, .peace-announcement {
+    padding: 12px;
+  }
+
+  /* 遗言栏 */
+  .last-words-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+  }
+  .last-words-input {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  /* 弹窗 */
+  .modal-overlay {
+    padding: 0;
+  }
+  .modal-content {
+    border-radius: 0;
+    max-height: 100dvh;
+  }
+
+  /* 登录卡片 */
+  .login-card, .lobby-card {
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+  .game-logo h1 {
+    font-size: 1.6em;
+  }
+
+  /* 角色卡细节面板 */
+  .char-detail-panel {
+    max-height: 50vh;
+    padding: 12px;
+  }
+  .trait-full {
+    min-width: unset;
+    flex-direction: column;
+  }
+}
+
+/* ---- 安全区域适配（刘海屏） ---- */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .game-screen {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .game-body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .last-words-bar {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+  .chat-input-row {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
 }

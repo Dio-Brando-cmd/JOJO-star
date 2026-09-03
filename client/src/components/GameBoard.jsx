@@ -314,7 +314,7 @@ function PhaseIndicator({ phase, nightStep }) {
     VEIL_SCHOLAR: '学者察灵',
     HERBAL_SAGE: '草药炼剂',
     SPIRIT_MENDER: '愈灵修复',
-    VILLAGER: '灵织守夜',
+    SPIRIT_WEAVER: '灵织守夜',
     RESOLUTION: '结算中',
   };
 
@@ -351,11 +351,11 @@ function formatLogEntry(entry, players) {
   switch (entry.type) {
     case 'death':
       return <span>💀 <strong>{getName(entry.player)}</strong> 死亡（{entry.reason}）</span>;
-    case 'wolf_kill':
+    case 'corrupted_kill':
       return <span>🌑 蚀者噬灵了某个目标</span>;
     case 'mass_seal':
       return <span>☠️ 某间屋子被蚀灭符阵覆盖</span>;
-    case 'hunter_shoot':
+    case 'flame_tracker_shoot':
       return <span>🎯 追猎者扣动了灵焰猎枪</span>;
     case 'talisman_save':
       return <span>💚 有人被愈灵符救回</span>;
@@ -363,7 +363,7 @@ function formatLogEntry(entry, players) {
       return <span>💚 灵焰修复救回了一人</span>;
     case 'seal_transferred':
       return <span>🧪 蚀痕净化转移到了别人身上</span>;
-    case 'hunter_defend':
+    case 'flame_tracker_defend':
       return <span>💥 追猎者的噬灭短铳击杀了攻击者</span>;
     case 'became_corrupted':
       return <span>🌑 有人蚀变为蚀者</span>;

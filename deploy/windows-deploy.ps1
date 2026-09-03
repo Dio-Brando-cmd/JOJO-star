@@ -36,7 +36,7 @@ New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 # 创建 package.json
 @'
 {
-  "name": "werewolf-server",
+  "name": "veilland-server",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {

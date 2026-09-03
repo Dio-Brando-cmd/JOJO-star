@@ -52,8 +52,8 @@ photorealistic, even studio lighting, clean edges
 tall muscular male Viking warrior character, 1.91 meters height,
 broad muscular shoulders, powerful athletic build, weathered scarred face,
 thick braided dark blonde beard reaching chest, long dark blonde hair with Norse braids,
-wearing detailed chainmail armor with layered leather pauldrons, wolf-fur lined dark wool cape,
-iron-studded leather bracers on both forearms, thick brown leather belt with iron wolf-head buckle,
+wearing detailed chainmail armor with layered leather pauldrons, corrupted-fur lined dark wool cape,
+iron-studded leather bracers on both forearms, thick brown leather belt with iron corrupted-head buckle,
 holding a Viking pattern-welded longsword in right hand, round wooden shield with iron rim on left arm,
 leather boots with fur trim, stern battle-hardened expression, prominent brow ridge,
 detailed realistic face with wrinkles around eyes, strong jaw, broken nose,
@@ -135,7 +135,7 @@ even studio lighting, clean silhouette, high detail, 8K
 
 ---
 
-### 6. 罗慕路斯 Romulus — 狼养之子 | 1.82m
+### 6. 罗慕路斯 Romulus — 蚀者养之子 | 1.82m
 
 ```
 compact muscular Roman legion commander male character, 1.82 meters height,
@@ -144,7 +144,7 @@ tanned weathered Mediterranean skin, short dark brown cropped military haircut,
 strong square jaw, intense dark eyes, thin scar across left cheek,
 wearing polished Roman lorica segmentata segmented plate iron armor with brass fittings,
 deep crimson red wool military tunic visible below armor at shoulders and hem,
-heavy crimson red wool general's paludamentum cape clasped at right shoulder with bronze she-wolf head fibula brooch,
+heavy crimson red wool general's paludamentum cape clasped at right shoulder with bronze she-corrupted head fibula brooch,
 leather military sandal caligae with bronze greaves, leather baldric belt with bronze plates,
 holding a Roman gladius hispaniensis short sword with eagle-head pommel in right hand,
 stoic commanding military bearing, disciplined posture,
@@ -154,15 +154,15 @@ even studio lighting, clean silhouette, high detail, 8K
 
 ---
 
-### 7. 哈尔瓦德 Fenrir Kin — 魔狼血裔 | 1.95m
+### 7. 哈尔瓦德 VORACIOUS Kin — 饥噬血裔 | 1.95m
 
 ```
 massive heavily-built Norse berserker warrior male character, 1.95 meters height,
 bear-like enormous build, barrel chest, tree-trunk thick arms and legs,
-weathered scarred tan skin covered with intricate black ritual wolf-fang Norse tattoos on both arms and chest,
+weathered scarred tan skin covered with intricate black ritual corrupted-fang Norse tattoos on both arms and chest,
 long wild dark brown hair with multiple small braids and bone beads, thick bushy unkempt beard,
 small scars on face, broken nose, one eyebrow split by old wound,
-wearing rough patchwork leather and fur armor, a massive grey wolf pelt draped over shoulders with wolf head as hood,
+wearing rough patchwork leather and fur armor, a massive grey corrupted pelt draped over shoulders with corrupted head as hood,
 iron-studded thick leather bracers, heavy fur-lined knee-high boots,
 holding an enormous double-bladed Dane battle axe with dark iron blades,
 the axe handle carved with protective Norse runes and wrapped in leather strips,
@@ -181,7 +181,7 @@ lean muscular athletic build, long limbs, broad shoulders for a woman,
 fair skin with wind-chapped pink cheeks and nose, sharp ice-blue hunter eyes,
 long silvery-white platinum hair in practical tight warrior braids with leather cords,
 wearing form-fitting fur-lined white and grey leather hunting armor,
-white wolf-fur trimmed collar and hood, multiple leather belts across torso with pouches,
+white corrupted-fur trimmed collar and hood, multiple leather belts across torso with pouches,
 tight leather hunting trousers, tall fur-lined snow boots with crampons,
 carrying an unstrung recurve hunting bow of dark yew wood in left hand,
 a large leather quiver full of white-fletched arrows visible over right shoulder,
@@ -242,7 +242,7 @@ even studio lighting, clean silhouette, high detail, 8K
 - [ ] 等 ~90 秒出 4 个结果
 - [ ] 选最好的 → **Download FBX**
 - [ ] 如果 4 个都不满意 → 点 **Retry**（不重复扣积分？检查一下，Meshy 可能每次都扣）
-- [ ] 每个角色导出后存到 `werewolf_models/` 目录
+- [ ] 每个角色导出后存到 `veilland_models/` 目录
 
 ---
 

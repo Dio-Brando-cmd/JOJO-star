@@ -4,7 +4,7 @@
 // ============================================================
 
 import React from 'react';
-import { ROLES, ROLE_NAMES, ROLE_ICONS, TEAM_NAMES, VILLAGER_TYPE_NAMES } from '../utils/constants';
+import { ROLES, ROLE_NAMES, ROLE_ICONS, TEAM_NAMES, SPIRIT_WEAVER_TYPE_NAMES } from '../utils/constants';
 import RoleIllustration from './RoleIllustration';
 
 export default function RoleCard({ privateState }) {
@@ -27,12 +27,12 @@ export default function RoleCard({ privateState }) {
           <span className={`team-badge ${team}`}>{TEAM_NAMES[team]}</span>
           {/* 灵织者子类型显示 */}
           {pvt?.weaverType && (
-            <span className="villager-type-badge">
-              {VILLAGER_TYPE_NAMES[pvt.weaverType] || pvt.weaverType}
+            <span className="weaver-type-badge">
+              {SPIRIT_WEAVER_TYPE_NAMES[pvt.weaverType] || pvt.weaverType}
             </span>
           )}
           {pvt?.weaverName && (
-            <span className="villager-name-badge">「{pvt.weaverName}」</span>
+            <span className="weaver-name-badge">「{pvt.weaverName}」</span>
           )}
         </div>
       </div>
@@ -56,9 +56,9 @@ export default function RoleCard({ privateState }) {
 
       {/* 角色详细信息 */}
       <div className="role-card-details">
-        {pvt?.isTransformed && <span className="detail-tag wolf">🌑 已蚀变</span>}
-        {pvt?.hasUsedInfect && <span className="detail-tag wolf">🦠 已堕化</span>}
-        {pvt?.fakeIdentity && <span className="detail-tag wolf">🎭 伪装: {pvt.fakeIdentity}</span>}
+        {pvt?.isTransformed && <span className="detail-tag corrupted">🌑 已蚀变</span>}
+        {pvt?.hasUsedCorrupt && <span className="detail-tag corrupted">🦠 已堕化</span>}
+        {pvt?.fakeIdentity && <span className="detail-tag corrupted">🎭 伪装: {pvt.fakeIdentity}</span>}
 
         {(role === ROLES.HERBAL_SAGE || role === ROLES.SPIRIT_MENDER) && pvt?.hasHealTalisman !== undefined && (
           <span className="detail-tag heal">💊 解药: {pvt.hasHealTalisman ? '有' : '已用'}</span>
@@ -73,11 +73,11 @@ export default function RoleCard({ privateState }) {
           <span className="detail-tag heal">🌿 药草可收获</span>
         )}
 
-        {pvt?.hasRifle && pvt?.rifleUsable && <span className="detail-tag hunter">🔫 灵焰猎枪可用</span>}
-        {pvt?.hasBlunderbuss && pvt?.blunderbussUsable && <span className="detail-tag hunter">💥 噬灭短铳可用</span>}
+        {pvt?.hasRifle && pvt?.rifleUsable && <span className="detail-tag flame-tracker">🔫 灵焰猎枪可用</span>}
+        {pvt?.hasBlunderbuss && pvt?.blunderbussUsable && <span className="detail-tag flame-tracker">💥 噬灭短铳可用</span>}
 
-        {pvt?.willBecomeWolf && <span className="detail-tag warning">⚠️ 即将蚀变</span>}
-        {pvt?.canShootNextNight && <span className="detail-tag hunter">🎯 明晚可追踪</span>}
+        {pvt?.willBecomeCorrupted && <span className="detail-tag warning">⚠️ 即将蚀变</span>}
+        {pvt?.canShootNextNight && <span className="detail-tag flame-tracker">🎯 明晚可追踪</span>}
         {pvt?.heavyInjury && <span className="detail-tag danger">💔 重伤</span>}
 
         {/* 灵织者特有状态 */}
@@ -88,12 +88,12 @@ export default function RoleCard({ privateState }) {
         )}
 
         {/* 蚀者特有状态 */}
-        {pvt?.howlCooldown > 0 && <span className="detail-tag wolf">📢 裂隙共鸣冷却: {pvt.howlCooldown}回合</span>}
+        {pvt?.resonanceCooldown > 0 && <span className="detail-tag corrupted">📢 裂隙共鸣冷却: {pvt.resonanceCooldown}回合</span>}
         {pvt?.corrosionMistActive && <span className="detail-tag poison">🌫️ 蚀雾就绪</span>}
 
         {/* 察灵家特有状态 */}
-        {pvt?.dreamFragment && <span className="detail-tag seer">🌙 梦境线索已获取</span>}
-        {pvt?.publicProphecyUsed && <span className="detail-tag seer">📢 公开察灵已用</span>}
+        {pvt?.dreamFragment && <span className="detail-tag veil-scholar">🌙 梦境线索已获取</span>}
+        {pvt?.publicProphecyUsed && <span className="detail-tag veil-scholar">📢 公开察灵已用</span>}
         {pvt?.diagnoseResult && <span className="detail-tag info">🔍 诊断完成</span>}
 
         {/* 特质冷却 */}
@@ -109,10 +109,10 @@ export default function RoleCard({ privateState }) {
       </div>
 
       {/* 已知同伴 */}
-      {pvt?.knownWolves?.length > 0 && (
+      {pvt?.knownCorrupted?.length > 0 && (
         <div className="role-card-allies">
           <h5>🌑 已知蚀者同伴:</h5>
-          {pvt.knownWolves.map(wid => (
+          {pvt.knownCorrupted.map(wid => (
             <span key={wid} className="ally-tag">{wid}</span>
           ))}
         </div>
@@ -155,46 +155,46 @@ export default function RoleCard({ privateState }) {
 function formatPrivateLog(entry) {
   switch (entry.type) {
     // 察灵家相关
-    case 'seer_check':
-      return `🔮 察灵结果: ${entry.result === 'GOOD' ? '守幕者 ✅' : entry.result === 'WOLF' ? '蚀者 🌑' : entry.result}`;
-    case 'seer_check_fake':
+    case 'veil_scholar_check':
+      return `🔮 察灵结果: ${entry.result === 'GOOD' ? '守幕者 ✅' : entry.result === 'CORRUPTED' ? '蚀者 🌑' : entry.result}`;
+    case 'veil_scholar_check_fake':
       return `🔮 察灵结果: ${entry.fakeRole || '?'}（可疑——可能是假身份）`;
-    case 'seer_dream':
+    case 'veil_scholar_dream':
       return `🌙 梦境碎片: ${entry.fragment || '模糊的幻象...'}`;
-    case 'seer_spirit_vision':
+    case 'veil_scholar_spirit_vision':
       return `👻 灵视: 死者身份 — ${entry.role || '?'}`;
 
     // 蚀者相关
-    case 'wolf_meet':
+    case 'corrupted_meet':
       return '🌑 你感知到另一名蚀者！';
-    case 'wolves_united':
+    case 'corrupted_united':
       return '🌑 蚀者们已共鸣，下蚀月可协同行动';
-    case 'wolf_mutual_kill':
+    case 'corrupted_mutual_kill':
       return '⚔️ 两名蚀者互噬，已相认';
-    case 'wolf_howl':
-      return '📢 你发出了嚎叫——同伴们听到了召唤';
-    case 'wolf_howl_heard':
-      return '📢 你听到了同伴的嚎叫——有人在召唤你';
-    case 'wolf_disguise':
-      return '🎭 你伪装成好人，混入人群中';
-    case 'wolf_scent_track':
+    case 'rift_resonance':
+      return '📢 你发出了共鸣——同伴们听到了召唤';
+    case 'rift_resonance_heard':
+      return '📢 你听到了同伴的共鸣——有人在召唤你';
+    case 'corrupted_disguise':
+      return '🎭 你伪装成守幕者，混入人群中';
+    case 'corrupted_scent_track':
       return `👃 嗅觉追踪: 目标去了 🏠${entry.house || '?'}`;
 
     // 守卫相关
-    case 'guard_heavy_injury':
+    case 'veil_guardian_heavy_injury':
       return '💔 守卫进入了重伤状态';
-    case 'guard_heavy_injury_alone':
+    case 'veil_guardian_heavy_injury_alone':
       return '💔 守卫独自在家被蚀者噬灵，重伤';
-    case 'guard_heavy_injury_3plus':
+    case 'veil_guardian_heavy_injury_3plus':
       return '💔 守卫在多人屋内被袭，重伤';
-    case 'guard_fortify':
+    case 'veil_guardian_fortify':
       return `🏰 筑垒完成: ${entry.target || '?'} 的屋子已加固`;
-    case 'guard_patrol':
-      return `👀 巡逻: ${entry.count > 0 ? `发现${entry.count}间屋子有狼人` : '未发现异常'}`;
-    case 'guard_sacrifice':
+    case 'veil_guardian_patrol':
+      return `👀 巡逻: ${entry.count > 0 ? `发现${entry.count}间屋子有蚀者` : '未发现异常'}`;
+    case 'veil_guardian_sacrifice':
       return `💀 舍身誓言: 若 ${entry.target || '?'} 死亡，你将替其而死`;
 
-    // 女巫相关
+    // 草药学者相关
     case 'corrosion_mist_set':
       return `🌫️ 蚀雾已布设在 ${entry.target || '?'} 的屋子——明晚触发`;
     case 'heal_injury':
@@ -206,49 +206,49 @@ function formatPrivateLog(entry) {
     case 'diagnose':
       return `🔍 诊断: ${entry.msg || '结果已记录'}`;
 
-    // 猎人相关
-    case 'hunter_observe':
+    // 灵痕追猎者相关
+    case 'flame_tracker_observe':
       return `🔍 观察到目标${entry.wentOut ? '出门了' : '没有出门'}`;
-    case 'hunter_shoot':
+    case 'flame_tracker_shoot':
       return `🔫 猎枪射击: ${entry.target || '?'}`;
-    case 'hunter_trap':
+    case 'flame_tracker_trap':
       return `🪤 陷阱设在 ${entry.target || '?'} 的屋子`;
-    case 'hunter_revenge_mark':
+    case 'flame_tracker_revenge_mark':
       return `💢 复仇标记: ${entry.target || '?'}`;
     case 'blunderbuss_corroded':
       return '💥 短火铳已腐蚀';
     case 'rifle_corroded':
       return '🔫 猎枪带出门，已腐蚀';
 
-    // 种狼相关
-    case 'alpha_transform':
+    // 冥僧人相关
+    case 'nether_monk_transform':
       return '🌑 冥僧人完成了蚀变';
-    case 'alpha_fake_identity':
+    case 'nether_monk_fake_identity':
       return `🎭 假身份编织: ${entry.fakeRole || '?'}`;
-    case 'alpha_infected_visible':
-      return '⚠️ 种狼使用了感染——现在可被察灵家查出';
+    case 'nether_monk_corrupted_visible':
+      return '⚠️ 冥僧人使用了堕化——现在可被察灵家查出';
 
-    // 感染相关
-    case 'infected':
+    // 堕化相关
+    case 'corrupted':
       return '🦠 你被冥僧人堕化，下个夜晚将蚀变为蚀者';
-    case 'seer_infected':
+    case 'veil_scholar_corrupted':
       return '🔮 冥僧人试图堕化你，但你保留了察灵能力';
-    case 'alpha_to_villager':
+    case 'nether_monk_to_keeper':
       return '👨‍🌾 冥僧人堕化了帷幕学者，自己转化为灵织者';
     case 'became_corrupted':
       return '🌑 你已蚀变为蚀者！';
 
-    // 村民相关
+    // 灵织者相关
     case 'eavesdrop':
       return `👂 ${entry.result || entry.msg || '帷幕低语结果不明'}`;
     case 'eavesdrop_accurate':
       return `🧵 精确帷幕低语: ${entry.result || '...'}`;
     case 'house_visit':
       return `🏠 ${entry.desc || '去了目标家'}`;
-    case 'old_hunter_trap':
-      return '🪤 老猎人的陷阱已布设——等待猎物';
-    case 'old_hunter_detected':
-      return `🎯 老猎人发现了进入庇护所的蚀者！`;
+    case 'old_flame_tracker_trap':
+      return '🪤 老兵的陷阱已布设——等待猎物';
+    case 'old_veteran_detected':
+      return `🎯 老兵发现了进入庇护所的蚀者！`;
     case 'merchant_double_visit':
       return `📦 商人访问了两个屋子: ${entry.firstTarget || '?'} 和 ${entry.secondTarget || '?'}`;
     case 'trade_info':

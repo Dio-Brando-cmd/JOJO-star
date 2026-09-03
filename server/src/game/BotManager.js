@@ -3,7 +3,7 @@
 // 覆盖所有升级后的角色能力
 // ============================================================
 
-import { ROLES, NIGHT_ACTIONS, NIGHT_STEPS, SPIRIT_WEAVER_TYPES, ALPHA_ACTIONS } from './constants.js';
+import { ROLES, NIGHT_ACTIONS, NIGHT_STEPS, SPIRIT_WEAVER_TYPES, NETHER_MONK_ACTIONS } from './constants.js';
 
 export class BotManager {
   constructor(game) {
@@ -11,8 +11,8 @@ export class BotManager {
     this._timers = new Map();
     this.memory = {
       checkedPlayers: new Map(),
-      knownWolves: new Set(),
-      knownGods: new Set(),
+      knownCorrupted: new Set(),
+      knownKeepers: new Set(),
       attackHistory: [],
       voteHistory: [],
       deathHistory: [],
@@ -41,30 +41,30 @@ export class BotManager {
     for (const bot of this.getAliveBots()) {
       const logs = this.game.privateLogs[bot.id] || [];
       for (const entry of logs) {
-        if (entry.type === 'seer_check' && entry.target && entry.result) {
+        if (entry.type === 'veil_scholar_check' && entry.target && entry.result) {
           this.memory.checkedPlayers.set(entry.target, entry.result);
-          if (entry.result === 'WOLF') {
-            this.memory.knownWolves.add(entry.target);
+          if (entry.result === 'CORRUPTED') {
+            this.memory.knownCorrupted.add(entry.target);
             this.memory.suspicion.set(entry.target, (this.memory.suspicion.get(entry.target) || 0) + 50);
           }
         }
-        if (entry.type === 'wolf_meet' || entry.type === 'wolves_united') {
-          if (entry.wolves) entry.wolves.forEach(w => this.memory.knownWolves.add(w));
+        if (entry.type === 'corrupted_meet' || entry.type === 'corrupted_united') {
+          if (entry.corrupted) entry.corrupted.forEach(w => this.memory.knownCorrupted.add(w));
         }
-        if (entry.type === 'wolf_howl_heard') {
-          this.memory.resonanceHeard.push(entry.howler);
+        if (entry.type === 'rift_resonance_heard') {
+          this.memory.resonanceHeard.push(entry.resonator);
         }
-        if (entry.type === 'hunter_trap' || entry.type === 'old_hunter_trap') {
+        if (entry.type === 'flame_tracker_trap' || entry.type === 'old_flame_tracker_trap') {
           this.memory.trapLocations.add(entry.target);
         }
-        if (entry.type === 'guard_fortify') {
+        if (entry.type === 'veil_guardian_fortify') {
           this.memory.fortifiedHouses.add(entry.target);
         }
       }
     }
     for (const p of this.game.players) {
       if (!p.alive && p.role && p.role !== ROLES.SPIRIT_WEAVER && p.role !== ROLES.CORRUPTED && p.role !== ROLES.NETHER_MONK) {
-        this.memory.knownGods.add(p.id);
+        this.memory.knownKeepers.add(p.id);
       }
     }
   }
@@ -79,19 +79,19 @@ export class BotManager {
   }
 
   _pickVoteTarget(bot, alivePlayers) {
-    if (bot.isWolf()) {
-      const nonWolves = alivePlayers.filter(p => !this.memory.knownWolves.has(p.id));
-      if (nonWolves.length > 0) {
-        const gods = nonWolves.filter(p => this.memory.knownGods.has(p.id));
-        if (gods.length > 0) return gods[Math.floor(Math.random() * gods.length)];
-        nonWolves.sort((a, b) => (this.memory.suspicion.get(b.id) || 0) - (this.memory.suspicion.get(a.id) || 0));
-        if ((this.memory.suspicion.get(nonWolves[0].id) || 0) > 0) return nonWolves[0];
-        return nonWolves[Math.floor(Math.random() * nonWolves.length)];
+    if (bot.isCorrupted()) {
+      const nonCorrupted = alivePlayers.filter(p => !this.memory.knownCorrupted.has(p.id));
+      if (nonCorrupted.length > 0) {
+        const keepers = nonCorrupted.filter(p => this.memory.knownKeepers.has(p.id));
+        if (keepers.length > 0) return keepers[Math.floor(Math.random() * keepers.length)];
+        nonCorrupted.sort((a, b) => (this.memory.suspicion.get(b.id) || 0) - (this.memory.suspicion.get(a.id) || 0));
+        if ((this.memory.suspicion.get(nonCorrupted[0].id) || 0) > 0) return nonCorrupted[0];
+        return nonCorrupted[Math.floor(Math.random() * nonCorrupted.length)];
       }
       return alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
     }
-    const knownWolves = alivePlayers.filter(p => this.memory.knownWolves.has(p.id));
-    if (knownWolves.length > 0) return knownWolves[Math.floor(Math.random() * knownWolves.length)];
+    const knownCorrupted = alivePlayers.filter(p => this.memory.knownCorrupted.has(p.id));
+    if (knownCorrupted.length > 0) return knownCorrupted[Math.floor(Math.random() * knownCorrupted.length)];
     alivePlayers.sort((a, b) => (this.memory.suspicion.get(b.id) || 0) - (this.memory.suspicion.get(a.id) || 0));
     if ((this.memory.suspicion.get(alivePlayers[0].id) || 0) > 20) return alivePlayers[0];
     if (Math.random() < 0.3) return null;
@@ -166,7 +166,7 @@ export class BotManager {
   _getChatMessages(bot) {
     const checked = [...this.memory.checkedPlayers.entries()];
     const msgs = [];
-    if (bot.isWolf()) {
+    if (bot.isCorrupted()) {
       msgs.push('我觉得XX很可疑...', '我是灵织者，感知到了一些灵焰波动', '大家冷静分析', '我怀疑有人带节奏');
     } else if (bot.role === ROLES.VEIL_SCHOLAR && checked.length > 0) {
       const [target, result] = checked[checked.length - 1];
@@ -182,7 +182,7 @@ export class BotManager {
       };
       const vtMsgs = typeMsgs[bot.weaverType] || ['我是灵织者，听大家带队', '大家跟帷幕学者走'];
       msgs.push(...vtMsgs);
-    } else if (bot.isGod()) {
+    } else if (bot.isKeeper()) {
       msgs.push('我有一些信息但先不说', '请大家理性投票', '注意观察投票行为');
     }
     return msgs;
@@ -196,29 +196,29 @@ export class BotManager {
 
     switch (bot.role) {
       case ROLES.FLAME_TRACKER:     return this._hunterAction(bot, targets, randomTarget);
-      case ROLES.NETHER_MONK: return this._alphaWolfAction(bot, targets, randomTarget);
-      case ROLES.VEIL_GUARDIAN:      return this._guardAction(bot, targets, randomTarget);
-      case ROLES.CORRUPTED:   return this._werewolfAction(bot, targets, randomTarget);
+      case ROLES.NETHER_MONK: return this._netherMonkAction(bot, targets, randomTarget);
+      case ROLES.VEIL_GUARDIAN:      return this._veilGuardianAction(bot, targets, randomTarget);
+      case ROLES.CORRUPTED:   return this._corruptedAction(bot, targets, randomTarget);
       case ROLES.VEIL_SCHOLAR:       return this._seerAction(bot, targets, randomTarget);
-      case ROLES.HERBAL_SAGE: return this._poisonWitchAction(bot, targets, randomTarget);
-      case ROLES.SPIRIT_MENDER:   return this._healWitchAction(bot, targets, randomTarget);
+      case ROLES.HERBAL_SAGE: return this._herbalSageAction(bot, targets, randomTarget);
+      case ROLES.SPIRIT_MENDER:   return this._spiritMenderAction(bot, targets, randomTarget);
       case ROLES.SPIRIT_WEAVER:   return this._villagerAction(bot, targets, randomTarget);
       default: return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
     }
   }
 
-  _pickWolfKillTarget(bot, targets) {
-    const nonWolves = targets.filter(p => !this.memory.knownWolves.has(p.id));
-    if (nonWolves.length === 0) return null;
+  _pickCorruptedKillTarget(bot, targets) {
+    const nonCorrupted = targets.filter(p => !this.memory.knownCorrupted.has(p.id));
+    if (nonCorrupted.length === 0) return null;
 
     // 避开筑垒的屋子
-    const safeTargets = nonWolves.filter(p => !this.memory.fortifiedHouses.has(p.currentHouse || p.id));
-    const pool = safeTargets.length > 0 ? safeTargets : nonWolves;
+    const safeTargets = nonCorrupted.filter(p => !this.memory.fortifiedHouses.has(p.currentHouse || p.id));
+    const pool = safeTargets.length > 0 ? safeTargets : nonCorrupted;
 
-    const knownGod = pool.filter(p => this.memory.knownGods.has(p.id));
-    if (knownGod.length > 0 && Math.random() < 0.7) return knownGod[Math.floor(Math.random() * knownGod.length)];
-    const seers = pool.filter(p => p.role === ROLES.VEIL_SCHOLAR);
-    if (seers.length > 0 && Math.random() < 0.5) return seers[Math.floor(Math.random() * seers.length)];
+    const knownKeeper = pool.filter(p => this.memory.knownKeepers.has(p.id));
+    if (knownKeeper.length > 0 && Math.random() < 0.7) return knownKeeper[Math.floor(Math.random() * knownKeeper.length)];
+    const veilScholars = pool.filter(p => p.role === ROLES.VEIL_SCHOLAR);
+    if (veilScholars.length > 0 && Math.random() < 0.5) return veilScholars[Math.floor(Math.random() * veilScholars.length)];
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
@@ -264,19 +264,19 @@ export class BotManager {
     return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
   }
 
-  _alphaWolfAction(bot, targets, rt) {
-    if (!bot.isTransformed && !bot.hasUsedInfect) {
-      const infectTarget = this._pickWolfKillTarget(bot, targets) || rt;
-      if (infectTarget && Math.random() < 0.65) {
+  _netherMonkAction(bot, targets, rt) {
+    if (!bot.isTransformed && !bot.hasUsedCorrupt) {
+      const corruptTarget = this._pickCorruptedKillTarget(bot, targets) || rt;
+      if (corruptTarget && Math.random() < 0.65) {
         // 15%概率同时编织灵焰遮蔽
         const useFakeId = Math.random() < 0.15;
         const fakeRoles = [ROLES.VEIL_SCHOLAR, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER];
         return {
           action: NIGHT_ACTIONS.USE_ABILITY,
-          target: infectTarget.id,
+          target: corruptTarget.id,
           ability: {
             transform: true,
-            infect: true,
+            corrupt: true,
             fakeIdentity: useFakeId,
             fakeIdentityRole: useFakeId ? fakeRoles[Math.floor(Math.random() * fakeRoles.length)] : null,
           },
@@ -285,7 +285,7 @@ export class BotManager {
       return { action: NIGHT_ACTIONS.USE_ABILITY, target: rt?.id || null, ability: { transform: true } };
     }
     if (bot.isTransformed && rt && Math.random() < 0.85) {
-      const killTarget = this._pickWolfKillTarget(bot, targets) || rt;
+      const killTarget = this._pickCorruptedKillTarget(bot, targets) || rt;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: killTarget.id,
@@ -295,12 +295,12 @@ export class BotManager {
     return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
   }
 
-  _guardAction(bot, targets, rt) {
+  _veilGuardianAction(bot, targets, rt) {
     const roll = Math.random();
     // 40% 守护
     if (roll < 0.40 && rt) {
-      const guardTarget = this._pickImportantTarget(bot, targets) || rt;
-      return { action: NIGHT_ACTIONS.USE_ABILITY, target: guardTarget.id, ability: { guard: true } };
+      const veilGuardianTarget = this._pickImportantTarget(bot, targets) || rt;
+      return { action: NIGHT_ACTIONS.USE_ABILITY, target: veilGuardianTarget.id, ability: { protect: true } };
     }
     // 25% 巡逻
     if (roll < 0.65) {
@@ -312,20 +312,20 @@ export class BotManager {
     }
     // 10% 舍身（限选重要角色）
     if (roll < 0.90 && rt) {
-      const gods = targets.filter(p => this.memory.knownGods.has(p.id));
-      if (gods.length > 0) {
-        const sacrifice = gods[Math.floor(Math.random() * gods.length)];
+      const keepers = targets.filter(p => this.memory.knownKeepers.has(p.id));
+      if (keepers.length > 0) {
+        const sacrifice = keepers[Math.floor(Math.random() * keepers.length)];
         return { action: NIGHT_ACTIONS.SACRIFICE, target: sacrifice.id, ability: { sacrifice: true } };
       }
     }
     return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
   }
 
-  _werewolfAction(bot, targets, rt) {
+  _corruptedAction(bot, targets, rt) {
     const roll = Math.random();
     // 10% 裂隙共鸣（冷却中跳过）
-    if (roll < 0.10 && bot.howlCooldown <= 0) {
-      return { action: NIGHT_ACTIONS.HOWL, target: null, ability: { howl: true } };
+    if (roll < 0.10 && bot.resonanceCooldown <= 0) {
+      return { action: NIGHT_ACTIONS.RIFT_RESONANCE, target: null, ability: { resonance: true } };
     }
     // 12% 灵焰遮蔽
     if (roll < 0.22 && rt) {
@@ -333,7 +333,7 @@ export class BotManager {
     }
     // 65% 噬灵
     if (roll < 0.87 && rt) {
-      const killTarget = this._pickWolfKillTarget(bot, targets) || rt;
+      const killTarget = this._pickCorruptedKillTarget(bot, targets) || rt;
       const trackScent = Math.random() < 0.4;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
@@ -371,13 +371,13 @@ export class BotManager {
     return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
   }
 
-  _poisonWitchAction(bot, targets, rt) {
-    const knownWolf = targets.find(p => this.memory.knownWolves.has(p.id));
+  _herbalSageAction(bot, targets, rt) {
+    const knownCorrupted = targets.find(p => this.memory.knownCorrupted.has(p.id));
     const roll = Math.random();
 
     // 蚀雾符阵 25%
     if (roll < 0.25 && rt) {
-      const fogTarget = knownWolf || rt;
+      const fogTarget = knownCorrupted || rt;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: fogTarget.id,
@@ -386,7 +386,7 @@ export class BotManager {
     }
     // 蚀灭符阵（有足够材料）
     if (roll < 0.55 && rt && (bot.talismanMaterials || 2) >= 2) {
-      const poisonTarget = knownWolf || rt;
+      const poisonTarget = knownCorrupted || rt;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: poisonTarget.id,
@@ -404,8 +404,8 @@ export class BotManager {
     return { action: NIGHT_ACTIONS.SLEEP, target: null, ability: null };
   }
 
-  _healWitchAction(bot, targets, rt) {
-    const knownWolf = targets.find(p => this.memory.knownWolves.has(p.id));
+  _spiritMenderAction(bot, targets, rt) {
+    const knownCorrupted = targets.find(p => this.memory.knownCorrupted.has(p.id));
     const roll = Math.random();
 
     // 诊断 20%
@@ -427,7 +427,7 @@ export class BotManager {
     }
     // 毒药 25%
     if (roll < 0.65 && bot.hasSealTalisman && rt) {
-      const poisonTarget = knownWolf || rt;
+      const poisonTarget = knownCorrupted || rt;
       return {
         action: NIGHT_ACTIONS.USE_ABILITY,
         target: poisonTarget.id,

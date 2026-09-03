@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  werewolf:
+  veilland:
     build:
       context: ..
       dockerfile: deploy/Dockerfile

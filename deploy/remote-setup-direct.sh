@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-echo "=== 狼人杀直接部署 ==="
+echo "=== 帷幕之地直接部署 ==="
 
 # 安装 Node.js 20
 if ! command -v node >/dev/null 2>&1; then
@@ -14,7 +14,7 @@ echo "Node.js: $(node -v)"
 npm install -g pm2 2>/dev/null || true
 
 # 解压部署
-cd /opt/werewolf
+cd /opt/veilland
 tar -xzf veilland.tar.gz
 
 # 安装依赖
@@ -27,7 +27,7 @@ ufw allow 80/tcp 2>/dev/null || true
 ufw allow 4000/tcp 2>/dev/null || true
 
 # 启动服务
-pm2 delete werewolf 2>/dev/null || true
+pm2 delete veilland 2>/dev/null || true
 pm2 start src/index.js --name veilland -- --port 4000
 pm2 save
 pm2 startup 2>/dev/null || true

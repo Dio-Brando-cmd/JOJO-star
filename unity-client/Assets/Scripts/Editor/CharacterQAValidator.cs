@@ -1,6 +1,6 @@
 // ============================================================
 // CharacterQAValidator.cs — 商业级角色质量检查
-// Tools → Werewolf → QA Validate All Characters
+// Tools → Corrupted → QA Validate All Characters
 // 检查: 面数/LOD/材质/骨骼/UV/命名规范
 // ============================================================
 
@@ -14,7 +14,7 @@ public class CharacterQAValidator : EditorWindow
     private static readonly (string name, int maxTris, int maxBones)[] SPECS = {
         ("SIGURD", 25000, 65), ("FREYJA", 22000, 65), ("MORRIGAN", 23000, 65),
         ("ANUBIS_ACOLYTE", 24000, 65), ("HECTOR", 27000, 65), ("ROMULUS", 23000, 65),
-        ("FENRIR_KIN", 28000, 65), ("SKADI", 23000, 65), ("HAIKU_MONK", 20000, 65),
+        ("VORACIOUS_KIN", 28000, 65), ("SKADI", 23000, 65), ("HAIKU_MONK", 20000, 65),
         ("BRIGID", 21000, 65), ("YSERA", 21000, 65), ("GOREN", 26000, 65),
         ("AILIN", 22000, 65), ("ORIC", 22000, 65), ("NELIA", 21000, 65),
     };
@@ -54,8 +54,6 @@ public class CharacterQAValidator : EditorWindow
     void RunQACheck()
     {
         results = new List<QAResult>();
-        string charDir = "Assets/Models/Characters";
-
         foreach (var spec in SPECS)
         {
             var result = new QAResult { characterName = spec.name };

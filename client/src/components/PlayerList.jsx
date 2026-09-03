@@ -14,7 +14,7 @@ export default function PlayerList({ players, privateState, myId, votes, seerChe
     if (player.id === myId) return true;
     if (!player.alive) return true;
     // 蚀者共鸣
-    if (privateState.myPrivateState?.knownWolves?.includes(player.id)) return true;
+    if (privateState.myPrivateState?.knownCorrupted?.includes(player.id)) return true;
     return false;
   };
 
@@ -69,7 +69,7 @@ function PlayerItem({ player, isSelf, showRole, dead, votedFor, voters, checkRes
   let avatarStyle = {};
   if (checkResult === 'GOOD') {
     avatarStyle = { background: 'linear-gradient(135deg, #FFD700, #FFA500)', boxShadow: '0 0 10px rgba(255, 215, 0, 0.6)' };
-  } else if (checkResult === 'WOLF') {
+  } else if (checkResult === 'CORRUPTED') {
     avatarStyle = { background: 'linear-gradient(135deg, #C0C0C0, #808080)', boxShadow: '0 0 10px rgba(192, 192, 192, 0.6)' };
   }
 
@@ -84,7 +84,7 @@ function PlayerItem({ player, isSelf, showRole, dead, votedFor, voters, checkRes
           {player.isBot && <span className="bot-badge">🤖人机</span>}
           {isSelf && <span className="self-tag">你</span>}
           {player.heavyInjury && <span className="injury-tag">重伤</span>}
-          {player.isGuarding && <span className="guard-tag">守护中</span>}
+          {player.isProtecting && <span className="protect-tag">守护中</span>}
         </span>
         {showRole && player.role && (
           <span className="player-role-tag">{player.role === 'SPIRIT_WEAVER' ? `灵织者${player.weaverIndex || ''}` : ''}</span>

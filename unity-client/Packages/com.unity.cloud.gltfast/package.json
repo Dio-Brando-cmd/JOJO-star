@@ -1,0 +1,37 @@
+{
+  "name": "com.unity.cloud.gltfast",
+  "version": "6.1.0",
+  "displayName": "Unity glTFast",
+  "description": "Use glTFast to import and export glTF 3D files efficiently at runtime or in the Editor",
+  "unity": "2020.3",
+  "keywords": [
+    "mesh",
+    "gltf",
+    "asset",
+    "format",
+    "draco",
+    "ktx",
+    "basis",
+    "universal",
+    "basisu"
+  ],
+  "dependencies": {
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0",
+    "com.unity.mathematics": "1.3.1",
+    "com.unity.burst": "1.8.4"
+  },
+  "type": "library",
+  "unityRelease": "48f1",
+  "_upm": {
+    "changelog": "### Added\n- (Documentation) Explanation and user case for the add-on API\n- `GltfImport.IsTextureYFlipped` to support non-default texture orientations\n\n### Changed\n- Documentation improvements\n- Auto-formatted all markdown, USS, UXML and shader code\n- CI maintenance\n\n### Fixed\n- Updated references to *KTX for Unity*"
+  },
+  "upmCi": {
+    "footprint": "c982cf72905570a64558d94ce7e7dfd55e932f5d"
+  },
+  "repository": {
+    "url": "https://github.cds.internal.unity3d.com/unity/com.unity.cloud.gltfast.src.git",
+    "type": "git",
+    "revision": "be8b2b4650fa546f20636da498f41059ee52f427"
+  }
+}

@@ -138,7 +138,7 @@ export class Character {
 
 /**
  * 根据推荐度匹配表层身份和里层身份
- * @param {string} hiddenRole — 里层身份（如'HUNTER'）
+ * @param {string} hiddenRole — 里层身份（如'FLAME_TRACKER'）
  * @param {string[]} availableCharacters — 尚未被选走的表层身份ID列表
  * @returns {string|null} 推荐的characterId，或null
  */

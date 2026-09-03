@@ -75,13 +75,13 @@ T-pose, game ready character, low poly, PBR textures, stylized fantasy art style
 
 ---
 
-## 6. 罗慕路斯 Romulus — 狼养之子
+## 6. 罗慕路斯 Romulus — 蚀者养之子
 
 ```
 A compact muscular Roman warrior male, 1.82m tall, soldier build,
 tanned Mediterranean skin, short dark cropped hair, strong jaw,
 wearing Roman lorica segmentata plate armor with red tunic underneath,
-red woolen military cape clasped at shoulder with bronze wolf-head brooch,
+red woolen military cape clasped at shoulder with bronze corrupted-head brooch,
 leather sandals with greaves,
 holding a Roman gladius short sword in right hand,
 stoic commanding expression, disciplined military bearing,
@@ -90,13 +90,13 @@ T-pose, game ready character, low poly, PBR textures, stylized fantasy art style
 
 ---
 
-## 7. 哈尔瓦德 Fenrir Kin — 魔狼血裔
+## 7. 哈尔瓦德 VORACIOUS Kin — 饥噬血裔
 
 ```
 A massive heavy-built Norse warrior male, 1.95m tall, bear-like build,
-weathered scarred skin with ritual wolf-fang tattoos on arms,
+weathered scarred skin with ritual corrupted-fang tattoos on arms,
 long wild dark brown hair with braids, thick bushy beard,
-wearing rough leather and fur armor with wolf pelt draped over shoulders,
+wearing rough leather and fur armor with corrupted pelt draped over shoulders,
 iron-studded leather bracers, heavy fur-lined boots,
 holding a massive double-bladed battle axe with carved runes on the handle,
 fierce intimidating expression, primal berserker energy,
@@ -110,7 +110,7 @@ T-pose, game ready character, low poly, PBR textures, stylized fantasy art style
 ```
 A very tall athletic Norse huntress female, 1.91m tall, lean muscular build,
 fair skin with frost-bitten cheeks, long silvery-white hair in practical braids,
-wearing fur-lined leather hunting armor with white wolf-fur collar,
+wearing fur-lined leather hunting armor with white corrupted-fur collar,
 leather trousers and tall fur boots for snow terrain,
 carrying a recurve hunting bow in left hand, a leather quiver with arrows on back,
 sharp focused hunter's eyes, cold northern beauty,

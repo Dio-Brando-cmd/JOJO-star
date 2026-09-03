@@ -101,7 +101,7 @@ lorica segmentata iron plate armor with dark oiled finish and slight rust at riv
 brass fittings with warm golden patina and subtle verdigris in crevices,
 crimson red wool tunic with visible twill weave, slightly faded from sun exposure,
 heavy crimson paludamentum general's cape with deep wool texture and gold embroidered border,
-bronze she-wolf brooch with detailed casting texture, polished highlights on raised areas,
+bronze she-corrupted brooch with detailed casting texture, polished highlights on raised areas,
 leather caligae sandals with visible grain and iron hobnails showing rust,
 gladius sword with eagle-head pommel in cast bronze, blade with subtle scratch marks from sharpening,
 PBR textures, polished iron with oil finish, worn leather, wool fabric weave visible
@@ -109,17 +109,17 @@ PBR textures, polished iron with oil finish, worn leather, wool fabric weave vis
 
 ---
 
-## 7. 哈尔瓦德 Fenrir Kin
+## 7. 哈尔瓦德 VORACIOUS Kin
 
 ```
 massive Norse berserker, heavily scarred rough skin with thick pores and uneven texture,
-dark ritual wolf-fang tattoos in deep blue-black ink slightly faded into skin,
+dark ritual corrupted-fang tattoos in deep blue-black ink slightly faded into skin,
 deep scar across nose and split eyebrow, wind-burned reddish complexion,
 long wild dark brown hair with natural grease sheen, bone beads with crack lines,
 thick unkempt beard with braided sections, some grey hairs mixed in,
 patchwork leather armor from different hides showing varying grain and color,
 stitching repairs visible with thick sinew thread, dried blood stains darkened into leather,
-grey wolf pelt with individual fur strands, slightly matted in places,
+grey corrupted pelt with individual fur strands, slightly matted in places,
 iron-studded bracers with rough forged texture, studs showing hammer marks,
 fur-lined boots with packed snow residue in fur,
 massive Dane axe with dark forge-blackened iron blades showing layered steel pattern,
@@ -137,7 +137,7 @@ faint fine lines around ice-blue eyes from squinting into snow glare,
 long silvery-white hair in tight braids, hair catching light with platinum sheen,
 white and grey leather hunting armor with subtle grain texture,
 stitching visible as fine contrasting thread lines,
-white wolf-fur collar pristine and fluffy, individual guard hairs visible,
+white corrupted-fur collar pristine and fluffy, individual guard hairs visible,
 multiple leather belts with darkened edges from wear, brass buckles with frost oxidation,
 dark leather trousers with grain texture and slight sheen from waterproofing oil,
 fur-lined snow boots with crampon metal showing cold blue-grey patina,

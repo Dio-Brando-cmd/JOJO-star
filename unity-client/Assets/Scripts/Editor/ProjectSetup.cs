@@ -1,10 +1,12 @@
 // ============================================================
 // ProjectSetup.cs — Unity 项目一键配置
-// Tools → Werewolf → Setup Project
+// Tools → Corrupted → Setup Project
 // ============================================================
 
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.Rendering;
 using System.IO;
 
 public class ProjectSetup : EditorWindow
@@ -13,12 +15,56 @@ public class ProjectSetup : EditorWindow
     public static void SetupFull()
     {
         CreateFolders();
+        SetupRenderPipeline();
         SetupTagsAndLayers();
         SetupQualitySettings();
         SetupPhysics();
         SetupPlayerSettings();
         SetupScene();
         Debug.Log("✅ VeilLand project fully configured");
+    }
+
+    static void SetupRenderPipeline()
+    {
+        // Check if already configured
+        if (GraphicsSettings.renderPipelineAsset != null)
+        {
+            Debug.Log("[Setup] Render Pipeline already configured, skipping");
+            return;
+        }
+
+        // Create Settings folder
+        string settingsDir = "Assets/Settings";
+        if (!Directory.Exists(settingsDir))
+            Directory.CreateDirectory(settingsDir);
+
+        // Create Universal Renderer Data
+        var rendererData = ScriptableObject.CreateInstance<UnityEngine.Rendering.Universal.UniversalRendererData>();
+        rendererData.name = "URP-Renderer";
+        AssetDatabase.CreateAsset(rendererData, $"{settingsDir}/URP-Renderer.asset");
+
+        // Create URP Pipeline Asset
+        var pipelineAsset = ScriptableObject.CreateInstance<UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset>();
+        pipelineAsset.name = "URP-Pipeline";
+
+        // Use SerializedObject to set the renderer
+        var so = new SerializedObject(pipelineAsset);
+        var rendererListProp = so.FindProperty("m_RendererDataList");
+        if (rendererListProp != null)
+        {
+            rendererListProp.arraySize = 1;
+            var elem = rendererListProp.GetArrayElementAtIndex(0);
+            elem.objectReferenceValue = rendererData;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        AssetDatabase.CreateAsset(pipelineAsset, $"{settingsDir}/URP-Pipeline.asset");
+
+        // Assign to project
+        GraphicsSettings.renderPipelineAsset = pipelineAsset;
+        AssetDatabase.SaveAssets();
+
+        Debug.Log("[Setup] ✅ URP Pipeline created and assigned");
     }
 
     static void CreateFolders()
@@ -50,7 +96,7 @@ public class ProjectSetup : EditorWindow
     static void SetupTagsAndLayers()
     {
         AddTag("Player");
-        AddTag("Wolf");
+        AddTag("Corrupted");
         AddTag("HidingSpot");
         AddTag("House");
         AddTag("Interactable");
@@ -94,7 +140,7 @@ public class ProjectSetup : EditorWindow
         PlayerSettings.companyName = "VeilLand Studio";
         PlayerSettings.productName = "帷幕之地";
         PlayerSettings.SetApplicationIdentifier(
-            NamedBuildTarget.Standalone, "com.veilland.online");
+            BuildTargetGroup.Standalone, "com.veilland.online");
     }
 
     [MenuItem("Tools/VeilLand/Create Main Scene")]
@@ -102,11 +148,37 @@ public class ProjectSetup : EditorWindow
     {
         var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 
+        // === Skybox & Ambient ===
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.25f, 0.25f, 0.3f);
+
+        // === Camera ===
+        var cam = Camera.main;
+        if (cam == null)
+        {
+            var camGO = new GameObject("MainCamera");
+            cam = camGO.AddComponent<Camera>();
+            camGO.tag = "MainCamera";
+        }
+        cam.transform.position = new Vector3(0, 60, -60);
+        cam.transform.LookAt(Vector3.zero);
+        cam.backgroundColor = new Color(0.15f, 0.2f, 0.35f);
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.farClipPlane = 500f;
+
         // === Terrain (simple ground plane) ===
         var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
         ground.name = "Ground";
         ground.transform.localScale = new Vector3(10, 1, 10);
         ground.transform.position = Vector3.zero;
+        var groundR = ground.GetComponent<MeshRenderer>();
+        // Use URP-compatible material
+        var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+        if (urpLit != null)
+        {
+            groundR.sharedMaterial = new Material(urpLit);
+            groundR.sharedMaterial.color = new Color(0.2f, 0.3f, 0.12f);
+        }
 
         // === Directional Light (Sun) ===
         var sunGO = new GameObject("Sun");
@@ -115,6 +187,7 @@ public class ProjectSetup : EditorWindow
         sun.intensity = 1.2f;
         sun.color = new Color(1f, 0.95f, 0.85f);
         sunGO.transform.rotation = Quaternion.Euler(50, -30, 0);
+        sun.shadows = LightShadows.Soft;
 
         // === Moon Light ===
         var moonGO = new GameObject("Moon");
@@ -126,7 +199,8 @@ public class ProjectSetup : EditorWindow
 
         // === Village (auto-generates 12 houses + 4 landmarks) ===
         var village = new GameObject("Village");
-        village.AddComponent<VillageSceneSetup>();
+        var villageSetup = village.AddComponent<VillageSceneSetup>();
+        villageSetup.generateOnStart = false; // We call it manually below
 
         // === Game Manager ===
         var gm = new GameObject("GameManager");
@@ -264,7 +338,21 @@ public class ProjectSetup : EditorWindow
         gm3d.housePositions = new Transform[12];
         // These will be populated by VillageSceneSetup at runtime
 
-        Debug.Log("✅ Main scene created with full lobby UI");
+        // Trigger village generation (won't auto-run in Editor mode)
+        villageSetup.GenerateDefaultLayout();
+
+        Debug.Log("✅ Main scene created with full lobby UI + village");
+
+        // Save the scene
+        if (string.IsNullOrEmpty(scene.path))
+        {
+            EditorSceneManager.SaveScene(scene, "Assets/Scenes/MainScene.unity");
+        }
+        else
+        {
+            EditorSceneManager.SaveScene(scene);
+        }
+        Debug.Log("💾 Scene saved to Assets/Scenes/MainScene.unity");
     }
 
     // ==================== UI Helper Methods ====================

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 const HERO_QUOTES = [
-  { text: '诸神已死。帷幕之外，混沌在呼吸。', src: '——《帷幕观测录》' },
+  { text: '诸神已死。帷幕之外，饥饿在呼吸。', src: '——《帷幕观测录》' },
   { text: '灵焰不可创造，不可毁灭。它先于诸神存在。', src: '——奈莉娅第一定律' },
   { text: '每一次噬灵，都在喂养帷幕之外的古老存在。', src: '——《帷幕观测录》第七卷' },
   { text: '信任是血月之夜唯一的光源。', src: '——暮色聚落谚语' },
@@ -10,8 +10,8 @@ const HERO_QUOTES = [
 
 const LORE_FRAGMENTS = [
   { title: '灵焰', desc: '每个人的生命本质。金色为纯净，黑色为蚀痕。不可创造，不可毁灭。' },
-  { title: '帷幕', desc: '诸神以自身编织的屏障。它是活的——在呼吸，在等待。' },
-  { title: '蚀者', desc: '灵焰被蚀痕完全侵蚀的堕落者。以他人灵焰为食。' },
+  { title: '帷幕', desc: '诸神以自身编织的围栏。它是活的——在呼吸，在咀嚼。' },
+  { title: '蚀者', desc: '灵焰被蚀痕一点点掏空的被消化者。以他人灵焰为食，好让自己慢一点被吞干净。' },
   { title: '守幕者', desc: '守护聚落的遗民。八种传承，一个誓言。' },
 ];
 
@@ -139,7 +139,7 @@ export default function LandingPage({ onNavigate }) {
           <div className="feature-card">
             <span className="feature-icon">🌙</span>
             <h3>血月裁决</h3>
-            <p>白昼聚落会议——辨识蚀痕或隐藏身份。夜晚使用能力——噬灵或守护。每一次选择都在改写帷幕的命运。</p>
+            <p>白昼聚落会议——辨识蚀痕或隐藏身份。夜晚使用能力——噬灵或守护。每一次选择，都在喂养那个你永远看不见的食客。</p>
           </div>
         </div>
       </section>

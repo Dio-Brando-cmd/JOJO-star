@@ -31,24 +31,24 @@ flowchart TD
     NIGHT1[🌙 夜晚 - Round 1] --> NSTEP1
 
     subgraph NIGHT_LOOP[夜晚步骤循环]
-        NSTEP1[ALPHA_WOLF 种狼]
-        NSTEP1 --> NSTEP2[GUARD 守卫]
-        NSTEP2 --> NSTEP3[WEREWOLF 狼人群]
-        NSTEP3 --> NSTEP4[SEER 预言家]
-        NSTEP4 --> NSTEP5[POISON_WITCH 毒巫]
-        NSTEP5 --> NSTEP6[HEAL_WITCH 药巫]
-        NSTEP6 --> NSTEP7[VILLAGER 村民]
+        NSTEP1[NETHER_MONK 冥僧人]
+        NSTEP1 --> NSTEP2[VEIL_GUARDIAN 守卫]
+        NSTEP2 --> NSTEP3[CORRUPTED 蚀者群]
+        NSTEP3 --> NSTEP4[VEIL_SCHOLAR 帷幕学者]
+        NSTEP4 --> NSTEP5[HERBAL_SAGE 草药学者]
+        NSTEP5 --> NSTEP6[SPIRIT_MENDER 愈灵师]
+        NSTEP6 --> NSTEP7[SPIRIT_WEAVER 灵织者]
         NSTEP7 --> NSTEP8[RESOLUTION 结算]
     end
 
     NSTEP8 --> CHECKWIN{检查胜利条件}
-    CHECKWIN --> |狼全灭| GOODWIN[🎉 好人胜利]
-    CHECKWIN --> |狼≥好| WOLFWIN[🐺 狼人胜利]
+    CHECKWIN --> |蚀者全灭| GOODWIN[🎉 守幕者胜利]
+    CHECKWIN --> |蚀者≥好| CORRUPTEDWIN[🌑 蚀者胜利]
     CHECKWIN --> |继续| DAY
 
-    DAY[☀️ 白天] --> HUNTER{猎人有枪?}
-    HUNTER --> |开枪| SHOOT[猎人白天开枪]
-    HUNTER --> |不开枪| DISCUSS
+    DAY[☀️ 白天] --> FLAME_TRACKER{灵痕追猎者有枪?}
+    FLAME_TRACKER --> |开枪| SHOOT[灵痕追猎者白天开枪]
+    FLAME_TRACKER --> |不开枪| DISCUSS
     SHOOT --> DISCUSS[🗣️ 讨论阶段]
 
     DISCUSS --> SPEAKER_LOOP{轮流发言}
@@ -76,13 +76,13 @@ flowchart TD
     NIGHTNEXT --> NSTEP1_FULL
 
     subgraph FULL_NIGHT[第二晚起完整步骤]
-        NSTEP1_FULL[HUNTER 猎人] --> NSTEP2_FULL[ALPHA_WOLF 种狼]
-        NSTEP2_FULL --> NSTEP3_FULL[GUARD 守卫]
-        NSTEP3_FULL --> NSTEP4_FULL[WEREWOLF 狼人群]
-        NSTEP4_FULL --> NSTEP5_FULL[SEER 预言家]
-        NSTEP5_FULL --> NSTEP6_FULL[POISON_WITCH 毒巫]
-        NSTEP6_FULL --> NSTEP7_FULL[HEAL_WITCH 药巫]
-        NSTEP7_FULL --> NSTEP8_FULL[VILLAGER 村民]
+        NSTEP1_FULL[FLAME_TRACKER 灵痕追猎者] --> NSTEP2_FULL[NETHER_MONK 冥僧人]
+        NSTEP2_FULL --> NSTEP3_FULL[VEIL_GUARDIAN 守卫]
+        NSTEP3_FULL --> NSTEP4_FULL[CORRUPTED 蚀者群]
+        NSTEP4_FULL --> NSTEP5_FULL[VEIL_SCHOLAR 帷幕学者]
+        NSTEP5_FULL --> NSTEP6_FULL[HERBAL_SAGE 草药学者]
+        NSTEP6_FULL --> NSTEP7_FULL[SPIRIT_MENDER 愈灵师]
+        NSTEP7_FULL --> NSTEP8_FULL[SPIRIT_WEAVER 灵织者]
         NSTEP8_FULL --> NSTEP9_FULL[RESOLUTION 结算]
     end
 
@@ -93,14 +93,14 @@ flowchart TD
     TIMER30 --> LOBBY
 
     GOODWIN --> GAMEOVER
-    WOLFWIN --> GAMEOVER
+    CORRUPTEDWIN --> GAMEOVER
 ```
 
 ## 二、夜晚步骤详细流程（单步骤）
 
 ```mermaid
 flowchart TD
-    STEP_START([进入步骤]) --> GET_PLAYERS[_getPlayersForStep 获取参与者]
+    STEP_SWSTART([进入步骤]) --> GET_PLAYERS[_getPlayersForStep 获取参与者]
     GET_PLAYERS --> HAS_PLAYERS{有存活参与者?}
 
     HAS_PLAYERS --> |无| RANDOM_DELAY[3-7秒随机延迟]
@@ -134,64 +134,64 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    RESOLVE([开始结算]) --> STEP_H[HUNTER 猎人处理]
-    STEP_H --> |观察目标是否出门| H_LOG[写入 privateLog]
-    STEP_H --> |射杀/追踪| H_KILL[markForDeath]
-    STEP_H --> |武器腐蚀| H_CORRODE[blunderbuss/rifle 失效]
+    RESOLVE([开始结算]) --> STEP_FT[FLAME_TRACKER 灵痕追猎者处理]
+    STEP_FT --> |观察目标是否出门| H_LOG[写入 privateLog]
+    STEP_FT --> |射杀/追踪| H_KILL[markForDeath]
+    STEP_FT --> |武器腐蚀| H_CORRODE[blunderbuss/rifle 失效]
 
-    H_CORRODE --> STEP_A[ALPHA_WOLF 种狼处理]
-    STEP_A --> |变狼| A_TRANSFORM[isTransformed=true]
-    STEP_A --> |感染| A_INFECT{目标是预言家?}
-    A_INFECT --> |是| A_SEER[预言家保留能力 查验反转]
-    A_INFECT --> |否| A_NORMAL[目标下回合变狼]
-    A_SEER --> A_RESET[重置 nightAction=null<br/>让种狼在狼人步骤重交]
+    H_CORRODE --> STEP_A[NETHER_MONK 冥僧人处理]
+    STEP_A --> |蚀变| A_TRANSFORM[isTransformed=true]
+    STEP_A --> |感染| A_INFECT{目标是帷幕学者?}
+    A_INFECT --> |是| A_VEIL_SCHOLAR[帷幕学者保留能力 查验反转]
+    A_INFECT --> |否| A_NORMAL[目标下回合蚀变]
+    A_VEIL_SCHOLAR --> A_RESET[重置 nightAction=null<br/>让冥僧人在蚀者步骤重交]
     A_NORMAL --> A_RESET
 
-    A_RESET --> STEP_G[GUARD 守卫处理]
-    STEP_G --> |守护| G_SET[guardingTarget=目标 isGuarding=true]
-    STEP_G --> |出门到目标家| G_HOUSE[currentHouse=目标]
+    A_RESET --> STEP_SWG[VEIL_GUARDIAN 守卫处理]
+    STEP_SWG --> |守护| G_SET[guardingTarget=目标 isGuarding=true]
+    STEP_SWG --> |出门到目标家| G_HOUSE[currentHouse=目标]
 
-    G_HOUSE --> STEP_W[WEREWOLF 狼人处理]
-    STEP_W --> |遍历所有狼人| W_LOOP[检查 nightAbility.kill]
+    G_HOUSE --> STEP_C[CORRUPTED 蚀者处理]
+    STEP_C --> |遍历所有蚀者| W_LOOP[检查 nightAbility.kill]
     W_LOOP --> |刀人| W_KILL[killTargets Map收集]
-    W_LOOP --> |出门| W_GO[相认检测: 去了狼人家?]
-    W_GO --> |互刀| W_MUTUAL[互刀→相认不死]
+    W_LOOP --> |出门| W_GO[相认检测: 去了蚀者家?]
+    W_GO --> |互刀| C_MUTUAL[互刀→相认不死]
 
-    W_MUTUAL --> STEP_S[SEER 预言家处理]
-    STEP_S --> |查验| S_CHECK{目标身份判定}
-    S_CHECK --> |普通狼人| S_WOLF[结果=WOLF]
-    S_CHECK --> |种狼 未变狼未感染| S_GOOD[结果=GOOD]
-    S_CHECK --> |种狼 已变狼或已感染| S_WOLF2[结果=WOLF]
-    S_CHECK --> |预言家被感染| S_REVERSE[结果反转!]
-    S_WOLF --> S_LOG[写入 privateLog seer_check]
-    S_GOOD --> S_LOG
-    S_WOLF2 --> S_LOG
-    S_REVERSE --> S_LOG
+    C_MUTUAL --> STEP_SWS[VEIL_SCHOLAR 帷幕学者处理]
+    STEP_SWS --> |查验| S_CHECK{目标身份判定}
+    S_CHECK --> |普通蚀者| S_CORRUPTED[结果=CORRUPTED]
+    S_CHECK --> |冥僧人 未蚀变未感染| S_GOOD[结果=GOOD]
+    S_CHECK --> |冥僧人 已蚀变或已感染| S_CORRUPTED2[结果=CORRUPTED]
+    S_CHECK --> |帷幕学者被感染| S_REVERSE[结果反转!]
+    S_CORRUPTED --> VS_LOG[写入 privateLog seer_check]
+    S_GOOD --> VS_LOG
+    S_CORRUPTED2 --> VS_LOG
+    S_REVERSE --> VS_LOG
 
-    S_LOG --> STEP_PW[POISON_WITCH 毒巫处理]
-    STEP_PW --> |烈性毒药| PW_POISON[获取屋内所有人]
-    PW_POISON --> PW_GUARD{屋内≥3人且有守卫?}
-    PW_GUARD --> |是| PW_HURT[守卫重伤 其余毒死]
-    PW_GUARD --> |否| PW_ALL[全部毒死]
+    VS_LOG --> STEP_HS[HERBAL_SAGE 草药学者处理]
+    STEP_HS --> |烈性毒药| PW_POISON[获取屋内所有人]
+    PW_POISON --> PW_VEIL_GUARDIAN{屋内≥3人且有守卫?}
+    PW_VEIL_GUARDIAN --> |是| HS_HURT[守卫重伤 其余毒死]
+    PW_VEIL_GUARDIAN --> |否| HS_ALL[全部毒死]
 
-    PW_ALL --> STEP_HW[HEAL_WITCH 药巫处理]
-    PW_HURT --> STEP_HW
-    STEP_HW --> |万能药| HW_HEAL[治疗一切: 救活+治重伤]
-    STEP_HW --> |单目标毒| HW_POISON{目标离开屋子?}
-    HW_POISON --> |是| HW_TRANSFER[毒转移到第一进入者]
+    HS_ALL --> STEP_FTW[SPIRIT_MENDER 愈灵师处理]
+    HS_HURT --> STEP_FTW
+    STEP_FTW --> |万能药| HW_HEAL[治疗一切: 救活+治重伤]
+    STEP_FTW --> |单目标毒| HW_POISON{目标离开屋子?}
+    HW_POISON --> |是| SM_TRANSFER[毒转移到第一进入者]
     HW_POISON --> |否| HW_KILL[毒杀目标]
 
-    HW_TRANSFER --> STEP_V[VILLAGER 村民处理]
-    HW_HEAL --> STEP_V
-    HW_KILL --> STEP_V
+    SM_TRANSFER --> STEP_SW[SPIRIT_WEAVER 灵织者处理]
+    HW_HEAL --> STEP_SW
+    HW_KILL --> STEP_SW
 
-    STEP_V --> |出门| V_GO[currentHouse=目标]
-    STEP_V --> |偷听| V_EAVES{扫描目标屋内成员}
-    V_EAVES --> |有狼人| V_W[候选:狼嚎/野兽呼吸]
-    V_EAVES --> |有神职| V_G[候选:祈祷/法器]
+    STEP_SW --> |出门| V_GO[currentHouse=目标]
+    STEP_SW --> |偷听| V_EAVES{扫描目标屋内成员}
+    V_EAVES --> |有蚀者| V_C[候选:裂隙共鸣/野兽呼吸]
+    V_EAVES --> |有守幕者| V_G[候选:祈祷/法器]
     V_EAVES --> |有人| V_P[候选:交谈/脚步]
     V_EAVES --> |空屋| V_EMPTY[候选:空无一人/安静]
-    V_W --> V_PICK[随机选一条结果]
+    V_C --> V_PICK[随机选一条结果]
     V_G --> V_PICK
     V_P --> V_PICK
     V_EMPTY --> V_PICK
@@ -201,24 +201,24 @@ flowchart TD
     V_LOG --> COLLECT
 
     COLLECT --> |遍历出门玩家| VISIT[统计目标屋访客数]
-    VISIT --> |村民+≥3人| V_BACK[被赶回家 显示很多人]
+    VISIT --> |灵织者+≥3人| V_BACK[被赶回家 显示很多人]
     VISIT --> |其他| V_COUNT[显示实际人数]
 
     V_BACK --> DEATH[resolveAllDeaths 处理死亡]
     V_COUNT --> DEATH
 
-    DEATH --> |守卫保护判定| GUARD_CHECK{守卫在目标屋?}
-    GUARD_CHECK --> |≤2人| GUARD_SAVE[守卫重伤 保护成功]
-    GUARD_CHECK --> |≥3人| GUARD_FAIL[守卫重伤 目标仍死]
-    GUARD_CHECK --> |独自在家1狼| GUARD_ALONE[重伤 狼知晓身份]
+    DEATH --> |守卫保护判定| VEIL_GUARDIAN_CHECK{守卫在目标屋?}
+    VEIL_GUARDIAN_CHECK --> |≤2人| VEIL_GUARDIAN_SAVE[守卫重伤 保护成功]
+    VEIL_GUARDIAN_CHECK --> |≥3人| VEIL_GUARDIAN_FAIL[守卫重伤 目标仍死]
+    VEIL_GUARDIAN_CHECK --> |独自在家1蚀者| VEIL_GUARDIAN_ALONE[重伤 蚀者知晓身份]
 
-    GUARD_SAVE --> HUNTER_DEF{目标有短火铳?}
-    GUARD_FAIL --> HUNTER_DEF
-    GUARD_ALONE --> HUNTER_DEF
+    VEIL_GUARDIAN_SAVE --> FLAME_TRACKER_DEF{目标有短火铳?}
+    VEIL_GUARDIAN_FAIL --> FLAME_TRACKER_DEF
+    VEIL_GUARDIAN_ALONE --> FLAME_TRACKER_DEF
 
-    HUNTER_DEF --> |有且可用| HUNTER_KILL[反杀所有攻击者]
-    HUNTER_DEF --> |无| NORMAL_KILL[正常击杀]
-    HUNTER_KILL --> APPLY
+    FLAME_TRACKER_DEF --> |有且可用| FLAME_TRACKER_KILL[反杀所有攻击者]
+    FLAME_TRACKER_DEF --> |无| NORMAL_KILL[正常击杀]
+    FLAME_TRACKER_KILL --> APPLY
     NORMAL_KILL --> APPLY
 
     APPLY[applyDeathMarks 执行死亡] --> INFECT_EFFECT[应用感染效果]
@@ -286,24 +286,24 @@ Player {
   nightAction, nightTarget, nightAbility  // 当晚行动（每步骤可覆写）
   currentHouse, atHome                     // 位置状态
   // 角色特有状态...
-  isTransformed, hasUsedInfect, infectedByAlpha  // 种狼
-  checkResult, checkTarget                       // 预言家
-  hasPotion, hasPoison, poisonTarget             // 女巫
+  isTransformed, hasUsedInfect, infectedByAlpha  // 冥僧人
+  checkResult, checkTarget                       // 帷幕学者
+  hasPotion, hasPoison, poisonTarget             // 草药学者
   guardingTarget, isGuarding, heavyInjury        // 守卫
-  hasRifle, hasBlunderbuss, canAct               // 猎人
+  hasRifle, hasBlunderbuss, canAct               // 灵痕追猎者
   hasLastWords                                    // 遗言
 }
 
 NightResolver {
   game, players, log[], privateLog[]
-  wolfKills: Map<targetId, wolfIds[]>  // 狼人击杀收集
+  corruptedKills: Map<targetId, corruptedIds[]>  // 蚀者击杀收集
   deathMarks: Map<playerId, reason>    // 死亡标记队列
 }
 
 BotManager {
   game, _timers
   memory: {
-    checkedPlayers, knownWolves, knownGods
+    checkedPlayers, knownCorrupted, knownGods
     attackHistory, voteHistory, deathHistory
     suspicion: Map<playerId, score>
   }
@@ -319,17 +319,17 @@ UserManager {
 
 ```
 checkWinCondition():
-  aliveWolves = 存活且属于狼人阵营的玩家
-    (普通狼人 || 种狼已变狼 || 种狼已使用感染)
+  aliveCorrupted = 存活且属于蚀者阵营的玩家
+    (普通蚀者 || 冥僧人已蚀变 || 冥僧人已使用感染)
 
-  aliveVillage = 存活且属于好人阵营的玩家
-    (好人阵营角色 || 种狼未变狼且未感染)
+  aliveVillage = 存活且属于守幕者阵营的玩家
+    (守幕者阵营角色 || 冥僧人未蚀变且未感染)
 
-  if aliveWolves.length === 0
-    → 好人胜利 "所有蚀者已出局"
+  if aliveCorrupted.length === 0
+    → 守幕者胜利 "所有蚀者已出局"
 
-  if aliveWolves.length >= aliveVillage.length
-    → 狼人胜利 "蚀者数量不少于守幕者"
+  if aliveCorrupted.length >= aliveVillage.length
+    → 蚀者胜利 "蚀者数量不少于守幕者"
 ```
 
 ---

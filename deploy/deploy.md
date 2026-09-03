@@ -15,7 +15,7 @@ curl -fsSL https://get.docker.com | sh
 ### 3. 上传项目到服务器
 ```bash
 # 在本地电脑打包
-cd werewolf-online
+cd veilland
 npm run build:client
 tar -czf veilland.tar.gz server/src package.json client/dist deploy/Dockerfile
 
@@ -31,13 +31,13 @@ ssh root@你的服务器IP
 # 解压并构建
 cd /root
 tar -xzf veilland.tar.gz
-docker build -t werewolf -f deploy/Dockerfile .
+docker build -t veilland -f deploy/Dockerfile .
 # 生产环境请修改盐值环境变量（务必修改默认值！）
 docker run -d -p 80:4000 --restart=unless-stopped --name veilland \
   -e PORT=4000 \
   -e USER_PASSWORD_SALT="your-random-salt-here" \
   -e ROOM_PASSWORD_SALT="your-random-salt-here" \
-  werewolf
+  veilland
 ```
 
 ### 5. 完成！

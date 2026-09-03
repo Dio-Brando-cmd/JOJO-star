@@ -454,7 +454,7 @@ input:focus {
 .player-name { font-size: 0.9em; }
 .player-role-tag { font-size: 0.75em; color: var(--text-muted); }
 .injury-tag { color: var(--danger); font-size: 0.75em; margin-left: 6px; }
-.guard-tag { color: var(--village); font-size: 0.75em; margin-left: 6px; }
+.protect-tag { color: var(--village); font-size: 0.75em; margin-left: 6px; }
 .self-tag { color: var(--accent); font-size: 0.75em; margin-left: 4px; }
 .dead-mark { font-size: 0.9em; }
 .vote-count { color: var(--accent); font-size: 0.8em; font-weight: 700; }
@@ -651,15 +651,15 @@ input:focus {
   margin: 20px 0;
 }
 
-/* 猎人白天开枪 */
-.hunter-day-shoot {
+/* 灵痕追猎者白天开枪 */
+.flame-tracker-day-shoot {
   margin-top: 20px;
   padding: 16px;
   background: rgba(211,84,0,0.1);
   border: 1px solid #d35400;
   border-radius: var(--radius);
 }
-.hunter-day-shoot h4 { color: #d35400; }
+.flame-tracker-day-shoot h4 { color: #d35400; }
 .shoot-targets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .shoot-btn { font-size: 0.9em; }
 
@@ -807,20 +807,20 @@ input:focus {
 }
 
 /* ---- 冥僧告知 ---- */
-.alpha-notify-section {
+.netherMonk-notify-section {
   margin-top: 16px;
   padding: 12px;
   border-radius: 10px;
   background: rgba(255,193,7,0.12);
   border: 1px dashed rgba(255,193,7,0.4);
 }
-.alpha-notify-btn {
+.netherMonk-notify-btn {
   width: 100%;
   font-size: 1em;
   font-weight: 700;
   padding: 12px;
 }
-.alpha-notify-hint {
+.netherMonk-notify-hint {
   text-align: center;
   font-size: 0.75em;
   color: var(--text-muted);
@@ -904,7 +904,7 @@ input:focus {
   font-weight: 600;
 }
 .team-badge.CORRUPTED { background: var(--corrupted); color: white; }
-.team-badge.VILLAGE { background: var(--village); color: white; }
+.team-badge.VEIL_KEEPERS { background: var(--village); color: white; }
 
 .role-card-details {
   display: flex;
@@ -1019,7 +1019,7 @@ input:focus {
 .reveal-role { font-size: 0.8em; font-weight: 700; color: var(--accent2); }
 .reveal-team { font-size: 0.7em; padding: 1px 6px; border-radius: 4px; }
 .reveal-team.CORRUPTED { background: rgba(192,57,43,0.2); color: var(--corrupted); }
-.reveal-team.VILLAGE { background: rgba(41,128,185,0.2); color: var(--village); }
+.reveal-team.VEIL_KEEPERS { background: rgba(41,128,185,0.2); color: var(--village); }
 .reveal-status { font-size: 0.75em; }
 .reveal-status.alive { color: var(--success); }
 .reveal-status.dead { color: var(--danger); }
@@ -1310,7 +1310,7 @@ input:focus {
 .role-option:hover { border-color: var(--accent2); }
 .role-option.selected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
 .role-option.CORRUPTED.selected { border-color: var(--corrupted); }
-.role-option.VILLAGE.selected { border-color: var(--village); }
+.role-option.VEIL_KEEPERS.selected { border-color: var(--village); }
 .role-option-icon { font-size: 1.5em; }
 .role-option-name { font-weight: 600; }
 .role-option-desc { font-size: 0.72em; color: var(--text-muted); }
@@ -1341,7 +1341,7 @@ input:focus {
   font-weight: 600;
 }
 .config-role-tag.CORRUPTED { background: rgba(192,57,43,0.2); color: var(--corrupted); }
-.config-role-tag.VILLAGE { background: rgba(41,128,185,0.2); color: var(--village); }
+.config-role-tag.VEIL_KEEPERS { background: rgba(41,128,185,0.2); color: var(--village); }
 
 .role-count-controls {
   display: flex;

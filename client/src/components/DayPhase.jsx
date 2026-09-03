@@ -11,8 +11,8 @@ export default function DayPhase({ socket }) {
 
   const myRole = privateState?.myRole;
   const myPrivate = privateState?.myPrivateState;
-  const isHunter = myRole === ROLES.FLAME_TRACKER;
-  const canShoot = isHunter && myPrivate?.hasRifle && myPrivate?.rifleUsable;
+  const isFlameTracker = myRole === ROLES.FLAME_TRACKER;
+  const canShoot = isFlameTracker && myPrivate?.hasRifle && myPrivate?.rifleUsable;
 
   return (
     <div className="day-panel">
@@ -54,7 +54,7 @@ export default function DayPhase({ socket }) {
 
       {/* 追猎者白昼追猎 */}
       {canShoot && (
-        <div className="hunter-day-shoot">
+        <div className="flame-tracker-day-shoot">
           <h4>🔫 追猎者射击（白天必杀）</h4>
           <p>选择你要射杀的目标:</p>
           <div className="shoot-targets">
@@ -64,7 +64,7 @@ export default function DayPhase({ socket }) {
                 <button
                   key={p.id}
                   className="btn btn-danger shoot-btn"
-                  onClick={() => { if (window.confirm(`确认射杀 ${p.name}?`)) socket.hunterDayShoot(p.id); }}
+                  onClick={() => { if (window.confirm(`确认射杀 ${p.name}?`)) socket.flameTrackerDayShoot(p.id); }}
                 >
                   🔫 {p.name}
                 </button>

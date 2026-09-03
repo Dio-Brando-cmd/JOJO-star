@@ -170,7 +170,7 @@ async function deploy() {
   console.log(c.yellow('[4/4] 重启服务器...'));
 
   const restartResult = await new Promise((resolve) => {
-    const restartCmd = 'cd /opt/veilland-server && npm install --production 2>&1 && (USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 restart veilland-server 2>&1 || USER_PASSWORD_SALT="werewolf-prod-salt-1.4.0" ROOM_PASSWORD_SALT="werewolf-room-salt-1.4.0" pm2 start index.js --name veilland-server 2>&1)';
+    const restartCmd = 'cd /opt/veilland-server && npm install --production 2>&1 && (USER_PASSWORD_SALT="veilland-prod-salt-1.4.0" ROOM_PASSWORD_SALT="veilland-room-salt-1.4.0" pm2 restart veilland-server 2>&1 || USER_PASSWORD_SALT="veilland-prod-salt-1.4.0" ROOM_PASSWORD_SALT="veilland-room-salt-1.4.0" pm2 start index.js --name veilland-server 2>&1)';
     conn.exec(restartCmd, (err, stream) => {
       if (err) { resolve({ error: err.message }); return; }
       let output = '';

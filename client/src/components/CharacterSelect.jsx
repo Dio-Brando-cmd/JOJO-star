@@ -29,7 +29,7 @@ export default function CharacterSelect({ gameState, socket, onSelected }) {
 
   const [selected, setSelected] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [hoveredChar, setHoveredChar] = useState(null);
+  const [detailChar, setDetailChar] = useState(null);  // 点击查看详情（移动端友好）
 
   // 构建可用角色详情
   const availableChars = available
@@ -109,9 +109,11 @@ export default function CharacterSelect({ gameState, socket, onSelected }) {
                     <div
                       key={char.id}
                       className={`char-card ${isSelected ? 'selected' : ''} ${isTakenByOther ? 'taken' : ''} ${alreadySelected ? 'locked' : ''}`}
-                      onClick={() => handleSelect(char.id)}
-                      onMouseEnter={() => setHoveredChar(char.id)}
-                      onMouseLeave={() => setHoveredChar(null)}
+                      onClick={() => {
+                        if (!alreadySelected) handleSelect(char.id);
+                        // 点击切换详情面板（移动端友好替代hover）
+                        setDetailChar(prev => prev === char.id ? null : char.id);
+                      }}
                     >
                       {/* 性别标识 */}
                       <span className={`char-gender ${char.gender}`}>
@@ -150,11 +152,12 @@ export default function CharacterSelect({ gameState, socket, onSelected }) {
           ))}
         </div>
 
-        {/* 详情面板 */}
-        {hoveredChar && (
+        {/* 详情面板（点击查看，移动端友好） */}
+        {detailChar && (
           <div className="char-detail-panel">
+            <button className="char-detail-close" onClick={(e) => { e.stopPropagation(); setDetailChar(null); }}>✕</button>
             {(() => {
-              const c = CHARACTER_IDENTITIES[hoveredChar];
+              const c = CHARACTER_IDENTITIES[detailChar];
               if (!c) return null;
               return (
                 <>

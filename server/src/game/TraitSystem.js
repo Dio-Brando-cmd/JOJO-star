@@ -99,7 +99,7 @@ export class TraitSystem {
     }
 
     // 英雄之躯（赫克托）：守护姿态下25%不受重伤
-    if (this.canUseTrait(player, '英雄之躯') && player.isGuarding) {
+    if (this.canUseTrait(player, '英雄之躯') && player.isProtecting) {
       if (Math.random() < 0.25) {
         this.markTraitUsed(player, '英雄之躯', 3);
         this._logTraitTrigger(player, '英雄之躯', '守护中完全抵御攻击');
@@ -128,7 +128,7 @@ export class TraitSystem {
     }
 
     // 猎手步伐（斯卡蒂）：移动时脚步声减半（不影响速度本身）
-    // 魔狼之血（哈尔瓦德）：移速+30%（在狼形态下，不在此处处理）
+    // 噬星之血（哈尔瓦德）：移速+30%（在蚀者形态下，不在此处处理）
 
     return mod;
   }
@@ -183,7 +183,7 @@ export class TraitSystem {
   }
 
   /**
-   * 检查"荣誉枷锁"：不能投票给已知好人
+   * 检查"荣誉枷锁"：不能投票给已知守幕者
    */
   canVoteFor(player, target) {
     if (!this.hasTrait(player, '荣誉枷锁')) return true;
@@ -207,9 +207,9 @@ export class TraitSystem {
   /**
    * 检查"戒律"：不能投票给第一晚查出的蚀者
    */
-  canVoteEarlyWolf(player, target) {
+  canVoteEarlyCorrupted(player, target) {
     if (!this.hasTrait(player, '戒律')) return true;
-    if (player.earlyCheckedWolf === target.id) return false;
+    if (player.earlyCheckedCorrupted === target.id) return false;
     return true;
   }
 
@@ -220,7 +220,7 @@ export class TraitSystem {
   /**
    * 冥界视觉（卡赫特）：查验类能力准确率+20%
    */
-  getSeerBonus(player) {
+  getVeilScholarBonus(player) {
     if (this.hasTrait(player, '冥界视觉')) {
       return 0.20;
     }
@@ -228,21 +228,21 @@ export class TraitSystem {
   }
 
   /**
-   * 狼之嗅觉（罗慕路斯）：感知附近蚀者
+   * 蚀感嗅觉（罗慕路斯）：感知附近蚀者
    */
-  getWolfSense(player) {
-    if (!this.hasTrait(player, '狼之嗅觉')) return null;
+  getCorruptedSense(player) {
+    if (!this.hasTrait(player, '蚀感嗅觉')) return null;
 
     const alivePlayers = this.game.players.filter(p => p.alive && p.id !== player.id);
-    const nearbyWolves = alivePlayers.filter(p => p.isWolf());
+    const nearbyCorrupted = alivePlayers.filter(p => p.isCorrupted());
 
-    if (nearbyWolves.length === 0) return { detected: false, message: '你没有感知到狼人的气息' };
+    if (nearbyCorrupted.length === 0) return { detected: false, message: '你没有感知到蚀者的气息' };
 
     // 模糊方向——只说"有"不说"谁"
     return {
       detected: true,
-      message: '你隐约感觉到附近有狼人的气息……',
-      vagueDirection: nearbyWolves.length === 1 ? '一股' : '多股',
+      message: '你隐约感觉到附近有蚀者的气息……',
+      vagueDirection: nearbyCorrupted.length === 1 ? '一股' : '多股',
     };
   }
 
@@ -295,15 +295,15 @@ export class TraitSystem {
   }
 
   /**
-   * 银之恐惧（哈尔瓦德）：被守卫筑垒的屋子不能进入
+   * 缚链余悸（哈尔瓦德）：被守卫筑垒的屋子不能进入
    */
   canEnterHouse(player, houseId) {
-    if (!this.hasTrait(player, '银之恐惧')) return true;
+    if (!this.hasTrait(player, '缚链余悸')) return true;
     // 检查该屋子是否被守卫筑垒
-    const guard = this.game.players.find(p =>
+    const veilGuardian = this.game.players.find(p =>
       p.role === ROLES.VEIL_GUARDIAN && p.alive && p.fortifiedTarget === houseId
     );
-    if (guard) return false;
+    if (veilGuardian) return false;
     return true;
   }
 

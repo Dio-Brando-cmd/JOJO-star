@@ -236,19 +236,19 @@ export class GameManager {
       delete game.privateLogs[oldId];
     }
 
-    // 3. 其他玩家的 knownWolves 数组
+    // 3. 其他玩家的 knownCorrupted 数组
     for (const p of game.players) {
-      if (p.knownWolves && p.knownWolves.includes(oldId)) {
-        const idx = p.knownWolves.indexOf(oldId);
-        p.knownWolves[idx] = newSocketId;
+      if (p.knownCorrupted && p.knownCorrupted.includes(oldId)) {
+        const idx = p.knownCorrupted.indexOf(oldId);
+        p.knownCorrupted[idx] = newSocketId;
       }
       // 守卫目标
-      if (p.guardingTarget === oldId) {
-        p.guardingTarget = newSocketId;
+      if (p.protectTarget === oldId) {
+        p.protectTarget = newSocketId;
       }
       // 蚀者噬灵目标
-      if (p.wolfKillTarget === oldId) {
-        p.wolfKillTarget = newSocketId;
+      if (p.corruptedKillTarget === oldId) {
+        p.corruptedKillTarget = newSocketId;
       }
     }
 
@@ -256,8 +256,8 @@ export class GameManager {
     for (const entry of game.nightLog) {
       if (entry.player === oldId) entry.player = newSocketId;
       if (entry.target === oldId) entry.target = newSocketId;
-      if (entry.wolves && Array.isArray(entry.wolves)) {
-        entry.wolves = entry.wolves.map(w => w === oldId ? newSocketId : w);
+      if (entry.corrupted && Array.isArray(entry.corrupted)) {
+        entry.corrupted = entry.corrupted.map(w => w === oldId ? newSocketId : w);
       }
     }
 
@@ -298,10 +298,10 @@ export class GameManager {
       if (p.herbalRemedyTarget === oldId) p.herbalRemedyTarget = newSocketId;
       if (p.diagnoseTarget === oldId) p.diagnoseTarget = newSocketId;
       if (p.fortifiedTarget === oldId) p.fortifiedTarget = newSocketId;
-      // 同狼开眼列表
-      if (p.wolvesOpenEyesTogether && p.wolvesOpenEyesTogether.includes(oldId)) {
-        const weIdx = p.wolvesOpenEyesTogether.indexOf(oldId);
-        p.wolvesOpenEyesTogether[weIdx] = newSocketId;
+      // 同蚀者开眼列表
+      if (p.corruptedOpenEyesTogether && p.corruptedOpenEyesTogether.includes(oldId)) {
+        const weIdx = p.corruptedOpenEyesTogether.indexOf(oldId);
+        p.corruptedOpenEyesTogether[weIdx] = newSocketId;
       }
     }
 

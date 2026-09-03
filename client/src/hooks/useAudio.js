@@ -75,8 +75,8 @@ export function useAudio() {
       case 'vote':
         playVote(ctx, now, vol);
         break;
-      case 'wolf_howl':
-        playWolfHowl(ctx, now, vol);
+      case 'rift_resonance':
+        playRiftResonance(ctx, now, vol);
         break;
       case 'gunshot':
         playGunshot(ctx, now, vol);
@@ -236,8 +236,8 @@ function playVote(ctx, now, vol) {
   osc2.stop(now + 0.13);
 }
 
-// 狼嚎 —— 滑音
-function playWolfHowl(ctx, now, vol) {
+// 裂隙共鸣 —— 滑音
+function playRiftResonance(ctx, now, vol) {
   const osc = ctx.createOscillator();
   osc.type = 'sine';
   osc.frequency.setValueAtTime(300, now);

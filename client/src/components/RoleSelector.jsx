@@ -129,15 +129,15 @@ export default function RoleSelector({ isHost, playerCount, currentConfig, onUpd
     const config = buildConfig();
     if (config.length === 0) return '请选择至少一个角色';
     if (config.length !== playerCount) return `角色数量(${config.length})与玩家数量(${playerCount})不匹配`;
-    const hasWolf = config.some(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
-    if (!hasWolf) return '必须至少有一个蚀者阵营角色';
-    const hasVillage = config.some(r =>
+    const hasCorrupted = config.some(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
+    if (!hasCorrupted) return '必须至少有一个蚀者阵营角色';
+    const hasKeeper = config.some(r =>
       [ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(r)
     );
-    if (!hasVillage) return '必须至少有一个守幕者阵营角色';
-    const wolves = config.filter(r => r === ROLES.CORRUPTED || r === ROLES.NETHER_MONK).length;
-    const village = config.length - wolves;
-    if (wolves >= village) return '蚀者数量不能≥守幕者数量';
+    if (!hasKeeper) return '必须至少有一个守幕者阵营角色';
+    const corrupted = config.filter(r => r === ROLES.CORRUPTED || r === ROLES.NETHER_MONK).length;
+    const village = config.length - corrupted;
+    if (corrupted >= village) return '蚀者数量不能≥守幕者数量';
     return null;
   }, [buildConfig, playerCount]);
 
@@ -172,8 +172,8 @@ export default function RoleSelector({ isHost, playerCount, currentConfig, onUpd
     );
   }
 
-  const wolfCount = (roleCounts[ROLES.NETHER_MONK] || 0) + (roleCounts[ROLES.CORRUPTED] || 0);
-  const villageCount = totalSelected - wolfCount;
+  const corruptedCount = (roleCounts[ROLES.NETHER_MONK] || 0) + (roleCounts[ROLES.CORRUPTED] || 0);
+  const keeperCount = totalSelected - corruptedCount;
   const validationError = totalSelected > 0 ? validate() : null;
 
   return (
@@ -181,7 +181,7 @@ export default function RoleSelector({ isHost, playerCount, currentConfig, onUpd
       <h4>🎭 角色配置（房主 — 随机分配）</h4>
       <p className="select-hint">
         玩家 {playerCount} 人 | 已配置 {totalSelected}/{playerCount} 个角色 |
-        🌑蚀者 {wolfCount} | ✨守幕者 {villageCount}
+        🌑蚀者 {corruptedCount} | ✨守幕者 {keeperCount}
       </p>
       {totalSelected > 0 && totalSelected !== playerCount && (
         <p className="warning-text">⚠️ 角色数量需等于玩家数量</p>

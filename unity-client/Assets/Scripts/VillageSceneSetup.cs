@@ -62,9 +62,9 @@ public class VillageSceneSetup : MonoBehaviour
         ClearAll();
 
         string[] houseNames = {
-            "追猎者庇护所", "帷幕守卫庇护所", "种狼屋", "狼人屋",
-            "预言家屋", "毒巫屋", "药巫屋", "村民1屋",
-            "村民2屋", "村民3屋", "村民4屋", "村民5屋",
+            "追猎者庇护所", "帷幕守卫庇护所", "冥僧人屋", "蚀者屋",
+            "帷幕学者屋", "草药学者屋", "愈灵师屋", "灵织者1屋",
+            "灵织者2屋", "灵织者3屋", "灵织者4屋", "灵织者5屋",
         };
 
         for (int i = 0; i < 12; i++)
@@ -86,10 +86,25 @@ public class VillageSceneSetup : MonoBehaviour
                 // 无prefab时创建基础Cube占位
                 prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 prefab.transform.localScale = new Vector3(5, 3, 4);
+                // Fix material for URP
+                var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+                if (urpLit != null)
+                    prefab.GetComponent<MeshRenderer>().sharedMaterial = new Material(urpLit);
             }
 
             GameObject house = Instantiate(prefab, pos, Quaternion.Euler(0, angle * Mathf.Rad2Deg, 0), transform);
             house.name = houseNames[i];
+
+            // Fix all child renderer materials for URP
+            foreach (var mr in house.GetComponentsInChildren<MeshRenderer>())
+            {
+                if (mr.sharedMaterial == null || mr.sharedMaterial.shader.name == "Standard")
+                {
+                    var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+                    if (urpLit != null)
+                        mr.sharedMaterial = new Material(urpLit);
+                }
+            }
 
             // 添加房屋组件
             var houseComp = house.AddComponent<VillageHouse>();
@@ -115,6 +130,16 @@ public class VillageSceneSetup : MonoBehaviour
         {
             prefab = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             prefab.transform.localScale = new Vector3(1, 2, 1);
+        }
+        // Fix material for URP
+        foreach (var mr in prefab.GetComponentsInChildren<MeshRenderer>())
+        {
+            if (mr.sharedMaterial == null || mr.sharedMaterial.shader.name == "Standard")
+            {
+                var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+                if (urpLit != null)
+                    mr.sharedMaterial = new Material(urpLit);
+            }
         }
         GameObject obj = Instantiate(prefab, pos, Quaternion.identity, transform);
         obj.name = name;
@@ -143,10 +168,8 @@ public class VillageHouse : MonoBehaviour, IInteractable
     public int ownerIndex;
     public bool isLocked = false;
     public bool isFortified = false;    // 守卫筑垒
-    public bool hasTrap = false;        // 猎人/老猎人陷阱
+    public bool hasTrap = false;        // 灵痕追猎者/老兵陷阱
     public bool hasPoisonFog = false;   // 毒雾陷阱
-
-    private bool playerInside = false;
 
     void Start()
     {
@@ -181,7 +204,7 @@ public class VillageHouse : MonoBehaviour, IInteractable
     {
         if (other.CompareTag("Player"))
         {
-            playerInside = true;
+            Debug.Log($"[House] Player entered {houseName}");
         }
     }
 
@@ -189,7 +212,7 @@ public class VillageHouse : MonoBehaviour, IInteractable
     {
         if (other.CompareTag("Player"))
         {
-            playerInside = true;
+            Debug.Log($"[House] Player left {houseName}");
         }
     }
 

@@ -14,11 +14,11 @@ sleep 3
 systemctl is-active docker
 
 echo "=== 解压代码包 ==="
-cd /opt/werewolf
+cd /opt/veilland
 tar -xzf veilland.tar.gz
 
 echo "=== Dockerfile ==="
-cat > /opt/werewolf/Dockerfile << 'DOCKERFILE'
+cat > /opt/veilland/Dockerfile << 'DOCKERFILE'
 FROM node:20-alpine
 WORKDIR /app
 COPY server/package*.json ./server/
@@ -27,8 +27,8 @@ COPY server/src ./server/src
 COPY client/dist ./client/dist
 ENV PORT=4000
 # 安全: 生产环境应通过 docker run -e 传入实际盐值
-ENV USER_PASSWORD_SALT=werewolf-prod-salt-change-me
-ENV ROOM_PASSWORD_SALT=werewolf-room-salt-change-me
+ENV USER_PASSWORD_SALT=veilland-prod-salt-change-me
+ENV ROOM_PASSWORD_SALT=veilland-room-salt-change-me
 EXPOSE 4000
 CMD ["node", "server/src/index.js"]
 DOCKERFILE
@@ -36,19 +36,19 @@ DOCKERFILE
 echo "=== 拉取 Node 镜像 ==="
 docker pull node:20-alpine 2>&1
 
-echo "=== 构建狼人杀镜像 ==="
-docker build -t werewolf /opt/werewolf 2>&1
+echo "=== 构建帷幕之地镜像 ==="
+docker build -t veilland /opt/veilland 2>&1
 
 echo "=== 启动服务 ==="
-docker stop werewolf 2>/dev/null || true
-docker rm werewolf 2>/dev/null || true
+docker stop veilland 2>/dev/null || true
+docker rm veilland 2>/dev/null || true
 docker run -d --name veilland --restart=unless-stopped -p 80:4000 \
   -e PORT=4000 \
-  -e USER_PASSWORD_SALT=werewolf-prod-salt-$(date +%s) \
-  -e ROOM_PASSWORD_SALT=werewolf-room-salt-$(date +%s) \
-  werewolf
+  -e USER_PASSWORD_SALT=veilland-prod-salt-$(date +%s) \
+  -e ROOM_PASSWORD_SALT=veilland-room-salt-$(date +%s) \
+  veilland
 
 echo "=== 部署完成 ==="
-docker ps --filter name=werewolf
+docker ps --filter name=veilland
 echo ""
 echo "游戏地址: http://210.16.170.144"

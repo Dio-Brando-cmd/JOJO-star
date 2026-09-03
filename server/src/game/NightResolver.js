@@ -10,7 +10,7 @@ export class NightResolver {
     this.players = game.players;
     this.log = [];           // 夜晚日志（公开）
     this.privateLog = [];    // 夜晚日志（仅相关角色可见）
-    this.wolfKills = new Map(); // 蚀者噬灵目标 Map<targetId, wolfIds[]>
+    this.corruptedKills = new Map(); // 蚀者噬灵目标 Map<targetId, corruptedIds[]>
   }
 
   // ---- 主入口：结算整晚 ----
@@ -51,7 +51,7 @@ export class NightResolver {
         });
         const count = visitors.length;
 
-        // 村民因人数过多被赶回家时只显示"很多人"
+        // 灵织者因人数过多被赶回家时只显示"很多人"
         let countDisplay;
         if (p.role === 'SPIRIT_WEAVER' && count >= 3) {
           countDisplay = -1; // 代表"很多人"
@@ -62,7 +62,7 @@ export class NightResolver {
             count: countDisplay,
             desc: '屋子里有很多人（≥3人），你被赶回了自己家',
           });
-          // 村民被赶回家
+          // 灵织者被赶回家
           p.currentHouse = p.id;
           p.atHome = true;
         } else {
@@ -82,13 +82,13 @@ export class NightResolver {
   // ---- 按步骤分发 ----
   async processStep(step) {
     const handlers = {
-      [NIGHT_STEPS.FLAME_TRACKER]: () => this.resolveHunter(),
-      [NIGHT_STEPS.NETHER_MONK]: () => this.resolveAlphaWolf(),
-      [NIGHT_STEPS.VEIL_GUARDIAN]: () => this.resolveGuard(),
-      [NIGHT_STEPS.CORRUPTED]: () => this.resolveWerewolves(),
-      [NIGHT_STEPS.VEIL_SCHOLAR]: () => this.resolveSeer(),
-      [NIGHT_STEPS.HERBAL_SAGE]: () => this.resolvePoisonWitch(),
-      [NIGHT_STEPS.SPIRIT_MENDER]: () => this.resolveHealWitch(),
+      [NIGHT_STEPS.FLAME_TRACKER]: () => this.resolveFlameTracker(),
+      [NIGHT_STEPS.NETHER_MONK]: () => this.resolveNetherMonk(),
+      [NIGHT_STEPS.VEIL_GUARDIAN]: () => this.resolveVeilGuardian(),
+      [NIGHT_STEPS.CORRUPTED]: () => this.resolveCorrupted(),
+      [NIGHT_STEPS.VEIL_SCHOLAR]: () => this.resolveVeilScholar(),
+      [NIGHT_STEPS.HERBAL_SAGE]: () => this.resolveHerbalSage(),
+      [NIGHT_STEPS.SPIRIT_MENDER]: () => this.resolveSpiritMender(),
       [NIGHT_STEPS.SPIRIT_WEAVER]: () => this.resolveWeaver(),
     };
 
@@ -97,455 +97,455 @@ export class NightResolver {
   }
 
   // ==========================================
-  //  1. 猎人（第二晚起第一个行动）
+  //  1. 灵痕追猎者（第二晚起第一个行动）
   // ==========================================
-  resolveHunter() {
-    const hunter = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
-    if (!hunter || !hunter.nightAction) return;
+  resolveFlameTracker() {
+    const flameTracker = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
+    if (!flameTracker || !flameTracker.nightAction) return;
 
-    if (hunter.nightAction === 'SLEEP') return;
+    if (flameTracker.nightAction === 'SLEEP') return;
 
-    // 猎人观察目标
-    if (hunter.observedTarget && hunter.nightAction === 'USE_ABILITY') {
-      const target = this.players.find(p => p.id === hunter.observedTarget);
+    // 灵痕追猎者观察目标
+    if (flameTracker.observedTarget && flameTracker.nightAction === 'USE_ABILITY') {
+      const target = this.players.find(p => p.id === flameTracker.observedTarget);
       if (target && target.alive) {
-        hunter.observedTargetWentOut = target.nightAction === 'GO_OUT';
+        flameTracker.observedTargetWentOut = target.nightAction === 'GO_OUT';
         this.privateLog.push({
-          type: 'hunter_observe',
-          player: hunter.id,
+          type: 'flame_tracker_observe',
+          player: flameTracker.id,
           target: target.id,
-          wentOut: hunter.observedTargetWentOut,
+          wentOut: flameTracker.observedTargetWentOut,
         });
       }
     }
 
-    // 猎人使用猎枪射杀（先开枪后腐蚀，确保同一晚可开枪）
-    if (hunter.nightAbility?.useRifle && hunter.rifleUsable) {
-      const targetId = hunter.nightAbility.rifleTarget;
+    // 灵痕追猎者使用猎枪射杀（先开枪后腐蚀，确保同一晚可开枪）
+    if (flameTracker.nightAbility?.useRifle && flameTracker.rifleUsable) {
+      const targetId = flameTracker.nightAbility.rifleTarget;
       if (targetId) {
-        this.markForDeath(targetId, 'hunter_rifle');
-        this.log.push({ type: 'hunter_shoot', target: targetId, msg: '追猎者射击了！' });
-        hunter.rifleUsable = false; // 开枪消耗猎枪
-        hunter.canShootNextNight = null;
+        this.markForDeath(targetId, 'flame_tracker_rifle');
+        this.log.push({ type: 'flame_tracker_shoot', target: targetId, msg: '追猎者射击了！' });
+        flameTracker.rifleUsable = false; // 开枪消耗猎枪
+        flameTracker.canShootNextNight = null;
       }
     }
 
     // 猎枪追猎：上一晚观察到的出门目标
-    if (hunter.canShootNextNight && hunter.rifleUsable) {
-      this.markForDeath(hunter.canShootNextNight, 'hunter_rifle');
-      this.log.push({ type: 'hunter_shoot', target: hunter.canShootNextNight, msg: '猎人追踪射杀！' });
-      hunter.rifleUsable = false; // 开枪消耗猎枪
-      hunter.canShootNextNight = null;
+    if (flameTracker.canShootNextNight && flameTracker.rifleUsable) {
+      this.markForDeath(flameTracker.canShootNextNight, 'flame_tracker_rifle');
+      this.log.push({ type: 'flame_tracker_shoot', target: flameTracker.canShootNextNight, msg: '灵痕追猎者追踪射杀！' });
+      flameTracker.rifleUsable = false; // 开枪消耗猎枪
+      flameTracker.canShootNextNight = null;
     }
 
     // 设置下一晚可追踪的目标
-    if (hunter.observedTargetWentOut && hunter.observedTarget && !hunter.nightAbility?.useRifle) {
-      hunter.canShootNextNight = hunter.observedTarget;
+    if (flameTracker.observedTargetWentOut && flameTracker.observedTarget && !flameTracker.nightAbility?.useRifle) {
+      flameTracker.canShootNextNight = flameTracker.observedTarget;
     }
 
-    // 新增：猎人陷阱射击
-    if (hunter.nightAbility?.useTrap && hunter.nightTarget) {
-      hunter.trapTarget = hunter.nightTarget;
+    // 新增：灵痕追猎者陷阱射击
+    if (flameTracker.nightAbility?.useTrap && flameTracker.nightTarget) {
+      flameTracker.trapTarget = flameTracker.nightTarget;
       this.privateLog.push({
-        type: 'hunter_trap',
-        player: hunter.id,
-        target: hunter.nightTarget,
-        msg: '猎人在目标屋子设下了陷阱',
+        type: 'flame_tracker_trap',
+        player: flameTracker.id,
+        target: flameTracker.nightTarget,
+        msg: '灵痕追猎者在目标屋子设下了陷阱',
       });
     }
 
-    // 新增：猎人复仇标记（投票出局时触发，在此处记录）
-    if (hunter.nightAbility?.markRevenge && hunter.nightTarget) {
-      hunter.revengeTarget = hunter.nightTarget;
+    // 新增：灵痕追猎者复仇标记（投票出局时触发，在此处记录）
+    if (flameTracker.nightAbility?.markRevenge && flameTracker.nightTarget) {
+      flameTracker.revengeTarget = flameTracker.nightTarget;
       this.privateLog.push({
-        type: 'hunter_revenge_mark',
-        player: hunter.id,
-        target: hunter.nightTarget,
-        msg: '猎人标记了复仇目标',
+        type: 'flame_tracker_revenge_mark',
+        player: flameTracker.id,
+        target: flameTracker.nightTarget,
+        msg: '灵痕追猎者标记了复仇目标',
       });
     }
 
     // 处理武器腐蚀：带出门才会被腐蚀（在开枪之后判定，确保同一晚出门+开枪不会冲突）
-    if (hunter.blunderbussUsable && hunter.nightAction === 'GO_OUT') {
-      hunter.blunderbussUsable = false;
-      this.privateLog.push({ type: 'blunderbuss_corroded', player: hunter.id, msg: '短火铳带出门，已腐蚀' });
+    if (flameTracker.blunderbussUsable && flameTracker.nightAction === 'GO_OUT') {
+      flameTracker.blunderbussUsable = false;
+      this.privateLog.push({ type: 'blunderbuss_corroded', player: flameTracker.id, msg: '短火铳带出门，已腐蚀' });
     }
-    if (hunter.rifleUsable && hunter.nightAction === 'GO_OUT') {
-      hunter.rifleUsable = false;
-      this.privateLog.push({ type: 'rifle_corroded', player: hunter.id, msg: '猎枪带出门，已腐蚀' });
+    if (flameTracker.rifleUsable && flameTracker.nightAction === 'GO_OUT') {
+      flameTracker.rifleUsable = false;
+      this.privateLog.push({ type: 'rifle_corroded', player: flameTracker.id, msg: '猎枪带出门，已腐蚀' });
     }
   }
 
   // ==========================================
-  //  2. 种狼
+  //  2. 冥僧人
   // ==========================================
-  resolveAlphaWolf() {
-    const alpha = this.players.find(p => p.role === ROLES.NETHER_MONK && p.alive);
-    if (!alpha || alpha.nightAction === 'SLEEP') return;
+  resolveNetherMonk() {
+    const netherMonk = this.players.find(p => p.role === ROLES.NETHER_MONK && p.alive);
+    if (!netherMonk || netherMonk.nightAction === 'SLEEP') return;
 
-    const ability = alpha.nightAbility || {};
+    const ability = netherMonk.nightAbility || {};
 
-    // 变狼
-    if (ability.transform && !alpha.isTransformed) {
-      alpha.isTransformed = true;
-      this.privateLog.push({ type: 'alpha_transform', player: alpha.id, msg: '种狼完成了变狼' });
+    // 蚀变
+    if (ability.transform && !netherMonk.isTransformed) {
+      netherMonk.isTransformed = true;
+      this.privateLog.push({ type: 'nether_monk_transform', player: netherMonk.id, msg: '冥僧人完成了蚀变' });
     }
 
-    // 感染
-    if (ability.infect && !alpha.hasUsedInfect && !alpha.hasKilled) {
-      const targetId = alpha.nightTarget;
+    // 堕化
+    if (ability.corrupt && !netherMonk.hasUsedCorrupt && !netherMonk.hasKilled) {
+      const targetId = netherMonk.nightTarget;
       const target = this.players.find(p => p.id === targetId && p.alive);
       if (target) {
-        // 感染察灵家的特殊处理：察灵家被感染但不变成狼人，种狼保持蚀者阵营
+        // 堕化察灵家的特殊处理：察灵家被堕化但不变成蚀者，冥僧人保持蚀者阵营
         if (target.role === ROLES.VEIL_SCHOLAR) {
-          target.infectedByAlpha = true;
-          target.willBecomeWolf = false; // 察灵家保留能力，不变狼
-          // 种狼仍属于蚀者阵营，身份不变，行动次序不变
-          this.privateLog.push({ type: 'seer_infected', player: target.id, alphaId: alpha.id, msg: '察灵家被冥僧人堕化，但保留察灵能力' });
+          target.corruptedByNetherMonk = true;
+          target.willBecomeCorrupted = false; // 察灵家保留能力，不蚀变
+          // 冥僧人仍属于蚀者阵营，身份不变，行动次序不变
+          this.privateLog.push({ type: 'veil_scholar_corrupted', player: target.id, netherMonkId: netherMonk.id, msg: '察灵家被冥僧人堕化，但保留察灵能力' });
         } else {
-          target.infectedByAlpha = true;
-          target.willBecomeWolf = true;
-          this.privateLog.push({ type: 'infected', player: target.id, msg: '被冥僧人堕化，下个夜晚蚀变为蚀者' });
+          target.corruptedByNetherMonk = true;
+          target.willBecomeCorrupted = true;
+          this.privateLog.push({ type: 'corrupted', player: target.id, msg: '被冥僧人堕化，下个夜晚蚀变为蚀者' });
         }
-        alpha.hasUsedInfect = true;
-        // 使用了感染后，当前夜晚种狼算作狼人（可被察灵家查出）
-        this.privateLog.push({ type: 'alpha_infected_visible', player: alpha.id });
+        netherMonk.hasUsedCorrupt = true;
+        // 使用了堕化后，当前夜晚冥僧人算作蚀者（可被察灵家查出）
+        this.privateLog.push({ type: 'nether_monk_corrupted_visible', player: netherMonk.id });
       }
     }
 
-    // 注意：变狼后的刀人在 resolveWerewolves 中统一处理（已变狼种狼算作狼人群）
+    // 注意：蚀变后的刀人在 resolveCorrupted 中统一处理（已蚀变冥僧人算作蚀者群）
     // 此处只设置标记，不重复写击杀逻辑
 
-    // 新增：假身份编织（变狼前可伪装成神职）
-    if (ability.fakeIdentity && !alpha.isTransformed && !alpha.hasUsedInfect) {
+    // 新增：假身份编织（蚀变前可伪装成守幕者）
+    if (ability.fakeIdentity && !netherMonk.isTransformed && !netherMonk.hasUsedCorrupt) {
       const fakeRole = ability.fakeIdentityRole;
       if (fakeRole && [ROLES.VEIL_SCHOLAR, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(fakeRole)) {
-        alpha.fakeIdentity = fakeRole;
+        netherMonk.fakeIdentity = fakeRole;
         this.privateLog.push({
-          type: 'alpha_fake_identity',
-          player: alpha.id,
+          type: 'nether_monk_fake_identity',
+          player: netherMonk.id,
           fakeRole,
-          msg: `种狼编织了假身份：${fakeRole}`,
+          msg: `冥僧人编织了假身份：${fakeRole}`,
         });
       }
     }
 
     // 更新冥僧人的所在屋子（不计入人数）
-    if (alpha.nightAction === 'GO_OUT' && alpha.nightTarget) {
-      alpha.currentHouse = alpha.nightTarget;
-      alpha.atHome = false;
+    if (netherMonk.nightAction === 'GO_OUT' && netherMonk.nightTarget) {
+      netherMonk.currentHouse = netherMonk.nightTarget;
+      netherMonk.atHome = false;
     }
 
     // 重置冥僧入定状态，使其能在蚀者步骤重新提交刀人
     // 出门信息已保存在 currentHouse/atHome，collectHouseVisitInfo 用这些判断
-    alpha.nightAction = null;
-    alpha.nightTarget = null;
-    alpha.nightAbility = null;
+    netherMonk.nightAction = null;
+    netherMonk.nightTarget = null;
+    netherMonk.nightAbility = null;
   }
 
   // ==========================================
   //  3. 守卫
   // ==========================================
-  resolveGuard() {
-    const guard = this.players.find(p => p.role === ROLES.VEIL_GUARDIAN && p.alive);
-    if (!guard || guard.nightAction === 'SLEEP') return;
+  resolveVeilGuardian() {
+    const veilGuardian = this.players.find(p => p.role === ROLES.VEIL_GUARDIAN && p.alive);
+    if (!veilGuardian || veilGuardian.nightAction === 'SLEEP') return;
 
-    if (guard.nightAbility?.guard) {
-      const targetId = guard.nightTarget;
+    if (veilGuardian.nightAbility?.protect) {
+      const targetId = veilGuardian.nightTarget;
       const target = this.players.find(p => p.id === targetId);
       if (target) {
         // 守卫去目标家
-        guard.currentHouse = targetId;
-        guard.atHome = false;
-        guard.isGuarding = true;
-        guard.guardingTarget = targetId;
-        this.privateLog.push({ type: 'guard', player: guard.id, target: targetId });
+        veilGuardian.currentHouse = targetId;
+        veilGuardian.atHome = false;
+        veilGuardian.isProtecting = true;
+        veilGuardian.protectTarget = targetId;
+        this.privateLog.push({ type: 'protect', player: veilGuardian.id, target: targetId });
       }
     }
 
     // 如果守卫只是出门（不使用守护能力）
-    if (guard.nightAction === 'GO_OUT' && !guard.nightAbility?.guard) {
-      guard.atHome = false;
-      if (guard.nightTarget) {
-        guard.currentHouse = guard.nightTarget;
+    if (veilGuardian.nightAction === 'GO_OUT' && !veilGuardian.nightAbility?.protect) {
+      veilGuardian.atHome = false;
+      if (veilGuardian.nightTarget) {
+        veilGuardian.currentHouse = veilGuardian.nightTarget;
       }
     }
 
     // 新增：守卫筑垒（加固目标屋子）
-    if (guard.nightAbility?.fortify && guard.nightTarget) {
-      guard.fortifiedTarget = guard.nightTarget;
-      guard.currentHouse = guard.nightTarget;
-      guard.atHome = false;
+    if (veilGuardian.nightAbility?.fortify && veilGuardian.nightTarget) {
+      veilGuardian.fortifiedTarget = veilGuardian.nightTarget;
+      veilGuardian.currentHouse = veilGuardian.nightTarget;
+      veilGuardian.atHome = false;
       this.privateLog.push({
-        type: 'guard_fortify',
-        player: guard.id,
-        target: guard.nightTarget,
+        type: 'veil_guardian_fortify',
+        player: veilGuardian.id,
+        target: veilGuardian.nightTarget,
         msg: '守卫筑垒加固了目标屋子',
       });
     }
 
     // 新增：守卫巡逻（不护具体目标，巡视全村）
-    if (guard.nightAbility?.patrol) {
-      guard.patrolled = true;
-      const wolfHouses = [];
+    if (veilGuardian.nightAbility?.patrol) {
+      veilGuardian.patrolled = true;
+      const corruptedHouses = [];
       for (const p of this.players) {
-        if (p.alive && p.isWolf() && p.nightAction === 'GO_OUT' && p.currentHouse !== p.id) {
-          wolfHouses.push(p.currentHouse);
+        if (p.alive && p.isCorrupted() && p.nightAction === 'GO_OUT' && p.currentHouse !== p.id) {
+          corruptedHouses.push(p.currentHouse);
         }
       }
       this.privateLog.push({
-        type: 'guard_patrol',
-        player: guard.id,
-        wolfVisitedHouses: wolfHouses,
-        count: wolfHouses.length,
-        msg: `守卫巡逻：${wolfHouses.length > 0 ? `发现${wolfHouses.length}间屋子有狼人进入` : '未发现异常'}`,
+        type: 'veil_guardian_patrol',
+        player: veilGuardian.id,
+        corruptedVisitedHouses: corruptedHouses,
+        count: corruptedHouses.length,
+        msg: `守卫巡逻：${corruptedHouses.length > 0 ? `发现${corruptedHouses.length}间屋子有蚀者进入` : '未发现异常'}`,
       });
     }
 
     // 新增：守卫舍身（标记替死目标）
-    if (guard.nightAbility?.sacrifice && guard.nightTarget) {
-      guard.sacrificeTarget = guard.nightTarget;
+    if (veilGuardian.nightAbility?.sacrifice && veilGuardian.nightTarget) {
+      veilGuardian.sacrificeTarget = veilGuardian.nightTarget;
       this.privateLog.push({
-        type: 'guard_sacrifice',
-        player: guard.id,
-        target: guard.nightTarget,
+        type: 'veil_guardian_sacrifice',
+        player: veilGuardian.id,
+        target: veilGuardian.nightTarget,
         msg: '守卫立下舍身誓言：若目标死亡，愿替其死',
       });
     }
   }
 
   // ==========================================
-  //  4. 狼人群（随机顺序）
+  //  4. 蚀者群（随机顺序）
   // ==========================================
-  resolveWerewolves() {
-    // 所有蚀者阵营：普通狼人 + 已变狼/已感染的种狼（参与协同）
-    const wolves = this.players.filter(p =>
+  resolveCorrupted() {
+    // 所有蚀者阵营：普通蚀者 + 已蚀变/已堕化的冥僧人（参与协同）
+    const corrupted = this.players.filter(p =>
       p.alive &&
       (p.role === ROLES.CORRUPTED ||
-       (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedInfect)))
+       (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedCorrupt)))
     );
 
-    if (wolves.length === 0) return;
+    if (corrupted.length === 0) return;
 
     // 随机打乱蚀者噬灵顺序
-    this.shuffleArray(wolves);
+    this.shuffleArray(corrupted);
 
-    // 收集所有狼人的击杀目标
-    const killTargets = new Map(); // targetId -> [wolfIds]
+    // 收集所有蚀者的击杀目标
+    const killTargets = new Map(); // targetId -> [corruptedIds]
 
-    for (const wolf of wolves) {
-      if (wolf.nightAction === 'SLEEP') continue;
+    for (const corrupted of corrupted) {
+      if (corrupted.nightAction === 'SLEEP') continue;
 
-      // 新增：狼人嚎叫召集
-      if (wolf.nightAction === 'HOWL') {
-        wolf.howled = true;
-        wolf.howlCooldown = 2; // 冷却2回合
+      // 新增：蚀者共鸣召集
+      if (corrupted.nightAction === 'RIFT_RESONANCE') {
+        corrupted.resonated = true;
+        corrupted.resonanceCooldown = 2; // 冷却2回合
         this.privateLog.push({
-          type: 'wolf_howl',
-          player: wolf.id,
-          msg: '狼人发出嚎叫——同伴们听到了召唤',
+          type: 'rift_resonance',
+          player: corrupted.id,
+          msg: '蚀者发出共鸣——同伴们听到了召唤',
         });
-        // 通知所有未相认的狼人
-        for (const otherWolf of wolves) {
-          if (otherWolf.id !== wolf.id && !otherWolf.knownWolves.includes(wolf.id)) {
+        // 通知所有未相认的蚀者
+        for (const otherCorrupted of corrupted) {
+          if (otherCorrupted.id !== corrupted.id && !otherCorrupted.knownCorrupted.includes(corrupted.id)) {
             this.privateLog.push({
-              type: 'wolf_howl_heard',
-              player: otherWolf.id,
-              howler: wolf.id,
-              msg: '你听到了同伴的嚎叫——有人在召唤你',
+              type: 'rift_resonance_heard',
+              player: otherCorrupted.id,
+              resonator: corrupted.id,
+              msg: '你听到了同伴的共鸣——有人在召唤你',
             });
           }
         }
-        continue; // 嚎叫的狼人今晚不刀人
+        continue; // 共鸣的蚀者今晚不刀人
       }
 
-      // 新增：狼人伪装（计入屋子人数）
-      if (wolf.nightAction === 'DISGUISE') {
-        wolf.disguised = true;
-        wolf.atHome = false;
-        if (wolf.nightTarget) {
-          wolf.currentHouse = wolf.nightTarget;
+      // 新增：蚀者伪装（计入屋子人数）
+      if (corrupted.nightAction === 'DISGUISE') {
+        corrupted.disguised = true;
+        corrupted.atHome = false;
+        if (corrupted.nightTarget) {
+          corrupted.currentHouse = corrupted.nightTarget;
         }
         this.privateLog.push({
-          type: 'wolf_disguise',
-          player: wolf.id,
-          msg: '狼人伪装成好人，混入人群中',
+          type: 'corrupted_disguise',
+          player: corrupted.id,
+          msg: '蚀者伪装成守幕者，混入人群中',
         });
-        continue; // 伪装的狼人今晚不刀人
+        continue; // 伪装的蚀者今晚不刀人
       }
 
-      // 狼人出门
-      if (wolf.nightAction === 'GO_OUT') {
-        wolf.atHome = false;
-        if (wolf.nightTarget) {
-          wolf.currentHouse = wolf.nightTarget;
-          // 检查是否去了另一个狼人家 → 相认
-          const houseOwner = this.players.find(p => p.id === wolf.nightTarget);
-          if (houseOwner && houseOwner.isWolf() && houseOwner.alive) {
-            if (!wolf.knownWolves.includes(houseOwner.id)) {
-              wolf.knownWolves.push(houseOwner.id);
-              wolf.wolvesOpenEyesTogether.push(houseOwner.id);
-              houseOwner.knownWolves.push(wolf.id);
-              houseOwner.wolvesOpenEyesTogether.push(wolf.id);
-              this.privateLog.push({ type: 'wolf_meet', wolves: [wolf.id, houseOwner.id] });
+      // 蚀者出门
+      if (corrupted.nightAction === 'GO_OUT') {
+        corrupted.atHome = false;
+        if (corrupted.nightTarget) {
+          corrupted.currentHouse = corrupted.nightTarget;
+          // 检查是否去了另一个蚀者家 → 相认
+          const houseOwner = this.players.find(p => p.id === corrupted.nightTarget);
+          if (houseOwner && houseOwner.isCorrupted() && houseOwner.alive) {
+            if (!corrupted.knownCorrupted.includes(houseOwner.id)) {
+              corrupted.knownCorrupted.push(houseOwner.id);
+              corrupted.corruptedOpenEyesTogether.push(houseOwner.id);
+              houseOwner.knownCorrupted.push(corrupted.id);
+              houseOwner.corruptedOpenEyesTogether.push(corrupted.id);
+              this.privateLog.push({ type: 'corrupted_meet', corrupted: [corrupted.id, houseOwner.id] });
             }
           }
         }
       }
 
       // 新增：嗅觉追踪（刀人时记录目标的去向）
-      if (wolf.nightAbility?.trackScent && wolf.nightTarget) {
-        const target = this.players.find(p => p.id === wolf.nightTarget && p.alive);
+      if (corrupted.nightAbility?.trackScent && corrupted.nightTarget) {
+        const target = this.players.find(p => p.id === corrupted.nightTarget && p.alive);
         if (target && target.nightAction === 'GO_OUT' && target.currentHouse !== target.id) {
-          wolf.scentTrail.push({
-            target: wolf.nightTarget,
+          corrupted.scentTrail.push({
+            target: corrupted.nightTarget,
             house: target.currentHouse,
             round: this.game.round,
           });
           this.privateLog.push({
-            type: 'wolf_scent_track',
-            player: wolf.id,
-            target: wolf.nightTarget,
+            type: 'corrupted_scent_track',
+            player: corrupted.id,
+            target: corrupted.nightTarget,
             house: target.currentHouse,
             msg: `嗅觉追踪：目标去了 ${target.currentHouse} 的屋子`,
           });
         }
       }
 
-      // 狼人刀人（锁定人，不是锁定屋子）
-      if (wolf.nightAbility?.kill) {
-        const targetId = wolf.nightTarget;
-        // 狼人刀人是跟着人走 —— 目标锁定为人
+      // 蚀者刀人（锁定人，不是锁定屋子）
+      if (corrupted.nightAbility?.kill) {
+        const targetId = corrupted.nightTarget;
+        // 蚀者刀人是跟着人走 —— 目标锁定为人
         if (targetId) {
           if (!killTargets.has(targetId)) {
             killTargets.set(targetId, []);
           }
-          killTargets.get(targetId).push(wolf.id);
-          wolf.wolfKillTarget = targetId;
+          killTargets.get(targetId).push(corrupted.id);
+          corrupted.corruptedKillTarget = targetId;
         }
       }
     }
 
-    // 处理狼人互刀：如果两个狼人互刀 → 相认；如果一方刀另一方 → 被杀
+    // 处理蚀者互刀：如果两个蚀者互刀 → 相认；如果一方刀另一方 → 被杀
     for (const [targetId, killers] of killTargets) {
       const target = this.players.find(p => p.id === targetId);
       if (!target || !target.alive) continue;
 
-      // 被刀的目标也是狼人
-      if (target.isWolf() && target.wolfKillTarget) {
+      // 被刀的目标也是蚀者
+      if (target.isCorrupted() && target.corruptedKillTarget) {
         // 检查是否互刀
-        const mutualKill = killers.some(wolfId => target.wolfKillTarget === wolfId);
+        const mutualKill = killers.some(corruptedId => target.corruptedKillTarget === corruptedId);
         if (mutualKill) {
           // 互刀 → 相认，不死
-          for (const wolfId of killers) {
-            const wolf = this.players.find(p => p.id === wolfId);
-            if (wolf && !wolf.knownWolves.includes(targetId)) {
-              wolf.knownWolves.push(targetId);
-              wolf.wolvesOpenEyesTogether.push(targetId);
+          for (const corruptedId of killers) {
+            const corrupted = this.players.find(p => p.id === corruptedId);
+            if (corrupted && !corrupted.knownCorrupted.includes(targetId)) {
+              corrupted.knownCorrupted.push(targetId);
+              corrupted.corruptedOpenEyesTogether.push(targetId);
             }
           }
-          if (!target.knownWolves.includes(killers[0])) {
-            target.knownWolves.push(killers[0]);
-            target.wolvesOpenEyesTogether.push(killers[0]);
+          if (!target.knownCorrupted.includes(killers[0])) {
+            target.knownCorrupted.push(killers[0]);
+            target.corruptedOpenEyesTogether.push(killers[0]);
           }
-          this.privateLog.push({ type: 'wolf_mutual_kill', wolves: [...killers, targetId] });
+          this.privateLog.push({ type: 'corrupted_mutual_kill', corrupted: [...killers, targetId] });
           // 移除击杀
           killTargets.delete(targetId);
-          for (const wolfId of killers) {
-            const wolf = this.players.find(p => p.id === wolfId);
-            if (wolf) wolf.wolfKillTarget = null;
+          for (const corruptedId of killers) {
+            const corrupted = this.players.find(p => p.id === corruptedId);
+            if (corrupted) corrupted.corruptedKillTarget = null;
           }
-          target.wolfKillTarget = null;
+          target.corruptedKillTarget = null;
         }
       }
     }
 
     // 存储击杀目标供结算阶段使用
-    this.wolfKills = killTargets;
+    this.corruptedKills = killTargets;
   }
 
   // ==========================================
   //  5. 察灵家
   // ==========================================
-  resolveSeer() {
-    const seer = this.players.find(p => p.role === ROLES.VEIL_SCHOLAR && p.alive);
-    if (!seer || seer.nightAction === 'SLEEP' || !seer.nightTarget) return;
+  resolveVeilScholar() {
+    const veilScholar = this.players.find(p => p.role === ROLES.VEIL_SCHOLAR && p.alive);
+    if (!veilScholar || veilScholar.nightAction === 'SLEEP' || !veilScholar.nightTarget) return;
 
-    const targetId = seer.nightTarget;
+    const targetId = veilScholar.nightTarget;
     const target = this.players.find(p => p.id === targetId && p.alive);
     if (!target) return;
 
     // 出门
-    if (seer.nightAction === 'GO_OUT') {
-      seer.currentHouse = targetId;
-      seer.atHome = false;
+    if (veilScholar.nightAction === 'GO_OUT') {
+      veilScholar.currentHouse = targetId;
+      veilScholar.atHome = false;
     }
 
     // 查验
-    if (seer.nightAbility?.check) {
+    if (veilScholar.nightAbility?.check) {
       // 判断逻辑：
-      // - 普通狼人：是狼
-      // - 种狼：变狼后是狼；使用感染后是狼；未变狼未感染 → 好人
-      // - 假身份：种狼有fakeIdentity时显示为该神职
+      // - 普通蚀者：是蚀者
+      // - 冥僧人：蚀变后是蚀者；使用堕化后是蚀者；未蚀变未堕化 → 守幕者
+      // - 假身份：冥僧人有fakeIdentity时显示为该守幕者
       let isGood = true;
       if (target.role === ROLES.CORRUPTED) {
         isGood = false;
       } else if (target.role === ROLES.NETHER_MONK) {
-        const isWolf = target.isTransformed || target.hasUsedInfect;
-        if (!isWolf && target.fakeIdentity) {
-          // 假身份编织：查验结果显示为伪装的神职
-          seer.checkResult = `FAKE_${target.fakeIdentity}`;
+        const isCorrupted = target.isTransformed || target.hasUsedCorrupt;
+        if (!isCorrupted && target.fakeIdentity) {
+          // 假身份编织：查验结果显示为伪装的守幕者
+          veilScholar.checkResult = `FAKE_${target.fakeIdentity}`;
           this.privateLog.push({
-            type: 'seer_check_fake',
-            player: seer.id,
+            type: 'veil_scholar_check_fake',
+            player: veilScholar.id,
             target: targetId,
             fakeRole: target.fakeIdentity,
             msg: `查验结果：${target.fakeIdentity}（但真相隐藏在更深处...）`,
           });
           return; // 特殊处理，不走正常逻辑
         }
-        isGood = !isWolf;
+        isGood = !isCorrupted;
       }
-      // 被感染但尚未生效的不算狼人
+      // 被堕化但尚未生效的不算蚀者
 
-      // 被感染察灵家：查验结果反转（狼→好人，好人→狼）
-      if (seer.infectedByAlpha) {
+      // 被堕化察灵家：查验结果反转（蚀者→守幕者，守幕者→蚀者）
+      if (veilScholar.corruptedByNetherMonk) {
         isGood = !isGood;
       }
 
-      seer.checkResult = isGood ? 'GOOD' : 'WOLF';
+      veilScholar.checkResult = isGood ? 'GOOD' : 'CORRUPTED';
       this.privateLog.push({
-        type: 'seer_check',
-        player: seer.id,
+        type: 'veil_scholar_check',
+        player: veilScholar.id,
         target: targetId,
-        result: seer.checkResult,
-        reversed: !!seer.infectedByAlpha,
+        result: veilScholar.checkResult,
+        reversed: !!veilScholar.corruptedByNetherMonk,
       });
     }
 
     // 新增：梦境碎片（额外模糊线索）
-    if (seer.nightAbility?.dreamFragment && seer.nightTarget) {
+    if (veilScholar.nightAbility?.dreamFragment && veilScholar.nightTarget) {
       const fragments = [
         '梦境中你看到有人影在目标屋外徘徊...',
         '梦的碎片里，你听到目标屋内传来不寻常的声响...',
         '你在梦中感受到一股不安——目标的命运与今晚紧密相连...',
       ];
-      seer.dreamFragment = fragments[Math.floor(Math.random() * fragments.length)];
+      veilScholar.dreamFragment = fragments[Math.floor(Math.random() * fragments.length)];
       this.privateLog.push({
-        type: 'seer_dream',
-        player: seer.id,
-        fragment: seer.dreamFragment,
+        type: 'veil_scholar_dream',
+        player: veilScholar.id,
+        fragment: veilScholar.dreamFragment,
       });
     }
 
     // 新增：灵视（查验已死的玩家）
-    if (seer.nightAbility?.spiritVision && seer.spiritVisionTarget) {
-      const deadTarget = this.players.find(p => p.id === seer.spiritVisionTarget && !p.alive);
+    if (veilScholar.nightAbility?.spiritVision && veilScholar.spiritVisionTarget) {
+      const deadTarget = this.players.find(p => p.id === veilScholar.spiritVisionTarget && !p.alive);
       if (deadTarget) {
-        seer.checkResult = `SPIRIT_${deadTarget.role}`;
+        veilScholar.checkResult = `SPIRIT_${deadTarget.role}`;
         this.privateLog.push({
-          type: 'seer_spirit_vision',
-          player: seer.id,
+          type: 'veil_scholar_spirit_vision',
+          player: veilScholar.id,
           target: deadTarget.id,
           role: deadTarget.role,
           msg: `灵视：死者 ${deadTarget.name || deadTarget.id} 的真实身份是 ${deadTarget.role}`,
@@ -555,9 +555,9 @@ export class NightResolver {
   }
 
   // ==========================================
-  //  6. 毒巫（蚀灭符阵 + 灵符）
+  //  6. 草药学者（蚀灭符阵 + 灵符）
   // ==========================================
-  resolvePoisonWitch() {
+  resolveHerbalSage() {
     const pw = this.players.find(p => p.role === ROLES.HERBAL_SAGE && p.alive);
     if (!pw || pw.nightAction === 'SLEEP') return;
 
@@ -575,14 +575,14 @@ export class NightResolver {
       const peopleInHouse = this.getPeopleInHouse(targetHouse);
 
       // 检查守卫是否在屋子里（3人及以上且守卫在其中→灵蚀重伤）
-      const guard = peopleInHouse.find(p => p.role === ROLES.VEIL_GUARDIAN);
-      if (peopleInHouse.length >= 3 && guard) {
-        guard.heavyInjury = true;
-        guard.whoKnowsGuardHeavyInjury = [guard.id, pw.id];
-        this.privateLog.push({ type: 'guard_heavy_injury', player: guard.id, source: 'mass_seal' });
+      const veilGuardian = peopleInHouse.find(p => p.role === ROLES.VEIL_GUARDIAN);
+      if (peopleInHouse.length >= 3 && veilGuardian) {
+        veilGuardian.heavyInjury = true;
+        veilGuardian.whoKnowsVeilGuardianHeavyInjury = [veilGuardian.id, pw.id];
+        this.privateLog.push({ type: 'veil_guardian_heavy_injury', player: veilGuardian.id, source: 'mass_seal' });
         // 灵蚀重伤，其余人被毒死
         for (const p of peopleInHouse) {
-          if (p.id !== guard.id && p.alive) {
+          if (p.id !== veilGuardian.id && p.alive) {
             this.markForDeath(p.id, 'mass_seal');
           }
         }
@@ -597,7 +597,7 @@ export class NightResolver {
       this.log.push({ type: 'mass_seal', house: targetHouse });
     }
 
-    // 毒巫的灵符（不能治疗灵蚀重伤）
+    // 草药学者的灵符（不能治疗灵蚀重伤）
     if (ability.talisman) {
       const targetId = ability.talismanTarget;
       const target = this.players.find(p => p.id === targetId);
@@ -618,7 +618,7 @@ export class NightResolver {
         type: 'corrosion_mist_set',
         player: pw.id,
         target: fogTarget,
-        msg: '毒巫在目标屋子释放了蚀雾——下一晚进入的人将中毒',
+        msg: '草药学者在目标屋子释放了蚀雾——下一晚进入的人将中毒',
       });
     }
 
@@ -631,9 +631,9 @@ export class NightResolver {
   }
 
   // ==========================================
-  //  7. 药巫（万能药 + 单目标毒药）
+  //  7. 愈灵师（万能药 + 单目标毒药）
   // ==========================================
-  resolveHealWitch() {
+  resolveSpiritMender() {
     const hw = this.players.find(p => p.role === ROLES.SPIRIT_MENDER && p.alive);
     if (!hw || hw.nightAction === 'SLEEP') return;
 
@@ -658,7 +658,7 @@ export class NightResolver {
         }
         if (target.heavyInjury) {
           target.heavyInjury = false;
-          target.whoKnowsGuardHeavyInjury = [];
+          target.whoKnowsVeilGuardianHeavyInjury = [];
           this.privateLog.push({ type: 'heal_injury', player: targetId });
         }
       }
@@ -675,11 +675,11 @@ export class NightResolver {
           // 目标离开了，毒失效，毒到第一个进入屋子的人
           const firstEntrant = this.getFirstEntrant(target.id);
           if (firstEntrant) {
-            this.markForDeath(firstEntrant.id, 'heal_witch_poison');
+            this.markForDeath(firstEntrant.id, 'spirit_mender_poison');
             this.log.push({ type: 'seal_transferred', original: targetId, actual: firstEntrant.id });
           }
         } else {
-          this.markForDeath(targetId, 'heal_witch_poison');
+          this.markForDeath(targetId, 'spirit_mender_poison');
         }
       }
       hw.hasSealTalisman = false;
@@ -697,7 +697,7 @@ export class NightResolver {
             type: 'battlefield_aid',
             player: hw.id,
             target: p.id,
-            msg: '药巫战场急救成功——目标存活但暂时无法行动',
+            msg: '愈灵师战场急救成功——目标存活但暂时无法行动',
           });
           break;
         }
@@ -711,7 +711,7 @@ export class NightResolver {
       this.privateLog.push({
         type: 'herb_garden',
         player: hw.id,
-        msg: '药巫在自己的药草园种下了种子——下一回合可收获',
+        msg: '愈灵师在自己的药草园种下了种子——下一回合可收获',
       });
     }
 
@@ -722,8 +722,8 @@ export class NightResolver {
         hw.diagnoseResult = {
           isMarkedForDeath: this.deathMarks.has(diagTarget.id),
           heavyInjury: diagTarget.heavyInjury,
-          infectedByAlpha: diagTarget.infectedByAlpha,
-          willBecomeWolf: diagTarget.willBecomeWolf,
+          corruptedByNetherMonk: diagTarget.corruptedByNetherMonk,
+          willBecomeCorrupted: diagTarget.willBecomeCorrupted,
         };
         this.privateLog.push({
           type: 'diagnose',
@@ -737,108 +737,108 @@ export class NightResolver {
   }
 
   // ==========================================
-  //  8. 村民（所有神和狼行动完后行动）
+  //  8. 灵织者（在所有专业守幕者和蚀者之后行动）
   // ==========================================
   resolveWeaver() {
-    const villagers = this.players.filter(p =>
+    const weavers = this.players.filter(p =>
       p.role === ROLES.SPIRIT_WEAVER && p.alive
     );
-    if (villagers.length === 0) return;
+    if (weavers.length === 0) return;
 
-    for (const villager of villagers) {
-      if (!villager.nightAction || villager.nightAction === 'SLEEP') continue;
+    for (const weaver of weavers) {
+      if (!weaver.nightAction || weaver.nightAction === 'SLEEP') continue;
 
-      // 村民出门去别人家
-      if (villager.nightAction === 'GO_OUT' && villager.nightTarget) {
-        villager.currentHouse = villager.nightTarget;
-        villager.atHome = false;
+      // 灵织者出门去别人家
+      if (weaver.nightAction === 'GO_OUT' && weaver.nightTarget) {
+        weaver.currentHouse = weaver.nightTarget;
+        weaver.atHome = false;
       }
 
-      // 老猎人村民：直觉 + 陷阱
-      if (villager.weaverType === SPIRIT_WEAVER_TYPES.OLD_VETERAN) {
-        if (villager.nightAction === 'TRAP_SET') {
-          villager.doorFortified = true;
+      // 老兵灵织者：直觉 + 陷阱
+      if (weaver.weaverType === SPIRIT_WEAVER_TYPES.OLD_VETERAN) {
+        if (weaver.nightAction === 'TRAP_SET') {
+          weaver.doorFortified = true;
           this.privateLog.push({
-            type: 'old_hunter_trap',
-            player: villager.id,
-            msg: '老猎人在自家设下了陷阱',
+            type: 'old_flame_tracker_trap',
+            player: weaver.id,
+            msg: '老兵在自家设下了陷阱',
           });
         }
       }
 
-      // 旅行商人村民：双访问
-      if (villager.weaverType === SPIRIT_WEAVER_TYPES.WANDERING_TRADER) {
-        if (villager.nightAbility?.secondVisit && villager.nightAbility.secondTarget) {
+      // 旅行商人灵织者：双访问
+      if (weaver.weaverType === SPIRIT_WEAVER_TYPES.WANDERING_TRADER) {
+        if (weaver.nightAbility?.secondVisit && weaver.nightAbility.secondTarget) {
           // 第二个访问目标（不触发额外效果，仅收集信息）
           this.privateLog.push({
             type: 'merchant_double_visit',
-            player: villager.id,
-            firstTarget: villager.nightTarget,
-            secondTarget: villager.nightAbility.secondTarget,
+            player: weaver.id,
+            firstTarget: weaver.nightTarget,
+            secondTarget: weaver.nightAbility.secondTarget,
             msg: `商人访问了两个屋子`,
           });
         }
         // 交易信息
-        if (villager.nightAction === 'TRADE_INFO' && villager.nightTarget) {
+        if (weaver.nightAction === 'TRADE_INFO' && weaver.nightTarget) {
           this.privateLog.push({
             type: 'trade_info',
-            player: villager.id,
-            target: villager.nightTarget,
+            player: weaver.id,
+            target: weaver.nightTarget,
             msg: '商人发起了信息交易',
           });
         }
       }
 
-      // 草药师村民：草药
-      if (villager.weaverType === SPIRIT_WEAVER_TYPES.SPIRIT_APPRENTICE) {
-        if (villager.nightAction === 'HERBAL_REMEDY' && villager.nightTarget) {
-          villager.herbalRemedyUsed = true;
-          villager.herbalRemedyTarget = villager.nightTarget;
+      // 草药师灵织者：草药
+      if (weaver.weaverType === SPIRIT_WEAVER_TYPES.SPIRIT_APPRENTICE) {
+        if (weaver.nightAction === 'HERBAL_REMEDY' && weaver.nightTarget) {
+          weaver.herbalRemedyUsed = true;
+          weaver.herbalRemedyTarget = weaver.nightTarget;
           this.privateLog.push({
             type: 'herbal_remedy',
-            player: villager.id,
-            target: villager.nightTarget,
+            player: weaver.id,
+            target: weaver.nightTarget,
             msg: '草药师使用了草药——若目标今晚死亡，可推迟1回合',
           });
         }
       }
 
-      // 守夜人村民：守夜
-      if (villager.weaverType === SPIRIT_WEAVER_TYPES.NIGHT_SENTINEL) {
-        if (villager.nightAction === 'NIGHT_WATCH') {
+      // 守夜人灵织者：守夜
+      if (weaver.weaverType === SPIRIT_WEAVER_TYPES.NIGHT_SENTINEL) {
+        if (weaver.nightAction === 'NIGHT_WATCH') {
           // 获知今晚出门的总人数
           const outCount = this.players.filter(p => p.alive && p.nightAction === 'GO_OUT').length;
-          villager.nightWatchAlert = { outCount, round: this.game.round };
+          weaver.nightWatchAlert = { outCount, round: this.game.round };
           this.privateLog.push({
             type: 'night_watch',
-            player: villager.id,
+            player: weaver.id,
             outCount,
             msg: `守夜灵织者：今晚有 ${outCount} 人出门`,
           });
         }
       }
 
-      // 铁匠村民：加固门锁
-      if (villager.weaverType === SPIRIT_WEAVER_TYPES.ARMOR_SMITH) {
-        if (villager.nightAction === 'FORTIFY_DOOR') {
-          villager.doorFortified = true;
+      // 铁匠灵织者：加固门锁
+      if (weaver.weaverType === SPIRIT_WEAVER_TYPES.ARMOR_SMITH) {
+        if (weaver.nightAction === 'FORTIFY_DOOR') {
+          weaver.doorFortified = true;
           this.privateLog.push({
             type: 'blacksmith_fortify',
-            player: villager.id,
+            player: weaver.id,
             msg: '铁匠加固了自家门锁——可抵御一次蚀者噬灵',
           });
         }
       }
 
       // 织幕灵织者：帷幕低语更精确
-      if (villager.weaverType === SPIRIT_WEAVER_TYPES.VEIL_WEAVER) {
-        if (villager.nightAction === 'EAVESDROP' && villager.nightTarget) {
+      if (weaver.weaverType === SPIRIT_WEAVER_TYPES.VEIL_WEAVER) {
+        if (weaver.nightAction === 'EAVESDROP' && weaver.nightTarget) {
           // 织网：排除干扰项（50%概率给出精确信息而非模糊线索）
-          const accurateResult = this._accurateEavesdrop(villager.nightTarget);
+          const accurateResult = this._accurateEavesdrop(weaver.nightTarget);
           this.privateLog.push({
             type: 'eavesdrop_accurate',
-            player: villager.id,
-            target: villager.nightTarget,
+            player: weaver.id,
+            target: weaver.nightTarget,
             result: accurateResult,
             msg: `精确帷幕低语: ${accurateResult}`,
           });
@@ -847,12 +847,12 @@ export class NightResolver {
       }
 
       // 灵织低语（通用逻辑，非织布女）
-      if (villager.nightAction === 'EAVESDROP' && villager.nightTarget) {
-        const result = this._eavesdropResult(villager.nightTarget);
+      if (weaver.nightAction === 'EAVESDROP' && weaver.nightTarget) {
+        const result = this._eavesdropResult(weaver.nightTarget);
         this.privateLog.push({
           type: 'eavesdrop',
-          player: villager.id,
-          target: villager.nightTarget,
+          player: weaver.id,
+          target: weaver.nightTarget,
           result,
           msg: `帷幕低语结果: ${result}`,
         });
@@ -867,14 +867,14 @@ export class NightResolver {
       return (p.currentHouse || p.id) === targetHouseId;
     });
 
-    const hasWolf = peopleInHouse.some(p => p.isWolf());
-    const hasGod = peopleInHouse.some(p => p.isGod());
+    const hasCorrupted = peopleInHouse.some(p => p.isCorrupted());
+    const hasKeeper = peopleInHouse.some(p => p.isKeeper());
     const hasWeaver = peopleInHouse.some(p => p.isWeaver());
 
     const clues = [];
-    if (hasWolf) clues.push(`你清楚地听到了狼的呼吸声——屋里有狼人`);
-    if (hasGod) clues.push(`你听到了法器碰撞的声音——屋里有神职`);
-    if (hasWeaver) clues.push(`你听到了平常人的脚步声——屋里有村民`);
+    if (hasCorrupted) clues.push(`你清楚地听到了蚀者的呼吸声——屋里有蚀者`);
+    if (hasKeeper) clues.push(`你听到了法器碰撞的声音——屋里有守幕者`);
+    if (hasWeaver) clues.push(`你听到了平常人的脚步声——屋里有灵织者`);
     if (peopleInHouse.length === 0) clues.push('屋里空无一人，只有风声');
     if (peopleInHouse.length >= 2) clues.push(`你能分辨出至少${peopleInHouse.length}个人`);
 
@@ -891,19 +891,19 @@ export class NightResolver {
     });
 
     // 分类屋内成员
-    const hasWolf = peopleInHouse.some(p => p.isWolf());
-    const hasGod = peopleInHouse.some(p => p.isGod());
+    const hasCorrupted = peopleInHouse.some(p => p.isCorrupted());
+    const hasKeeper = peopleInHouse.some(p => p.isKeeper());
     const hasWeaver = peopleInHouse.some(p => p.isWeaver());
     const total = peopleInHouse.length;
 
     // 根据屋内实际成员构建候选结果池
     const candidates = [];
 
-    if (hasWolf) {
-      candidates.push('听到低沉的狼嚎声...');
+    if (hasCorrupted) {
+      candidates.push('听到低沉的裂隙共鸣声...');
       candidates.push('听到野兽般的呼吸声...');
     }
-    if (hasGod) {
+    if (hasKeeper) {
       candidates.push('听到祈祷的低语...');
       candidates.push('听到法器碰撞的声响...');
     }
@@ -933,65 +933,65 @@ export class NightResolver {
   resolveAllDeaths() {
     // --- 处理蚀者噬灵 ---
     // 守卫查找提前到循环外，避免每次迭代重复查找
-    const guard = this.players.find(p => p.role === ROLES.VEIL_GUARDIAN && p.alive);
-    const poisonWitch = this.players.find(p => p.role === ROLES.HERBAL_SAGE && p.alive);
+    const veilGuardian = this.players.find(p => p.role === ROLES.VEIL_GUARDIAN && p.alive);
+    const herbalSage = this.players.find(p => p.role === ROLES.HERBAL_SAGE && p.alive);
 
-    if (this.wolfKills) {
-      for (const [targetId, killers] of this.wolfKills) {
+    if (this.corruptedKills) {
+      for (const [targetId, killers] of this.corruptedKills) {
         if (killers.length === 0) continue;
         const target = this.players.find(p => p.id === targetId && p.alive);
         if (!target) continue;
 
-        // 狼人跟着目标去击杀（目标锁定为人）
-        if (guard && guard.isGuarding) {
+        // 蚀者跟着目标去击杀（目标锁定为人）
+        if (veilGuardian && veilGuardian.isProtecting) {
           // 检查守卫是否在当前被攻击目标所在屋子
           const targetHouse = target.currentHouse || target.id;
           const peopleInHouse = this.getPeopleInHouse(targetHouse);
           const peopleCount = peopleInHouse.length;
 
-          if (peopleInHouse.includes(guard) && peopleCount >= 1 && peopleCount <= 2) {
+          if (peopleInHouse.includes(veilGuardian) && peopleCount >= 1 && peopleCount <= 2) {
             // 守卫守护的屋子有1-2人且被蚀者噬灵 → 灵蚀重伤
-            guard.heavyInjury = true;
-            guard.whoKnowsGuardHeavyInjury = [guard.id];
-            if (poisonWitch) guard.whoKnowsGuardHeavyInjury.push(poisonWitch.id);
-            this.privateLog.push({ type: 'guard_heavy_injury', player: guard.id, source: 'wolf_attack' });
+            veilGuardian.heavyInjury = true;
+            veilGuardian.whoKnowsVeilGuardianHeavyInjury = [veilGuardian.id];
+            if (herbalSage) veilGuardian.whoKnowsVeilGuardianHeavyInjury.push(herbalSage.id);
+            this.privateLog.push({ type: 'veil_guardian_heavy_injury', player: veilGuardian.id, source: 'corrupted_attack' });
             // 守卫挡下了攻击，目标不死
             continue;
           }
-          if (peopleInHouse.includes(guard) && peopleCount >= 3 && killers.length >= 1) {
+          if (peopleInHouse.includes(veilGuardian) && peopleCount >= 3 && killers.length >= 1) {
             // 人多时灵蚀重伤但目标可能还是死
-            guard.heavyInjury = true;
-            guard.whoKnowsGuardHeavyInjury = [guard.id];
-            if (poisonWitch) guard.whoKnowsGuardHeavyInjury.push(poisonWitch.id);
-            this.privateLog.push({ type: 'guard_heavy_injury', player: guard.id, source: 'wolf_attack_3plus' });
+            veilGuardian.heavyInjury = true;
+            veilGuardian.whoKnowsVeilGuardianHeavyInjury = [veilGuardian.id];
+            if (herbalSage) veilGuardian.whoKnowsVeilGuardianHeavyInjury.push(herbalSage.id);
+            this.privateLog.push({ type: 'veil_guardian_heavy_injury', player: veilGuardian.id, source: 'corrupted_attack_3plus' });
           }
         }
 
         // 检查守卫独自在家被一位蚀者噬灵
-        if (guard && guard.nightAction === 'SLEEP' && targetId === guard.id && killers.length === 1) {
-          guard.heavyInjury = true;
-          guard.whoKnowsGuardHeavyInjury = [guard.id];
-          if (poisonWitch) guard.whoKnowsGuardHeavyInjury.push(poisonWitch.id);
-          // 狼人知道这是守卫
+        if (veilGuardian && veilGuardian.nightAction === 'SLEEP' && targetId === veilGuardian.id && killers.length === 1) {
+          veilGuardian.heavyInjury = true;
+          veilGuardian.whoKnowsVeilGuardianHeavyInjury = [veilGuardian.id];
+          if (herbalSage) veilGuardian.whoKnowsVeilGuardianHeavyInjury.push(herbalSage.id);
+          // 蚀者知道这是守卫
           const killer = this.players.find(p => p.id === killers[0]);
-          if (killer) killer.knownGuard = guard.id;
-          this.privateLog.push({ type: 'guard_heavy_injury_alone', player: guard.id, wolf: killers[0] });
+          if (killer) killer.knownVeilGuardian = veilGuardian.id;
+          this.privateLog.push({ type: 'veil_guardian_heavy_injury_alone', player: veilGuardian.id, corrupted: killers[0] });
           continue; // 灵蚀重伤但没死
         }
 
-        // 检查猎人的短铳反击
+        // 检查灵痕追猎者的短铳反击
         if (target.role === ROLES.FLAME_TRACKER && target.blunderbussUsable) {
-          // 猎人用短火铳反杀攻击者
-          for (const wolfId of killers) {
-            this.markForDeath(wolfId, 'hunter_blunderbuss');
+          // 灵痕追猎者用短火铳反杀攻击者
+          for (const corruptedId of killers) {
+            this.markForDeath(corruptedId, 'flame_tracker_blunderbuss');
           }
           target.blunderbussUsable = false;
-          this.log.push({ type: 'hunter_defend', player: target.id });
-          continue; // 猎人不死
+          this.log.push({ type: 'flame_tracker_defend', player: target.id });
+          continue; // 灵痕追猎者不死
         }
 
         // 正常击杀
-        this.markForDeath(targetId, 'wolf_kill');
+        this.markForDeath(targetId, 'corrupted_kill');
 
         // 新增：铁匠加固门锁——抵御一次蚀者噬灵
         if (target.doorFortified && target.alive) {
@@ -1000,21 +1000,21 @@ export class NightResolver {
           this.privateLog.push({
             type: 'blacksmith_door_blocked',
             player: target.id,
-            msg: '铁匠的加固门锁挡住了狼人的攻击！但门锁已被破坏',
+            msg: '铁匠的加固门锁挡住了蚀者的攻击！但门锁已被破坏',
           });
         }
 
-        // 新增：老猎人陷阱——狼人进入时有20%概率被发现
+        // 新增：老兵陷阱——蚀者进入时有20%概率被发现
         if (target.weaverType === 'OLD_VETERAN' && target.doorFortified && Math.random() < 0.20) {
-          for (const wolfId of killers) {
-            if (!target.knownWolves) target.knownWolves = [];
-            target.knownWolves.push(wolfId);
+          for (const corruptedId of killers) {
+            if (!target.knownCorrupted) target.knownCorrupted = [];
+            target.knownCorrupted.push(corruptedId);
           }
           this.privateLog.push({
-            type: 'old_hunter_detected',
+            type: 'old_veteran_detected',
             player: target.id,
             detectedWolves: killers,
-            msg: '老猎人的陷阱触发了——你发现了进入庇护所的蚀者！',
+            msg: '老兵的陷阱触发了——你发现了进入庇护所的蚀者！',
           });
         }
       }
@@ -1022,21 +1022,21 @@ export class NightResolver {
 
     // 新增：守卫舍身——替目标死亡
     for (const [targetId, reason] of this.deathMarks) {
-      const guard = this.players.find(p =>
+      const veilGuardian = this.players.find(p =>
         p.role === ROLES.VEIL_GUARDIAN && p.alive && p.sacrificeTarget === targetId
       );
-      if (guard) {
+      if (veilGuardian) {
         this.reviveFromDeath(targetId);
-        this.markForDeath(guard.id, 'guard_sacrifice');
+        this.markForDeath(veilGuardian.id, 'veil_guardian_sacrifice');
         this.log.push({
-          type: 'guard_sacrifice_death',
-          guard: guard.id,
+          type: 'veil_guardian_sacrifice_death',
+          veilGuardian: veilGuardian.id,
           savedTarget: targetId,
           msg: '守卫舍身替目标挡下了致命一击！',
         });
         this.privateLog.push({
-          type: 'guard_sacrifice',
-          player: guard.id,
+          type: 'veil_guardian_sacrifice',
+          player: veilGuardian.id,
           target: targetId,
           msg: '你履行了舍身誓言——目标活了下来',
         });
@@ -1046,14 +1046,14 @@ export class NightResolver {
     // 新增：蚀雾延迟结算——上一晚设下的蚀雾本晚触发
     for (const p of this.players) {
       if (!p.alive) continue;
-      // 找到毒巫的蚀雾
-      const poisonWitch = this.players.find(pw =>
+      // 找到草药学者的蚀雾
+      const herbalSage = this.players.find(pw =>
         pw.role === ROLES.HERBAL_SAGE && pw.corrosionMistActive && pw.corrosionMistTarget
       );
-      if (poisonWitch && poisonWitch.corrosionMistTarget) {
-        const peopleInFog = this.getPeopleInHouse(poisonWitch.corrosionMistTarget);
+      if (herbalSage && herbalSage.corrosionMistTarget) {
+        const peopleInFog = this.getPeopleInHouse(herbalSage.corrosionMistTarget);
         for (const victim of peopleInFog) {
-          if (victim.id !== poisonWitch.id && !this.deathMarks.has(victim.id)) {
+          if (victim.id !== herbalSage.id && !this.deathMarks.has(victim.id)) {
             this.markForDeath(victim.id, 'corrosion_mist');
             this.log.push({
               type: 'corrosion_mist_triggered',
@@ -1062,8 +1062,8 @@ export class NightResolver {
             });
           }
         }
-        poisonWitch.corrosionMistTarget = null;
-        poisonWitch.corrosionMistActive = false;
+        herbalSage.corrosionMistTarget = null;
+        herbalSage.corrosionMistActive = false;
       }
     }
 
@@ -1109,28 +1109,28 @@ export class NightResolver {
       }
     }
 
-    // --- 应用感染效果（延迟一晚上） ---
+    // --- 应用堕化效果（延迟一晚上） ---
     for (const p of this.players) {
-      if (p.willBecomeWolf && p.alive) {
+      if (p.willBecomeCorrupted && p.alive) {
         if (p.role === ROLES.VEIL_SCHOLAR) {
-          // 察灵家保留能力不变狼，已在冥僧步骤中处理
-          p.willBecomeWolf = false;
+          // 察灵家保留能力不蚀变，已在冥僧步骤中处理
+          p.willBecomeCorrupted = false;
         } else {
           p.role = ROLES.CORRUPTED;
-          p.team = 'WOLF';
-          p.willBecomeWolf = false;
-          p.infectedByAlpha = false;
+          p.team = 'CORRUPTED';
+          p.willBecomeCorrupted = false;
+          p.corruptedByNetherMonk = false;
           this.log.push({ type: 'became_corrupted', player: p.id });
         }
       }
     }
 
-    // --- 处理狼人相认（下回合共同睁眼） ---
+    // --- 处理蚀者相认（下回合共同睁眼） ---
     for (const p of this.players) {
-      if (p.role === ROLES.CORRUPTED && p.wolvesOpenEyesTogether.length > 0) {
+      if (p.role === ROLES.CORRUPTED && p.corruptedOpenEyesTogether.length > 0) {
         this.privateLog.push({
-          type: 'wolves_united',
-          wolves: [p.id, ...p.wolvesOpenEyesTogether],
+          type: 'corrupted_united',
+          corrupted: [p.id, ...p.corruptedOpenEyesTogether],
         });
       }
     }

@@ -16,7 +16,7 @@ const SIZE_MAP = {
 
 /**
  * 角色插图组件
- * 使用方式: <RoleIllustration role="WEREWOLF" size="large" />
+ * 使用方式: <RoleIllustration role="CORRUPTED" size="large" />
  */
 export default function RoleIllustration({ role, size = 'medium', showLabel = true }) {
   const px = SIZE_MAP[size] || SIZE_MAP.medium;

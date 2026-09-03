@@ -474,14 +474,18 @@ export function registerHandlers(io, socket, gameManager, userManager) {
       console.log(`[修复] 房间 ${game.id} hostId 从 ${game.hostId} 修正为 ${socket.id}`);
       game.hostId = socket.id;
     }
-    if (game.players.length < game.minPlayers) {
+
+    // 预估最终玩家数（含人机），用于验证角色配置
+    const finalCount = game.getEffectivePlayerCount();
+
+    if (finalCount < game.minPlayers) {
       callback?.({ success: false, error: `至少需要${game.minPlayers}名玩家才能开始游戏 (当前${game.players.length})` });
       return;
     }
 
-    // 应用最终角色配置
+    // 应用最终角色配置（基于预估总人数验证）
     if (roleConfig) {
-      const validated = validateRoleConfig(roleConfig, game.players.length);
+      const validated = validateRoleConfig(roleConfig, finalCount);
       if (validated) {
         game.customRoleConfig = validated;
       }
@@ -490,7 +494,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     const success = game.startGame();
     if (success) {
       game.setIO(io);
-      console.log(`[游戏] 房间 ${game.id} 游戏开始`);
+      console.log(`[游戏] 房间 ${game.id} 游戏开始 (${game.players.length}名玩家)`);
 
       // 向每个玩家发送其私有状态
       for (const player of game.players) {
@@ -585,16 +589,16 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   });
 
   // 灵痕追猎者在讨论阶段开枪
-  socket.on('hunter:dayShoot', ({ targetId }) => {
+  socket.on('flameTracker:dayShoot', ({ targetId }) => {
     const game = gameManager.getGameByPlayer(socket.id);
     if (!game || game.phase !== PHASES.DAY) return;
 
     const player = game.getPlayer(socket.id);
     // 必须存活 + 必须是灵痕追猎者 + 必须尚未开过枪
     if (!player || !player.alive || player.role !== ROLES.FLAME_TRACKER) return;
-    if (game.hunterDayShoot) return; // 已经开过枪，拒绝第二次
+    if (game.flameTrackerDayShoot) return; // 已经开过枪，拒绝第二次
 
-    game.hunterDayShootTarget(targetId);
+    game.flameTrackerDayShootTarget(targetId);
     game.setIO(io);
     io.to(game.id).emit('game:state', game.getPublicState());
   });
@@ -609,19 +613,19 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   });
 
   // 冥僧人告知被堕化者
-  socket.on('alpha:notifyInfected', () => {
+  socket.on('netherMonk:notifyCorrupted', () => {
     const game = gameManager.getGameByPlayer(socket.id);
     if (!game || game.phase !== PHASES.NIGHT) return;
     const player = game.getPlayer(socket.id);
     if (!player || player.role !== ROLES.NETHER_MONK) return;
 
     // 找到所有被冥僧人堕化的存活玩家
-    const infected = game.players.filter(p => p.alive && p.infectedByAlpha);
-    for (const p of infected) {
+    const corrupted = game.players.filter(p => p.alive && p.corruptedByNetherMonk);
+    for (const p of corrupted) {
       if (!game.privateLogs[p.id]) game.privateLogs[p.id] = [];
       const msg = p.role === ROLES.VEIL_SCHOLAR
-        ? { type: 'alpha_revealed', player: p.id, alphaId: player.id, alphaName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化！冥僧人是 ${player.name}。你的察灵结果已被反转。` }
-        : { type: 'infected_notified', player: p.id, alphaId: player.id, alphaName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化，下个夜晚将蚀变为蚀者。` };
+        ? { type: 'nether_monk_revealed', player: p.id, netherMonkId: player.id, netherMonkName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化！冥僧人是 ${player.name}。你的察灵结果已被反转。` }
+        : { type: 'corrupted_notified', player: p.id, netherMonkId: player.id, netherMonkName: player.name, msg: `冥僧人 ${player.name} 告知：你已被堕化，下个夜晚将蚀变为蚀者。` };
       game.privateLogs[p.id].push(msg);
       io.to(p.id).emit('game:privateState', game.getPrivateState(p.id));
     }
@@ -825,7 +829,7 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 /**
  * 验证自定义角色配置是否合法
  * 规则：
- *  - 至少包含1个蚀者阵营角色（ALPHA_WOLF 或 WEREWOLF）
+ *  - 至少包含1个蚀者阵营角色（NETHER_MONK 或 CORRUPTED）
  *  - 不能全是蚀者
  *  - 至少1个守幕者阵营角色
  *  - 总数不能超过最大玩家数
@@ -838,13 +842,13 @@ function validateRoleConfig(roleConfig, maxPlayers) {
     return null;
   }
 
-  const hasWolf = roleConfig.some(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
-  const hasVillage = roleConfig.some(r =>
+  const hasCorrupted = roleConfig.some(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
+  const hasKeeper = roleConfig.some(r =>
     [ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.SPIRIT_WEAVER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(r)
   );
-  const allWolves = roleConfig.every(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
+  const allCorrupted = roleConfig.every(r => r === ROLES.NETHER_MONK || r === ROLES.CORRUPTED);
 
-  if (!hasWolf || !hasVillage || allWolves) {
+  if (!hasCorrupted || !hasKeeper || allCorrupted) {
     return null;
   }
 
@@ -877,17 +881,17 @@ function _validateNightAction(player, currentStep, action, target, ability, game
     NETHER_MONK: {
       roles: ['NETHER_MONK'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY'],
-      allowedAbilities: ['transform', 'infect', 'kill', 'killTarget', 'fakeIdentity', 'fakeIdentityRole'],
+      allowedAbilities: ['transform', 'corrupt', 'kill', 'killTarget', 'fakeIdentity', 'fakeIdentityRole'],
     },
     VEIL_GUARDIAN: {
       roles: ['VEIL_GUARDIAN'],
       actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'PATROL', 'FORTIFY', 'SACRIFICE'],
-      allowedAbilities: ['guard', 'fortify', 'patrol', 'sacrifice'],
+      allowedAbilities: ['protect', 'fortify', 'patrol', 'sacrifice'],
     },
     CORRUPTED: {
       roles: ['CORRUPTED', 'NETHER_MONK'],
-      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'HOWL', 'DISGUISE'],
-      allowedAbilities: ['kill', 'trackScent', 'howl', 'disguise'],
+      actions: ['SLEEP', 'GO_OUT', 'USE_ABILITY', 'RIFT_RESONANCE', 'DISGUISE'],
+      allowedAbilities: ['kill', 'trackScent', 'resonance', 'disguise'],
     },
     VEIL_SCHOLAR: {
       roles: ['VEIL_SCHOLAR'],
@@ -932,7 +936,7 @@ function _validateNightAction(player, currentStep, action, target, ability, game
   }
 
   // 特殊限制：蚀者裂隙共鸣和灵焰遮蔽不能同时噬灵
-  if ((action === 'HOWL' || action === 'DISGUISE') && ability?.kill) return false;
+  if ((action === 'RIFT_RESONANCE' || action === 'DISGUISE') && ability?.kill) return false;
 
   // 特殊限制：草药学者灵符不能自己用自己
   if (action === 'USE_ABILITY' && ability?.talisman && ability?.talismanTarget === player.id) return false;

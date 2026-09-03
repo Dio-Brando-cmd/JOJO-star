@@ -6,7 +6,7 @@
 
 set -e
 
-echo "🐺 帷幕之地服务器 — 一键部署"
+echo "🌑 帷幕之地服务器 — 一键部署"
 echo "================================================"
 
 # 1. 安装 Docker（如果没有）
@@ -19,16 +19,16 @@ fi
 #    或者从本地构建
 
 # 创建应用目录
-mkdir -p /opt/werewolf
-cd /opt/werewolf
+mkdir -p /opt/veilland
+cd /opt/veilland
 
 # 3. 创建 docker-compose.yml
 cat > docker-compose.yml << 'DOCKEREOF'
 version: '3.8'
 services:
-  werewolf:
+  veilland:
     image: node:20-alpine
-    container_name: werewolf
+    container_name: veilland
     restart: unless-stopped
     ports:
       - "80:4000"
@@ -47,9 +47,9 @@ echo ""
 echo "================================================"
 echo "  接下来请在你的电脑上执行："
 echo ""
-echo "  cd werewolf-online"
+echo "  cd veilland"
 echo "  npm run build:client"
-echo "  scp -r server package.json 用户名@$(hostname -I | awk '{print $1}'):/opt/werewolf/"
+echo "  scp -r server package.json 用户名@$(hostname -I | awk '{print $1}'):/opt/veilland/"
 echo "  scp -r client/dist 用户名@$(hostname -I | awk '{print $1}'):/opt/veilland/client/"
 echo ""
 echo "  然后回到这里继续..."

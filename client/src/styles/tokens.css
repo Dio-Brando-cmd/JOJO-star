@@ -43,11 +43,11 @@
   /* 功能色 */
   --color-corrupted: #6b3fa0;
   --color-village: #1a4a6e;
-  --color-seer: #5a2d82;
-  --color-witch-poison: #2d6a1e;
-  --color-witch-heal: #1a8a4a;
-  --color-hunter: #b8551e;
-  --color-guard: #1a5a8a;
+  --color-veil-scholar: #5a2d82;
+  --color-herbal-sage: #2d6a1e;
+  --color-spirit-mender: #1a8a4a;
+  --color-flame-tracker: #b8551e;
+  --color-veil-guardian: #1a5a8a;
 
   /* ====== 排版 ====== */
   --font-display: 'Cinzel', 'Noto Serif SC', 'KaiTi', serif;

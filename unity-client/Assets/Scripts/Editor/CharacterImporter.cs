@@ -1,7 +1,7 @@
 // ============================================================
 // CharacterImporter.cs — Unity Editor 一键导入所有角色模型
 // 放在 Assets/Scripts/Editor/ 目录下
-// 使用: Tools → Werewolf → Import All Characters
+// 使用: Tools → Corrupted → Import All Characters
 // ============================================================
 
 using UnityEngine;
@@ -13,7 +13,7 @@ public class CharacterImporter : EditorWindow
 {
     private static readonly string[] CHARACTERS = {
         "SIGURD", "FREYJA", "MORRIGAN", "ANUBIS_ACOLYTE", "HECTOR",
-        "ROMULUS", "FENRIR_KIN", "SKADI", "HAIKU_MONK", "BRIGID",
+        "ROMULUS", "VORACIOUS_KIN", "SKADI", "HAIKU_MONK", "BRIGID",
         "YSERA", "GOREN", "AILIN", "ORIC", "NELIA"
     };
 
@@ -25,7 +25,7 @@ public class CharacterImporter : EditorWindow
         ["ANUBIS_ACOLYTE"]  = new() { height=1.82f, build="thin",       weapon="Scepter",    armor="PriestRobe" },
         ["HECTOR"]          = new() { height=1.95f, build="burly",      weapon="Shield",     armor="BronzeArmor" },
         ["ROMULUS"]         = new() { height=1.78f, build="lean",       weapon="Claws",      armor="LeatherVest" },
-        ["FENRIR_KIN"]      = new() { height=1.92f, build="hulking",    weapon="Claws",      armor="TornLeather" },
+        ["VORACIOUS_KIN"]      = new() { height=1.92f, build="hulking",    weapon="Claws",      armor="TornLeather" },
         ["SKADI"]           = new() { height=1.75f, build="athletic",   weapon="Bow",        armor="FurMantle" },
         ["HAIKU_MONK"]      = new() { height=1.70f, build="thin",       weapon="Brush",      armor="MonkRobe" },
         ["BRIGID"]          = new() { height=1.63f, build="slim",       weapon="Torch",      armor="FireCloth" },
@@ -70,7 +70,7 @@ public class CharacterImporter : EditorWindow
         var importer = AssetImporter.GetAtPath(destFile) as ModelImporter;
         if (importer != null)
         {
-            importer.animationType = ModelImporterAnimationType.Humanoid;
+            importer.animationType = ModelImporterAnimationType.Human;
             importer.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
             importer.SaveAndReimport();
         }
@@ -97,8 +97,8 @@ public class CharacterImporter : EditorWindow
             controller.ApplyTraitModifiers();
 
             var collider = instance.AddComponent<CapsuleCollider>();
-            var setup = SETUPS.GetValueOrDefault(charId);
-            if (setup != null)
+            var setupFound = SETUPS.TryGetValue(charId, out var setup);
+            if (setupFound)
             {
                 collider.height = setup.height;
                 collider.radius = 0.3f;

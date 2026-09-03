@@ -28,11 +28,11 @@ const IDENTITY_DEFS = {
   },
   ROMULUS: {
     colors: { primary: '#3a2020', glow: '#8a3030', accent: '#c9a96e', dark: '#1a0808' },
-    origin: 'ROMAN', label: '狼养之子',
+    origin: 'ROMAN', label: '荒原之子',
   },
-  FENRIR_KIN: {
+  VORACIOUS_KIN: {
     colors: { primary: '#1a1a3a', glow: '#4a4a8a', accent: '#8a8ac0', dark: '#0a0a1e' },
-    origin: 'NORSE', label: '魔狼血裔',
+    origin: 'NORSE', label: '饥噬血裔',
   },
   SKADI: {
     colors: { primary: '#2a3a4a', glow: '#5a8aaa', accent: '#a0c8e0', dark: '#0e1a2a' },

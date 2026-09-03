@@ -1,7 +1,7 @@
 // ============================================================
 // PlayerController3D.cs — 3D角色控制器
 // 处理: 移动(WASD)、冲刺(Shift)、蹲伏(Ctrl)、交互(E)、藏匿(Q)
-// 第一人称/第三人称切换
+// 动画: 通过 Animator 参数驱动 Freyja 动画
 // ============================================================
 
 using UnityEngine;
@@ -36,6 +36,10 @@ public class PlayerController3D : MonoBehaviour
     public bool movementRestricted = false;
     public string currentAction;
 
+    [Header("Animation")]
+    public Animator animator;
+    public RuntimeAnimatorController animatorController; // Freyja.controller
+
     // 内部
     private CharacterController characterController;
     private Camera playerCamera;
@@ -50,11 +54,34 @@ public class PlayerController3D : MonoBehaviour
     [Header("Network Sync")]
     public float syncInterval = 0.1f;     // 10Hz位置同步
 
+    // Animator 参数 hash (性能优化)
+    private static readonly int PARAM_SPEED      = Animator.StringToHash("Speed");
+    private static readonly int PARAM_GROUNDED   = Animator.StringToHash("Grounded");
+    private static readonly int PARAM_CROUCHING  = Animator.StringToHash("Crouching");
+    private static readonly int PARAM_THROW      = Animator.StringToHash("Throw");
+    private static readonly int PARAM_CHARM      = Animator.StringToHash("Charm");
+    private static readonly int PARAM_GATHER     = Animator.StringToHash("Gather");
+    private static readonly int PARAM_HIT        = Animator.StringToHash("Hit");
+    private static readonly int PARAM_DEAD       = Animator.StringToHash("Dead");
+
+    // 动画状态追踪
+    private bool isDead = false;
+
     void Start()
     {
         characterController = GetComponent<CharacterController>();
         if (characterController == null)
             characterController = gameObject.AddComponent<CharacterController>();
+
+        // Animator
+        if (animator == null)
+            animator = GetComponent<Animator>();
+        if (animator == null)
+            animator = gameObject.AddComponent<Animator>();
+
+        // 自动加载控制器
+        if (animator.runtimeAnimatorController == null && animatorController != null)
+            animator.runtimeAnimatorController = animatorController;
 
         if (isLocal)
         {
@@ -92,11 +119,26 @@ public class PlayerController3D : MonoBehaviour
             currentStamina += staminaRegen * Time.deltaTime;
             currentStamina = Mathf.Min(currentStamina, maxStamina);
         }
+
+        // 更新动画参数
+        UpdateAnimator();
+    }
+
+    void UpdateAnimator()
+    {
+        if (animator == null || !animator.isActiveAndEnabled) return;
+
+        float horizontalSpeed = new Vector3(moveDirection.x, 0, moveDirection.z).magnitude;
+
+        animator.SetFloat(PARAM_SPEED, isSprinting ? sprintSpeed : horizontalSpeed);
+        animator.SetBool(PARAM_GROUNDED, characterController != null && characterController.isGrounded);
+        animator.SetBool(PARAM_CROUCHING, isCrouching);
     }
 
     void HandleLocalInput()
     {
         if (!canMove || Cursor.lockState != CursorLockMode.Locked) return;
+        if (characterController == null) return;
 
         // === 移动输入 ===
         float horizontal = Input.GetAxis("Horizontal");
@@ -246,11 +288,75 @@ public class PlayerController3D : MonoBehaviour
             case "MORRIGAN": // 自然亲和：室外+10%
                 currentSpeed *= 1.1f;
                 break;
-            case "FENRIR_KIN": // 魔狼之血：击杀后恢复体力
+            case "VORACIOUS_KIN": // 噬星之血：击杀后恢复体力
                 break;
-            case "FREYJA":   // 纤弱：被狼攻击时无法逃脱（QTE难度提高）
+            case "FREYJA":   // 纤弱：被蚀者噬灵时无法逃脱（QTE难度提高）
                 break;
         }
+    }
+
+    // ==================== 动画触发 ====================
+
+    /// <summary>投掷蚀灭药剂</summary>
+    public void TriggerThrowPotion()
+    {
+        if (animator != null && !isDead)
+        {
+            animator.SetTrigger(PARAM_THROW);
+            currentAction = "ThrowPotion";
+        }
+    }
+
+    /// <summary>使用愈灵符</summary>
+    public void TriggerUseCharm()
+    {
+        if (animator != null && !isDead)
+        {
+            animator.SetTrigger(PARAM_CHARM);
+            currentAction = "UseCharm";
+        }
+    }
+
+    /// <summary>采集灵植</summary>
+    public void TriggerGatherPlant()
+    {
+        if (animator != null && !isDead)
+        {
+            animator.SetTrigger(PARAM_GATHER);
+            currentAction = "GatherPlant";
+        }
+    }
+
+    /// <summary>受击反应</summary>
+    public void TriggerHitReaction()
+    {
+        if (animator != null && !isDead)
+        {
+            animator.SetTrigger(PARAM_HIT);
+            currentAction = "HitReaction";
+        }
+    }
+
+    /// <summary>死亡</summary>
+    public void TriggerDeath()
+    {
+        if (animator != null && !isDead)
+        {
+            isDead = true;
+            canMove = false;
+            animator.SetTrigger(PARAM_DEAD);
+            currentAction = "Death";
+        }
+    }
+
+    /// <summary>复活（用于愈灵符救起）</summary>
+    public void Revive()
+    {
+        isDead = false;
+        canMove = true;
+        currentAction = "Idle";
+        if (animator != null)
+            animator.Play("Idle");
     }
 }
 

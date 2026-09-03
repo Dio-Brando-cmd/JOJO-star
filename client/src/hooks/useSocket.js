@@ -253,9 +253,9 @@ export function useSocket() {
     socketRef.current.emit('vote:submit', { targetId });
   }, []);
 
-  const hunterDayShoot = useCallback((targetId) => {
+  const flameTrackerDayShoot = useCallback((targetId) => {
     if (!socketRef.current) return;
-    socketRef.current.emit('hunter:dayShoot', { targetId });
+    socketRef.current.emit('flameTracker:dayShoot', { targetId });
   }, []);
 
   const sendChatMessage = useCallback((message) => {
@@ -348,7 +348,7 @@ export function useSocket() {
     skipNightStep,
     startVote,
     submitVote,
-    hunterDayShoot,
+    flameTrackerDayShoot,
     sendChatMessage,
     requestState,
     getLobbyList,

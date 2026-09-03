@@ -28,31 +28,31 @@ export class Player {
 
     // ---- 冥僧人特有 ----
     this.isTransformed = false;
-    this.hasUsedInfect = false;
+    this.hasUsedCorrupt = false;
     this.hasKilled = false;
-    this.infectedByAlpha = false;
-    this.willBecomeWolf = false;
+    this.corruptedByNetherMonk = false;
+    this.willBecomeCorrupted = false;
     // 新增：假身份编织
-    this.fakeIdentity = null;          // 伪装的神职身份（被查验时显示为该身份）
-    this.riftGuidanceBonus = 0;        // 狼群激素额外感染次数
+    this.fakeIdentity = null;          // 伪装的守幕者身份（被查验时显示为该身份）
+    this.riftGuidanceBonus = 0;        // 蚀者群激素额外堕化次数
 
     // ---- 守卫特有 ----
-    this.guardingTarget = null;
-    this.isGuarding = false;
+    this.protectTarget = null;
+    this.isProtecting = false;
     this.heavyInjury = false;
-    this.whoKnowsGuardHeavyInjury = [];
+    this.whoKnowsVeilGuardianHeavyInjury = [];
     // 新增：筑垒/巡逻/舍身
     this.fortifiedTarget = null;       // 筑垒目标屋子
     this.patrolled = false;            // 是否巡逻过
     this.sacrificeTarget = null;       // 舍身替死目标
 
     // ---- 蚀者特有 ----
-    this.knownWolves = [];
-    this.wolvesOpenEyesTogether = [];
-    this.wolfKillTarget = null;
-    // 新增：嚎叫/伪装/嗅觉
-    this.howled = false;               // 是否嚎叫过（冷却中）
-    this.howlCooldown = 0;            // 嚎叫冷却回合
+    this.knownCorrupted = [];
+    this.corruptedOpenEyesTogether = [];
+    this.corruptedKillTarget = null;
+    // 新增：共鸣/伪装/嗅觉
+    this.resonated = false;               // 是否共鸣过（冷却中）
+    this.resonanceCooldown = 0;            // 共鸣冷却回合
     this.disguised = false;            // 是否伪装中
     this.scentTrail = [];              // 嗅觉追踪记录 [{target, house}]
 
@@ -97,9 +97,9 @@ export class Player {
 
     // ---- 灵织者特有 ----
     this.weaverIndex = -1;
-    this.weaverType = null;          // 灵织者子类型（OLD_HUNTER / MERCHANT / ...）
+    this.weaverType = null;          // 灵织者子类型（OLD_FLAME_TRACKER / MERCHANT / ...）
     this.weaverName = null;          // 灵织者名字（如"老杰克"）
-    this.weaverTitle = null;         // 灵织者称号（如"退休猎人"）
+    this.weaverTitle = null;         // 灵织者称号（如"退休灵痕追猎者"）
     // 灵织者扩展状态
     this.herbalRemedyUsed = false;     // 学徒灵织者：是否用过草药
     this.herbalRemedyTarget = null;    // 学徒灵织者：草药目标
@@ -128,9 +128,9 @@ export class Player {
     this.nightAction = null;
     this.nightTarget = null;
     this.nightAbility = null;
-    this.guardingTarget = null;
-    this.isGuarding = false;
-    this.wolfKillTarget = null;
+    this.protectTarget = null;
+    this.isProtecting = false;
+    this.corruptedKillTarget = null;
     this.checkTarget = null;
     this.checkResult = null;
     this.talismanTarget = null;
@@ -154,16 +154,16 @@ export class Player {
   }
 
   // 是否属于蚀者阵营
-  isWolf() {
+  isCorrupted() {
     return this.team === 'CORRUPTED';
   }
 
-  // 是否是神职
-  isGod() {
+  // 是否是守幕者
+  isKeeper() {
     return [ROLES.VEIL_SCHOLAR, ROLES.HERBAL_SAGE, ROLES.SPIRIT_MENDER, ROLES.VEIL_GUARDIAN, ROLES.FLAME_TRACKER].includes(this.role);
   }
 
-  // 是否是村民
+  // 是否是灵织者
   isWeaver() {
     return this.role === ROLES.SPIRIT_WEAVER;
   }
@@ -180,13 +180,13 @@ export class Player {
     if ((this.role === ROLES.CORRUPTED || this.role === ROLES.NETHER_MONK) && this.nightAction === 'GO_OUT' && !this.disguised) {
       return false;
     }
-    if (this.role === ROLES.VEIL_GUARDIAN && this.isGuarding) {
+    if (this.role === ROLES.VEIL_GUARDIAN && this.isProtecting) {
       return false;
     }
     return true;
   }
 
-  // 获取村民类型特有能力的描述
+  // 获取灵织者类型特有能力的描述
   getWeaverAbilityDescription() {
     if (this.role !== ROLES.SPIRIT_WEAVER || !this.weaverType) return null;
     const descriptions = {
@@ -213,8 +213,8 @@ export class Player {
         this.traitCooldowns[key]--;
       }
     }
-    if (this.howlCooldown > 0) {
-      this.howlCooldown--;
+    if (this.resonanceCooldown > 0) {
+      this.resonanceCooldown--;
     }
   }
 
@@ -227,7 +227,7 @@ export class Player {
       atHome: this.atHome,
       currentHouse: this.currentHouse,
       heavyInjury: this.heavyInjury,
-      isGuarding: this.isGuarding,
+      isProtecting: this.isProtecting,
       // v2.0 新增公开信息
       characterId: this.characterId,
       weaverType: this.role === ROLES.SPIRIT_WEAVER ? this.weaverType : undefined,
@@ -236,29 +236,29 @@ export class Player {
   }
 
   toPrivateJSON() {
-    const isWitch = this.role === ROLES.HERBAL_SAGE || this.role === ROLES.SPIRIT_MENDER;
+    const isSage = this.role === ROLES.HERBAL_SAGE || this.role === ROLES.SPIRIT_MENDER;
     return {
       ...this.toJSON(),
       role: this.role,
       team: this.team,
-      hasHealTalisman: isWitch ? this.hasHealTalisman : undefined,
-      hasSealTalisman: isWitch ? this.hasSealTalisman : undefined,
-      talismanMaterials: isWitch ? this.talismanMaterials : undefined,
+      hasHealTalisman: isSage ? this.hasHealTalisman : undefined,
+      hasSealTalisman: isSage ? this.hasSealTalisman : undefined,
+      talismanMaterials: isSage ? this.talismanMaterials : undefined,
       hasRifle: this.hasRifle,
       hasBlunderbuss: this.hasBlunderbuss,
       rifleUsable: this.rifleUsable,
       blunderbussUsable: this.blunderbussUsable,
       isTransformed: this.isTransformed,
-      hasUsedInfect: this.hasUsedInfect,
-      willBecomeWolf: this.willBecomeWolf,
-      infectedByAlpha: this.infectedByAlpha,
-      knownWolves: this.knownWolves,
+      hasUsedCorrupt: this.hasUsedCorrupt,
+      willBecomeCorrupted: this.willBecomeCorrupted,
+      corruptedByNetherMonk: this.corruptedByNetherMonk,
+      knownCorrupted: this.knownCorrupted,
       canShootNextNight: this.canShootNextNight,
       checkResult: this.checkResult,
       checkTarget: this.checkTarget,
       // v2.0 新增
       fakeIdentity: this.fakeIdentity,
-      howlCooldown: this.howlCooldown,
+      resonanceCooldown: this.resonanceCooldown,
       heavyInjury: this.heavyInjury,
       corrosionMistActive: this.corrosionMistActive,
       talismanCharged: this.talismanCharged,

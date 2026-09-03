@@ -9,7 +9,7 @@
   ✅ 修复弃权投票被拒（可以使用弃权票）
   ✅ 修复夜间步骤跳过bug（竞态保护）
   ✅ 添加阶段计时器（60s夜/120s昼/60s投票）
-  ✅ 修复种狼同晚变身+刀人
+  ✅ 修复冥僧人同晚蚀变+刀人
   ✅ 修复语音PTT按钮和空格冲突
   ✅ 添加输入校验防XSS
   ✅ 游戏结束自动清理内存
@@ -24,7 +24,7 @@
    - 获得服务器 IP
 
 2. 在你的电脑上执行：
-   cd werewolf-online
+   cd veilland
    bash deploy/deploy.sh 你的服务器IP
 
 3. 完成！朋友访问 http://服务器IP:4000 即可联机
@@ -34,7 +34,7 @@
 ════════════════════════════════════════════════════════
 
 【步骤1】在本地打包
-   cd werewolf-online
+   cd veilland
    npm run build:client
    tar -czf veilland-deploy.tar.gz \
      server/package.json server/src client/dist deploy/Dockerfile
@@ -49,11 +49,11 @@
    curl -fsSL https://get.docker.com | sh
 
    # 解压并启动
-   mkdir -p /opt/werewolf
-   cd /opt/werewolf
+   mkdir -p /opt/veilland
+   cd /opt/veilland
    tar -xzf /root/veilland-deploy.tar.gz
-   docker build -t werewolf -f deploy/Dockerfile .
-   docker run -d --name veilland --restart=unless-stopped -p 80:4000 werewolf
+   docker build -t veilland -f deploy/Dockerfile .
+   docker run -d --name veilland --restart=unless-stopped -p 80:4000 veilland
 
 【步骤4】完成！
    浏览器打开 http://你的服务器IP
@@ -63,12 +63,12 @@
   维护命令
 ════════════════════════════════════════════════════════
 
-   查看日志:    docker logs -f werewolf
-   重启服务:    docker restart werewolf
-   停止服务:    docker stop werewolf
-   更新代码后:  docker stop werewolf && docker rm werewolf
-                docker build -t werewolf -f deploy/Dockerfile .
-                docker run -d --name veilland --restart=unless-stopped -p 80:4000 werewolf
+   查看日志:    docker logs -f veilland
+   重启服务:    docker restart veilland
+   停止服务:    docker stop veilland
+   更新代码后:  docker stop veilland && docker rm veilland
+                docker build -t veilland -f deploy/Dockerfile .
+                docker run -d --name veilland --restart=unless-stopped -p 80:4000 veilland
 
 ════════════════════════════════════════════════════════
   安全建议

@@ -94,6 +94,9 @@ export default function NightPhase({ socket }) {
         <div className="night-waiting">
           <h3>🌙 夜晚 - {NIGHT_STEP_NAMES[nightStep] || nightStep}</h3>
           <p className="waiting-text">正在等待 {NIGHT_STEP_NAMES[nightStep]} 行动...</p>
+          {gameState.nightNarrative?.guidance && (
+            <p className="night-guidance">「{gameState.nightNarrative.guidance}」</p>
+          )}
           <div className="night-spinner" />
         </div>
         {!shouldBeAwake(myRole, nightStep) && (
@@ -168,19 +171,19 @@ export default function NightPhase({ socket }) {
       )}
 
       {/* 冥僧人特殊：告知被堕化者 */}
-      {myRole === ROLES.NETHER_MONK && myPrivate?.hasUsedInfect && (
-        <div className="alpha-notify-section">
+      {myRole === ROLES.NETHER_MONK && myPrivate?.hasUsedCorrupt && (
+        <div className="netherMonk-notify-section">
           <button
-            className="btn btn-secondary alpha-notify-btn"
+            className="btn btn-secondary netherMonk-notify-btn"
             onClick={() => {
               if (socket.socket) {
-                socket.socket.emit('alpha:notifyInfected');
+                socket.socket.emit('netherMonk:notifyCorrupted');
               }
             }}
           >
             📢 告知被堕化者
           </button>
-          <p className="alpha-notify-hint">向被你堕化的玩家揭露你的身份</p>
+          <p className="netherMonk-notify-hint">向被你堕化的玩家揭露你的身份</p>
         </div>
       )}
     </div>
@@ -302,59 +305,59 @@ function ActionDetail({ action, myRole, myPrivate, alivePlayers, allPlayers, tar
 function AbilityOptions({ myRole, myPrivate, ability, setAbility, target, alivePlayers, nightStep }) {
   switch (myRole) {
     case ROLES.NETHER_MONK:
-      return <AlphaWolfOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} nightStep={nightStep} />;
+      return <NetherMonkOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} nightStep={nightStep} />;
     case ROLES.VEIL_GUARDIAN:
       return <p className="ability-note">🏠 前往该玩家家中进行守护（如对方出门则无效）</p>;
     case ROLES.CORRUPTED:
-      return <WolfOptions ability={ability} setAbility={setAbility} />;
+      return <CorruptedOptions ability={ability} setAbility={setAbility} />;
     case ROLES.VEIL_SCHOLAR:
-      return <SeerOptions ability={ability} setAbility={setAbility} />;
+      return <VeilScholarOptions ability={ability} setAbility={setAbility} />;
     case ROLES.HERBAL_SAGE:
-      return <PoisonWitchOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} target={target} alivePlayers={alivePlayers} />;
+      return <HerbalSageOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} target={target} alivePlayers={alivePlayers} />;
     case ROLES.SPIRIT_MENDER:
-      return <HealWitchOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} target={target} alivePlayers={alivePlayers} />;
+      return <SpiritMenderOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} target={target} alivePlayers={alivePlayers} />;
     case ROLES.FLAME_TRACKER:
-      return <HunterOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} />;
+      return <FlameTrackerOptions ability={ability} setAbility={setAbility} myPrivate={myPrivate} />;
     default:
       return null;
   }
 }
 
-function AlphaWolfOptions({ ability, setAbility, myPrivate, nightStep }) {
+function NetherMonkOptions({ ability, setAbility, myPrivate, nightStep }) {
   const toggle = (key) => setAbility(prev => ({ ...prev, [key]: !prev[key] }));
-  const canInfect = !myPrivate?.hasUsedInfect && !myPrivate?.hasKilled;
+  const canCorrupt = !myPrivate?.hasUsedCorrupt && !myPrivate?.hasKilled;
   // 冥僧步骤只能蚀变/堕化；噬灵在蚀者步骤进行
-  const isWolfStep = nightStep === 'CORRUPTED';
-  const canKill = isWolfStep && myPrivate?.isTransformed && !myPrivate?.hasKilled;
+  const isCorruptedStep = nightStep === 'CORRUPTED';
+  const canKill = isCorruptedStep && myPrivate?.isTransformed && !myPrivate?.hasKilled;
 
   return (
     <div className="ability-options">
-      {!isWolfStep && !myPrivate?.isTransformed && (
+      {!isCorruptedStep && !myPrivate?.isTransformed && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.transform} onChange={() => toggle('transform')} />
           <span>🌑 蚀变（蚀变后可在蚀者步骤与同伴一起噬灵）</span>
         </label>
       )}
-      {!isWolfStep && canInfect && (
+      {!isCorruptedStep && canCorrupt && (
         <label className="ability-check">
-          <input type="checkbox" checked={!!ability.infect} onChange={() => toggle('infect')} />
+          <input type="checkbox" checked={!!ability.corrupt} onChange={() => toggle('corrupt')} />
           <span>🦠 堕化目标（下个蚀月生效；使用后当前夜晚算蚀者）</span>
         </label>
       )}
-      {isWolfStep && canKill && (
+      {isCorruptedStep && canKill && (
         <label className="ability-check">
           <input type="checkbox" checked={!!ability.kill} onChange={() => toggle('kill')} />
           <span>🌑 噬灵（作为蚀者群一员选择噬灵目标）</span>
         </label>
       )}
-      {isWolfStep && myPrivate?.isTransformed && !canKill && (
+      {isCorruptedStep && myPrivate?.isTransformed && !canKill && (
         <p className="ability-note" style={{color:'#888', fontSize:'0.9em'}}>🌑 你已蚀变，今晚随蚀者群一起行动（本步骤自动视为噬灵目标选择）</p>
       )}
     </div>
   );
 }
 
-function WolfOptions({ ability, setAbility }) {
+function CorruptedOptions({ ability, setAbility }) {
   return (
     <div className="ability-options">
       <label className="ability-check">
@@ -365,7 +368,7 @@ function WolfOptions({ ability, setAbility }) {
   );
 }
 
-function SeerOptions({ ability, setAbility }) {
+function VeilScholarOptions({ ability, setAbility }) {
   return (
     <div className="ability-options">
       <label className="ability-check">
@@ -376,7 +379,7 @@ function SeerOptions({ ability, setAbility }) {
   );
 }
 
-function PoisonWitchOptions({ ability, setAbility, myPrivate, target, alivePlayers }) {
+function HerbalSageOptions({ ability, setAbility, myPrivate, target, alivePlayers }) {
   return (
     <div className="ability-options">
       <label className="ability-check">
@@ -393,7 +396,7 @@ function PoisonWitchOptions({ ability, setAbility, myPrivate, target, alivePlaye
   );
 }
 
-function HealWitchOptions({ ability, setAbility, myPrivate, target, alivePlayers }) {
+function SpiritMenderOptions({ ability, setAbility, myPrivate, target, alivePlayers }) {
   return (
     <div className="ability-options">
       {myPrivate?.hasHealTalisman && (
@@ -412,7 +415,7 @@ function HealWitchOptions({ ability, setAbility, myPrivate, target, alivePlayers
   );
 }
 
-function HunterOptions({ ability, setAbility, myPrivate }) {
+function FlameTrackerOptions({ ability, setAbility, myPrivate }) {
   const toggleWeapon = (weapon) => setAbility(prev => ({ ...prev, [weapon]: !prev[weapon] }));
   return (
     <div className="ability-options">

@@ -12,7 +12,7 @@ export const ROLES = {
   SPIRIT_MENDER: 'SPIRIT_MENDER',       // 愈灵师（灵焰修复）
   SPIRIT_WEAVER: 'SPIRIT_WEAVER',           // 灵织者
   VEIL_GUARDIAN: 'VEIL_GUARDIAN',                 // 守卫
-  FLAME_TRACKER: 'FLAME_TRACKER',               // 猎人
+  FLAME_TRACKER: 'FLAME_TRACKER',               // 灵痕追猎者
 };
 
 // ---- 灵织者子类型（每个灵织者有独特定位） ----
@@ -33,7 +33,7 @@ export const SPIRIT_WEAVER_NAMES = {
     name: '老杰克',
     title: '暮色老兵',
     weaverType: SPIRIT_WEAVER_TYPES.OLD_VETERAN,
-    backstory: '年轻时是名震一方的猎人，如今年事已高，但那份猎人的直觉从未消失。他的屋子里挂满了年轻时的战利品。',
+    backstory: '年轻时是名震一方的灵痕追猎者，如今年事已高，但那份灵痕追猎者的直觉从未消失。他的屋子里挂满了年轻时的战利品。',
     trait: '直觉敏锐 — 有概率识破进入自家的蚀者',
     quote: '"我可能老了，但这双眼睛，还看得清谁被蚀痕沾染。"',
   },
@@ -49,7 +49,7 @@ export const SPIRIT_WEAVER_NAMES = {
     name: '艾米丽',
     title: '学徒灵织者',
     weaverType: SPIRIT_WEAVER_TYPES.SPIRIT_APPRENTICE,
-    backstory: '继承了祖母留下的灵符绘制，虽然医术比不上真正的女巫，但她的草药足够帮人撑过最难熬的夜晚。',
+    backstory: '继承了祖母留下的灵符绘制，虽然医术比不上真正的草药学者，但她的草药足够帮人撑过最难熬的夜晚。',
     trait: '医术入门 — 可推迟目标死亡1回合',
     quote: '"大自然给了我们一切解药，只是大多数人不知道去哪里找。"',
   },
@@ -147,7 +147,7 @@ export const ROLE_ABILITY_DESCRIPTIONS = {
   [ROLES.NETHER_MONK]: {
     primary: '蚀变 / 堕化 / 噬灵',
     secondary: ['裂隙引导', '灵焰遮蔽编织'],
-    passive: '未蚀变时帷幕学者察灵为好人；堕化帷幕学者结果反转',
+    passive: '未蚀变时帷幕学者察灵为守幕者；堕化帷幕学者结果反转',
   },
   [ROLES.VEIL_SCHOLAR]: {
     primary: '察灵辨蚀',
@@ -237,7 +237,7 @@ export const NIGHT_ACTIONS = {
   SLEEP: 'SLEEP',
   EAVESDROP: 'EAVESDROP',
   // 新增
-  HOWL: 'HOWL',                   // 蚀者裂隙共鸣
+  RIFT_RESONANCE: 'RIFT_RESONANCE',                   // 蚀者裂隙共鸣
   DISGUISE: 'DISGUISE',           // 蚀者灵焰遮蔽
   PUBLIC_PROPHECY: 'PUBLIC_PROPHECY', // 帷幕学者公开察灵
   SPIRIT_VISION: 'SPIRIT_VISION',     // 帷幕学者灵视
@@ -247,8 +247,8 @@ export const NIGHT_ACTIONS = {
   PATROL: 'PATROL',                   // 守卫巡逻
   FORTIFY: 'FORTIFY',                 // 守卫壁垒筑造
   SACRIFICE: 'SACRIFICE',             // 帷幕守卫舍身誓言
-  TRAP_SET: 'TRAP_SET',               // 猎人陷阱射击 / 老兵灵织者陷阱
-  REVENGE: 'REVENGE',                 // 猎人复仇
+  TRAP_SET: 'TRAP_SET',               // 灵痕追猎者陷阱射击 / 老兵灵织者陷阱
+  REVENGE: 'REVENGE',                 // 灵痕追猎者复仇
   TRADE_INFO: 'TRADE_INFO',           // 商人灵织者交易信息
   HERBAL_REMEDY: 'HERBAL_REMEDY',     // 学徒灵织者草药
   NIGHT_WATCH: 'NIGHT_WATCH',         // 守夜灵织者守夜
@@ -257,16 +257,16 @@ export const NIGHT_ACTIONS = {
 };
 
 // ---- 冥僧人能力 ----
-export const ALPHA_ACTIONS = {
+export const NETHER_MONK_ACTIONS = {
   TRANSFORM: 'TRANSFORM',
-  INFECT: 'INFECT',
+  CORRUPT: 'CORRUPT',
   KILL: 'KILL',
   FAKE_IDENTITY: 'FAKE_IDENTITY',   // 灵焰遮蔽编织
-  PACK_HORMONE: 'PACK_HORMONE',     // 裂隙引导（被动）
+  RIFT_GUIDANCE: 'RIFT_GUIDANCE',     // 裂隙引导（被动）
 };
 
-// ---- 猎人武器 ----
-export const HUNTER_WEAPONS = {
+// ---- 灵痕追猎者武器 ----
+export const FLAME_TRACKER_WEAPONS = {
   RIFLE: 'RIFLE',
   BLUNDERBUSS: 'BLUNDERBUSS',
 };
@@ -340,7 +340,7 @@ export const CHARACTER_IDENTITIES = {
         icon: '📢',
       },
     ],
-    recommendedHiddenRoles: ['HUNTER', 'GUARD'],
+    recommendedHiddenRoles: ['FLAME_TRACKER', 'VEIL_GUARDIAN'],
   },
   FREYJA: {
     id: 'FREYJA',
@@ -369,7 +369,7 @@ export const CHARACTER_IDENTITIES = {
         icon: '🌿',
       },
     ],
-    recommendedHiddenRoles: ['POISON_WITCH', 'HEAL_WITCH'],
+    recommendedHiddenRoles: ['HERBAL_SAGE', 'SPIRIT_MENDER'],
   },
   MORRIGAN: {
     id: 'MORRIGAN',
@@ -398,7 +398,7 @@ export const CHARACTER_IDENTITIES = {
         icon: '⚠️',
       },
     ],
-    recommendedHiddenRoles: ['HEAL_WITCH', 'SEER'],
+    recommendedHiddenRoles: ['SPIRIT_MENDER', 'VEIL_SCHOLAR'],
   },
   ANUBIS_ACOLYTE: {
     id: 'ANUBIS_ACOLYTE',
@@ -411,7 +411,7 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '冥界视觉',
         type: TRAIT_TYPES.PASSIVE,
-        effect: '察灵类能力准确率+20%（对帷幕学者/猎人观察）',
+        effect: '察灵类能力准确率+20%（对帷幕学者/灵痕追猎者观察）',
         icon: '👁️',
       },
       {
@@ -427,7 +427,7 @@ export const CHARACTER_IDENTITIES = {
         icon: '🔇',
       },
     ],
-    recommendedHiddenRoles: ['SEER', 'HUNTER'],
+    recommendedHiddenRoles: ['VEIL_SCHOLAR', 'FLAME_TRACKER'],
   },
   HECTOR: {
     id: 'HECTOR',
@@ -456,15 +456,15 @@ export const CHARACTER_IDENTITIES = {
         icon: '🤝',
       },
     ],
-    recommendedHiddenRoles: ['GUARD', 'HUNTER'],
+    recommendedHiddenRoles: ['VEIL_GUARDIAN', 'FLAME_TRACKER'],
   },
   ROMULUS: {
     id: 'ROMULUS',
     name: '罗慕路斯',
-    title: '狼养之子',
+    title: '荒原之子',
     origin: MYTH_ORIGINS.ROMAN,
     gender: 'male',
-    story: '传说中由母狼养大的罗马聚落导师。在他体内，人性与狼性从未停止过争斗。帷幕之地的月亮，总让他听到血液中狼的呼唤。',
+    story: '传说中由荒原野兽养大的罗马聚落导师。在他体内，人性与蚀性从未停止过争斗。帷幕之地的月亮，总让他听到血液中蚀者的呼唤。',
     externalTraits: [
       {
         name: '双重血统',
@@ -473,9 +473,9 @@ export const CHARACTER_IDENTITIES = {
         icon: '🌗',
       },
       {
-        name: '狼之嗅觉',
+        name: '蚀感嗅觉',
         type: TRAIT_TYPES.PASSIVE,
-        effect: '可感知附近是否有狼人出没（模糊方向）',
+        effect: '可感知附近是否有蚀者出没（模糊方向）',
         icon: '👃',
       },
       {
@@ -487,16 +487,16 @@ export const CHARACTER_IDENTITIES = {
     ],
     recommendedHiddenRoles: ['CORRUPTED', 'NETHER_MONK'],
   },
-  FENRIR_KIN: {
-    id: 'FENRIR_KIN',
+  VORACIOUS_KIN: {
+    id: 'VORACIOUS_KIN',
     name: '哈尔瓦德',
-    title: '魔狼血裔',
+    title: '饥噬血裔',
     origin: MYTH_ORIGINS.NORSE,
     gender: 'male',
-    story: '巨狼芬里尔的后裔，血脉中流淌着吞噬一切的饥饿。他来到帷幕之地是为了寻找解除诅咒的方法——但每次月圆，诅咒就会变强一分。',
+    story: '噬星巨兽的后裔，血脉中流淌着吞噬一切的饥饿。他来到帷幕之地是为了寻找解除诅咒的方法——但每次月圆，诅咒就会变强一分。',
     externalTraits: [
       {
-        name: '魔狼之血',
+        name: '噬星之血',
         type: TRAIT_TYPES.PASSIVE,
         effect: '击杀后恢复体力（3D模式下），连续击杀无惩罚',
         icon: '🩸',
@@ -504,14 +504,14 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '远古诅咒',
         type: TRAIT_TYPES.ACTIVE,
-        effect: '可变身为狼形态（移速+30%，但会被所有人看到）',
-        icon: '🐺',
+        effect: '可进入蚀者形态（移速+30%，但会被所有人看到）',
+        icon: '🌑',
       },
       {
-        name: '银之恐惧',
+        name: '缚链余悸',
         type: TRAIT_TYPES.WEAKNESS,
         effect: '被守卫壁垒筑造的屋子不能进入',
-        icon: '🥈',
+        icon: '🔗',
       },
     ],
     recommendedHiddenRoles: ['NETHER_MONK', 'CORRUPTED'],
@@ -543,7 +543,7 @@ export const CHARACTER_IDENTITIES = {
         icon: '💢',
       },
     ],
-    recommendedHiddenRoles: ['HUNTER', 'VILLAGER'],
+    recommendedHiddenRoles: ['FLAME_TRACKER', 'SPIRIT_WEAVER'],
   },
   HAIKU_MONK: {
     id: 'HAIKU_MONK',
@@ -568,11 +568,11 @@ export const CHARACTER_IDENTITIES = {
       {
         name: '戒律',
         type: TRAIT_TYPES.WEAKNESS,
-        effect: '不能主动投票给第一晚察灵出的狼人（需等待更多证据）',
+        effect: '不能主动投票给第一晚察灵出的蚀者（需等待更多证据）',
         icon: '📿',
       },
     ],
-    recommendedHiddenRoles: ['SEER', 'VILLAGER'],
+    recommendedHiddenRoles: ['VEIL_SCHOLAR', 'SPIRIT_WEAVER'],
   },
   BRIGID: {
     id: 'BRIGID',
@@ -601,7 +601,7 @@ export const CHARACTER_IDENTITIES = {
         icon: '😰',
       },
     ],
-    recommendedHiddenRoles: ['GUARD', 'VILLAGER'],
+    recommendedHiddenRoles: ['VEIL_GUARDIAN', 'SPIRIT_WEAVER'],
   },
 
   // ---- 新增: 5个原创角色 ----
@@ -614,18 +614,18 @@ export const CHARACTER_IDENTITIES = {
       { name: '情报网', type: TRAIT_TYPES.PASSIVE, effect: '夜晚可获知一名随机出门玩家的去向', icon: '🕸️' },
       { name: '暗影恐惧', type: TRAIT_TYPES.WEAKNESS, effect: '被直接目光注视(察灵)时，下一回合无法使用能力', icon: '👁️' },
     ],
-    recommendedHiddenRoles: ['SEER', 'VILLAGER', 'HEAL_WITCH'],
+    recommendedHiddenRoles: ['VEIL_SCHOLAR', 'SPIRIT_WEAVER', 'SPIRIT_MENDER'],
   },
   GOREN: {
     id: 'GOREN', name: '格伦', title: '流浪锻甲灵织者',
     origin: MYTH_ORIGINS.MINE, gender: 'male',
-    story: '帷幕之地最好的锻甲灵织者。他打造过猎人的枪管、守卫的盾牌、女巫的药瓶架。蚀痕蔓延后他把铁砧搬到了暮色村。"如果我的铁能救一个人，这把锤子就没白抡。"',
+    story: '帷幕之地最好的锻甲灵织者。他打造过灵痕追猎者的枪管、帷幕守卫的盾牌、草药学者的药瓶架。蚀痕蔓延后他把铁砧搬到了暮色村。"如果我的铁能救一个人，这把锤子就没白抡。"',
     externalTraits: [
       { name: '锻甲灵织者之力', type: TRAIT_TYPES.PASSIVE, effect: '加固自家门锁(抵御一次蚀者噬灵)。被投出局时可带走一名投票者', icon: '🔨' },
       { name: '自制装备', type: TRAIT_TYPES.ACTIVE, effect: '可打造一件临时护甲给他人(持续1晚)', icon: '⚒️' },
       { name: '笨重', type: TRAIT_TYPES.WEAKNESS, effect: '移动速度-10%，潜行等级-2', icon: '🏋️' },
     ],
-    recommendedHiddenRoles: ['GUARD', 'HUNTER', 'VILLAGER'],
+    recommendedHiddenRoles: ['VEIL_GUARDIAN', 'FLAME_TRACKER', 'SPIRIT_WEAVER'],
   },
   AILIN: {
     id: 'AILIN', name: '艾琳', title: '守墓人',
@@ -636,29 +636,29 @@ export const CHARACTER_IDENTITIES = {
       { name: '安魂仪式', type: TRAIT_TYPES.ACTIVE, effect: '可获知已死亡玩家的真实身份(限1次/局)', icon: '⚰️' },
       { name: '死亡亲和', type: TRAIT_TYPES.WEAKNESS, effect: '被投票出局时不能发遗言', icon: '💀' },
     ],
-    recommendedHiddenRoles: ['SEER', 'POISON_WITCH', 'GUARD'],
+    recommendedHiddenRoles: ['VEIL_SCHOLAR', 'HERBAL_SAGE', 'VEIL_GUARDIAN'],
   },
   ORIC: {
     id: 'ORIC', name: '奥里克', title: '疾风信使',
     origin: MYTH_ORIGINS.PLAINS, gender: 'male',
-    story: '帷幕之地最快的跑者。在大瘟疫期间用双腿跑出了整个防疫网。现在他的速度成了对抗狼人最宝贵的资源——不管是传递信息、逃离危险、还是追捕狼人。',
+    story: '帷幕之地最快的跑者。在大瘟疫期间用双腿跑出了整个防疫网。现在他的速度成了对抗蚀者最宝贵的资源——不管是传递信息、逃离危险、还是追捕蚀者。',
     externalTraits: [
       { name: '疾风步', type: TRAIT_TYPES.PASSIVE, effect: '移动速度+20%，夜间可访问2个屋子', icon: '💨' },
       { name: '急件传递', type: TRAIT_TYPES.ACTIVE, effect: '可向一名玩家传递匿名加密消息(限1次/局)', icon: '📨' },
       { name: '耐力有限', type: TRAIT_TYPES.WEAKNESS, effect: '冲刺体力消耗+30%', icon: '🫁' },
     ],
-    recommendedHiddenRoles: ['VILLAGER', 'HUNTER', 'GUARD'],
+    recommendedHiddenRoles: ['SPIRIT_WEAVER', 'FLAME_TRACKER', 'VEIL_GUARDIAN'],
   },
   NELIA: {
     id: 'NELIA', name: '奈莉亚', title: '帷幕学者',
     origin: MYTH_ORIGINS.TOWER, gender: 'female',
     story: '在观测塔研究了三十年帷幕。她是唯一能"阅读"帷幕低语的人。她知道帷幕之外有什么——也知道帷幕正在变薄。来暮色村不是为了玩游戏——是为了找到最后的答案。',
     externalTraits: [
-      { name: '帷幕低语', type: TRAIT_TYPES.PASSIVE, effect: '察灵类能力准确率+25%，但每次使用帷幕低语都会向狼人泄露一条模糊信息', icon: '🌌' },
+      { name: '帷幕低语', type: TRAIT_TYPES.PASSIVE, effect: '察灵类能力准确率+25%，但每次使用帷幕低语都会向蚀者泄露一条模糊信息', icon: '🌌' },
       { name: '观测', type: TRAIT_TYPES.ACTIVE, effect: '可获知当前回合帷幕的"情绪"(随机事件预告)', icon: '🔭' },
       { name: '帷幕反噬', type: TRAIT_TYPES.WEAKNESS, effect: '使用能力后下一回合无法使用任何能力', icon: '⚡' },
     ],
-    recommendedHiddenRoles: ['SEER', 'POISON_WITCH', 'HEAL_WITCH'],
+    recommendedHiddenRoles: ['VEIL_SCHOLAR', 'HERBAL_SAGE', 'SPIRIT_MENDER'],
   },
 };
 
@@ -807,7 +807,7 @@ export const THIRD_PERSON_CONFIG = {
   QTE_ESCAPE_WINDOW_MS: 500,         // QTE逃脱时间窗口
   QTE_ESCAPE_BASE_CHANCE: 0.30,      // 基础逃脱概率
   KILL_ANIMATION_SECONDS: 3,         // 击杀动画时长
-  WOLF_NIGHT_VISION_RANGE: 40,       // 狼人夜视距离(米)
+  CORRUPTED_NIGHT_VISION_RANGE: 40,       // 蚀者夜视距离(米)
   HUMAN_NIGHT_VISION_RANGE: 15,      // 人类夜视距离(米)
   FOG_DENSITY: 0.02,                 // 雾浓度
   MOONLIGHT_INTENSITY: 0.6,          // 月光强度

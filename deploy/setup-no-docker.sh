@@ -20,14 +20,14 @@ if ! command -v pm2 >/dev/null 2>&1; then
 fi
 
 # 解压部署包
-cd /opt/werewolf
+cd /opt/veilland
 tar -xzf /root/veilland-deploy.tar.gz 2>/dev/null || true
 
 # 安装依赖
 cd server && npm install --production && cd ..
 
 # 用 PM2 启动
-pm2 delete werewolf 2>/dev/null || true
+pm2 delete veilland 2>/dev/null || true
 pm2 start server/src/index.js \
   --name veilland \
   --env PORT=4000
@@ -40,5 +40,5 @@ if command -v ufw >/dev/null 2>&1; then
   ufw allow 4000/tcp 2>/dev/null || true
 fi
 
-echo "✅ 狼人杀已启动！端口 4000"
+echo "✅ 帷幕之地已启动！端口 4000"
 pm2 status

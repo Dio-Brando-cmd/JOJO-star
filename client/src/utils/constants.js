@@ -24,8 +24,8 @@ export const SPIRIT_WEAVER_TYPES = {
   VEIL_WEAVER: 'VEIL_WEAVER',
 };
 
-export const VILLAGER_TYPE_NAMES = {
-  OLD_HUNTER: '老兵灵织者',
+export const SPIRIT_WEAVER_TYPE_NAMES = {
+  OLD_FLAME_TRACKER: '老兵灵织者',
   MERCHANT: '行路灵织者',
   HERBALIST: '学徒灵织者',
   STORYTELLER: '记述灵织者',
@@ -36,7 +36,7 @@ export const VILLAGER_TYPE_NAMES = {
 };
 
 export const SPIRIT_WEAVER_NAMES = {
-  1: { name: '老杰克', title: '暮色老兵', type: 'OLD_HUNTER', quote: '"我可能老了，但这双眼睛，还看得清谁被蚀痕沾染。"' },
+  1: { name: '老杰克', title: '暮色老兵', type: 'OLD_FLAME_TRACKER', quote: '"我可能老了，但这双眼睛，还看得清谁被蚀痕沾染。"' },
   2: { name: '玛丽安', title: '行路灵织者', type: 'MERCHANT', quote: '"在这个村子里，灵焰的频率比武器更可靠。"' },
   3: { name: '艾米丽', title: '学徒灵织者', type: 'HERBALIST', quote: '"大自然给了我们一切解药，只是大多数人不知道去哪里找。"' },
   4: { name: '托马斯', title: '记述灵织者', type: 'STORYTELLER', quote: '"给我三分钟，我能让蚀者自己走出庇护所。"' },
@@ -74,8 +74,8 @@ export const CHARACTER_IDENTITIES = {
   MORRIGAN: { id: 'MORRIGAN', name: '莫莉安', title: '最后的德鲁伊', origin: 'CELTIC', gender: 'female' },
   ANUBIS_ACOLYTE: { id: 'ANUBIS_ACOLYTE', name: '卡赫特', title: '冥界侍僧', origin: 'EGYPTIAN', gender: 'male' },
   HECTOR: { id: 'HECTOR', name: '赫克托', title: '特洛伊之盾', origin: 'GREEK', gender: 'male' },
-  ROMULUS: { id: 'ROMULUS', name: '罗慕路斯', title: '狼养之子', origin: 'ROMAN', gender: 'male' },
-  FENRIR_KIN: { id: 'FENRIR_KIN', name: '哈尔瓦德', title: '魔狼血裔', origin: 'NORSE', gender: 'male' },
+  ROMULUS: { id: 'ROMULUS', name: '罗慕路斯', title: '荒原之子', origin: 'ROMAN', gender: 'male' },
+  VORACIOUS_KIN: { id: 'VORACIOUS_KIN', name: '哈尔瓦德', title: '饥噬血裔', origin: 'NORSE', gender: 'male' },
   SKADI: { id: 'SKADI', name: '斯卡蒂', title: '雪山猎手', origin: 'NORSE', gender: 'female' },
   HAIKU_MONK: { id: 'HAIKU_MONK', name: '虚舟', title: '流浪僧人', origin: 'EASTERN', gender: 'male' },
   BRIGID: { id: 'BRIGID', name: '布丽吉德', title: '圣火侍女', origin: 'CELTIC', gender: 'female' },
@@ -92,7 +92,7 @@ export const MYTH_ORIGIN_NAMES = {
 };
 
 export const TEAMS = { CORRUPTED: 'CORRUPTED', VEIL_KEEPERS: 'VEIL_KEEPERS' };
-export const TEAM_NAMES = { WOLF: '蚀者阵营', VILLAGE: '守幕者阵营' };
+export const TEAM_NAMES = { CORRUPTED: '蚀者阵营', VEIL_KEEPERS: '守幕者阵营' };
 
 export const PHASES = {
   LOBBY: 'LOBBY', NIGHT: 'NIGHT', DAY: 'DAY', VOTE: 'VOTE',
@@ -107,14 +107,14 @@ export const NIGHT_STEPS = {
 };
 
 export const NIGHT_STEP_NAMES = {
-  FLAME_TRACKER: '追猎者', ALPHA_WOLF: '冥僧人', VEIL_GUARDIAN: '帷幕守卫', CORRUPTED: '蚀者',
-  VEIL_SCHOLAR: '帷幕学者', POISON_WITCH: '草药学者', HEAL_WITCH: '愈灵师',
-  VILLAGER: '灵织者', RESOLUTION: '结算',
+  FLAME_TRACKER: '追猎者', NETHER_MONK: '冥僧人', VEIL_GUARDIAN: '帷幕守卫', CORRUPTED: '蚀者',
+  VEIL_SCHOLAR: '帷幕学者', HERBAL_SAGE: '草药学者', SPIRIT_MENDER: '愈灵师',
+  SPIRIT_WEAVER: '灵织者', RESOLUTION: '结算',
 };
 
 export const NIGHT_ACTIONS = {
   GO_OUT: 'GO_OUT', USE_ABILITY: 'USE_ABILITY', SLEEP: 'SLEEP',
-  EAVESDROP: 'EAVESDROP', HOWL: 'HOWL', DISGUISE: 'DISGUISE',
+  EAVESDROP: 'EAVESDROP', RIFT_RESONANCE: 'RIFT_RESONANCE', DISGUISE: 'DISGUISE',
   PUBLIC_PROPHECY: 'PUBLIC_PROPHECY', SPIRIT_VISION: 'SPIRIT_VISION',
   CORROSION_MIST: 'CORROSION_MIST', BATTLEFIELD_AID: 'BATTLEFIELD_AID',
   DIAGNOSE: 'DIAGNOSE', PATROL: 'PATROL', FORTIFY: 'FORTIFY',

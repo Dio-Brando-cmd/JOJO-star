@@ -43,7 +43,7 @@ export class Game {
     this.privateLogs = {};           // { playerId: [log entries] }
 
     // 日间追猎者射击
-    this.hunterDayShoot = null;
+    this.flameTrackerDayShoot = null;
     this.dayLog = [];              // 白天日志（不会在夜晚被清除）
 
     // 计时器（防止玩家卡死）
@@ -128,15 +128,15 @@ export class Game {
     const shuffled = [...config];
     this.shuffleArray(shuffled);
 
-    // 给每个村民编号以区分
-    let villagerIdx = 1;
+    // 给每个灵织者编号以区分
+    let weaverIdx = 1;
     this.players.forEach((player, i) => {
       player.role = shuffled[i];
       player.team = ROLE_TEAM[shuffled[i]];
       if (shuffled[i] === ROLES.SPIRIT_WEAVER) {
-        player.weaverIndex = villagerIdx++;
+        player.weaverIndex = weaverIdx++;
       }
-      // 初始化猎人：第二晚才能行动，携带全部武器
+      // 初始化灵痕追猎者：第二晚才能行动，携带全部武器
       if (shuffled[i] === ROLES.FLAME_TRACKER) {
         player.canAct = false;
         player.hasRifle = true;
@@ -144,7 +144,7 @@ export class Game {
         player.rifleUsable = true;
         player.blunderbussUsable = true;
       }
-      // 药巫有两瓶药
+      // 愈灵师有两瓶药
       if (shuffled[i] === ROLES.SPIRIT_MENDER) {
         player.hasHealTalisman = true;
         player.hasSealTalisman = true;
@@ -218,7 +218,7 @@ export class Game {
         return alive.filter(p => p.role === ROLES.VEIL_GUARDIAN);
       case NIGHT_STEPS.CORRUPTED:
         return alive.filter(p => p.role === ROLES.CORRUPTED ||
-          (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedInfect)));
+          (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedCorrupt)));
       case NIGHT_STEPS.VEIL_SCHOLAR:
         return alive.filter(p => p.role === ROLES.VEIL_SCHOLAR);
       case NIGHT_STEPS.HERBAL_SAGE:
@@ -260,7 +260,7 @@ export class Game {
 
   // ==================== 阶段转换 ====================
 
-  // ---- v2.0: 开始游戏 → 先选表层身份 ----
+  // ---- v2.0: 开始游戏 → 房主配置的角色为所有玩家（含人机）统一随机分配 ----
   startGame() {
     if (this.enableBots) {
       this._autoFillBots();
@@ -273,19 +273,18 @@ export class Game {
     this.availableCharacters = allChars.slice(0, this.players.length);
     this.characterSelections = {};
 
-    // AI玩家自动随机选
-    for (const p of this.players) {
-      if (p.isBot) {
-        const pick = this.availableCharacters[Math.floor(Math.random() * this.availableCharacters.length)];
-        this.characterSelections[p.id] = pick;
-        this._applyCharacterToPlayer(p, pick);
-      }
+    // 所有玩家（人类+人机）统一随机分配表层身份——房主选择的角色池覆盖所有人
+    const shuffledChars = [...this.availableCharacters];
+    this.shuffleArray(shuffledChars);
+    for (let i = 0; i < this.players.length; i++) {
+      const p = this.players[i];
+      const pick = shuffledChars[i];
+      this.characterSelections[p.id] = pick;
+      this._applyCharacterToPlayer(p, pick);
     }
 
-    // 进入选人阶段
-    this.phase = PHASES.CHARACTER_SELECT;
-    this._broadcastState();
-    this._startCharacterSelectTimer();
+    // 跳过选人阶段，直接进入身份分配
+    this._finalizeCharacterSelection();
     return true;
   }
 
@@ -436,18 +435,18 @@ export class Game {
     }
 
     // 应用分配
-    let villagerIdx = 1;
+    let weaverIdx = 1;
     for (const { player, role } of assignments) {
       player.role = role;
       player.team = ROLE_TEAM[role];
 
       if (role === ROLES.SPIRIT_WEAVER) {
-        player.weaverIndex = villagerIdx;
-        const nameData = getWeaverName(villagerIdx);
+        player.weaverIndex = weaverIdx;
+        const nameData = getWeaverName(weaverIdx);
         player.weaverName = nameData.name;
         player.weaverTitle = nameData.title;
         player.weaverType = nameData.weaverType;
-        villagerIdx++;
+        weaverIdx++;
       }
 
       if (role === ROLES.FLAME_TRACKER) {
@@ -464,11 +463,23 @@ export class Game {
     }
   }
 
+  /**
+   * 计算本局总座位数（人类玩家 + 人机）。
+   * 需在补人机之前调用（此时 players 仅含人类玩家）。
+   */
+  getEffectivePlayerCount() {
+    const human = this.players.length;
+    if (!this.enableBots) return human;
+    const botTarget = this.botCount > 0
+      ? human + this.botCount
+      : Math.max(human, this.minBots);
+    return Math.min(botTarget, this.maxPlayers);
+  }
+
   // 自动补足人机
   _autoFillBots() {
-    // 房主指定了具体数量则用指定数量，否则自动补足至 minBots
-    const target = this.botCount > 0 ? this.botCount : Math.max(0, this.minBots - this.players.length);
-    const need = Math.max(0, target);
+    const effective = this.getEffectivePlayerCount();
+    const need = Math.max(0, effective - this.players.length);
     for (let i = 0; i < need; i++) {
       this._botIdCounter++;
       const botName = `人机${this._botIdCounter}`;
@@ -492,6 +503,8 @@ export class Game {
     this.voteResults = null;
     this.nightLog = [];
     this.privateLogs = {};
+    // 生成夜晚叙事（含"指引"低语）
+    this.nightNarrative = this.storyManager.generateNightNarrative(this.round);
 
     // 重置所有玩家当晚状态
     for (const p of this.players) {
@@ -540,7 +553,7 @@ export class Game {
 
     // 人机AI在3D模式下随机移动
     for (const bot of this.getAliveBots?.() || []) {
-      if (bot.isWolf()) {
+      if (bot.isCorrupted()) {
         bot._3dAction = 'HUNT'; // AI蚀者自动噬灵
       } else {
         bot._3dAction = Math.random() < 0.4 ? 'HIDE' : 'ROAM';
@@ -574,28 +587,28 @@ export class Game {
   }
 
   /** 3D模式: 蚀者噬灵目标 */
-  submit3DAttack(wolfId, targetId) {
+  submit3DAttack(corruptedId, targetId) {
     if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return null;
 
-    const wolf = this.getPlayer(wolfId);
+    const corrupted = this.getPlayer(corruptedId);
     const target = this.getPlayer(targetId);
-    if (!wolf || !target || !wolf.alive || !target.alive) return null;
-    if (!wolf.isWolf()) return null; // 只有狼人能攻击
+    if (!corrupted || !target || !corrupted.alive || !target.alive) return null;
+    if (!corrupted.isCorrupted()) return null; // 只有蚀者能攻击
 
     // 检查是否在攻击冷却中
     const now = Date.now();
-    if (wolf._lastAttackTime && now - wolf._lastAttackTime < 8000) {
+    if (corrupted._lastAttackTime && now - corrupted._lastAttackTime < 8000) {
       return { success: false, reason: 'COOLDOWN' };
     }
 
-    wolf._lastAttackTime = now;
+    corrupted._lastAttackTime = now;
 
     // 检查目标是否有短铳反击
     if (target.role === 'FLAME_TRACKER' && target.blunderbussUsable) {
-      wolf.alive = false;
-      wolf._killedBy = targetId;
+      corrupted.alive = false;
+      corrupted._killedBy = targetId;
       target.blunderbussUsable = false;
-      return { success: true, result: 'COUNTERED', victim: wolfId, killer: targetId };
+      return { success: true, result: 'COUNTERED', victim: corruptedId, killer: targetId };
     }
 
     // 检查逃脱: 30%基础 + 特质加成
@@ -610,8 +623,8 @@ export class Game {
 
     // 击杀
     target.alive = false;
-    target._killedBy = wolfId;
-    return { success: true, result: 'KILLED', victim: targetId, killer: wolfId };
+    target._killedBy = corruptedId;
+    return { success: true, result: 'KILLED', victim: targetId, killer: corruptedId };
   }
 
   /** 3D模式: 玩家尝试藏匿 */
@@ -660,19 +673,19 @@ export class Game {
         if (!this.privateLogs[entry.player]) this.privateLogs[entry.player] = [];
         this.privateLogs[entry.player].push(entry);
       }
-      // 狼人相认日志分发给相关狼人
-      if (entry.type === 'wolves_united' && entry.wolves) {
-        for (const wid of entry.wolves) {
+      // 蚀者相认日志分发给相关蚀者
+      if (entry.type === 'corrupted_united' && entry.corrupted) {
+        for (const wid of entry.corrupted) {
           if (!this.privateLogs[wid]) this.privateLogs[wid] = [];
           this.privateLogs[wid].push(entry);
         }
       }
     }
 
-    // 检查猎人第二晚起可以行动
+    // 检查灵痕追猎者第二晚起可以行动
     if (this.round >= 2) {
-      const hunter = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
-      if (hunter) hunter.canAct = true;
+      const flameTracker = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
+      if (flameTracker) flameTracker.canAct = true;
     }
 
     // 推送每个玩家的私有状态（确保察灵家等角色看到夜间反馈）
@@ -693,7 +706,7 @@ export class Game {
 
   enterDay() {
     this.phase = PHASES.DAY;
-    this.hunterDayShoot = null;
+    this.flameTrackerDayShoot = null;
     this._clearPhaseTimeout();
     this.broadcastPhaseChange();
     this._startDayTimer();
@@ -885,24 +898,24 @@ export class Game {
     }
   }
 
-  // ==================== 猎人白天开枪 ====================
+  // ==================== 灵痕追猎者白天开枪 ====================
 
-  hunterDayShootTarget(targetId) {
-    // P0修复: 只能在DAY阶段开枪 + 猎人必须在世 + 未开过枪
+  flameTrackerDayShootTarget(targetId) {
+    // P0修复: 只能在DAY阶段开枪 + 灵痕追猎者必须在世 + 未开过枪
     if (this.phase !== PHASES.DAY) return false;
-    if (this.hunterDayShoot) return false; // 已开过枪
-    const hunter = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
-    if (!hunter || !hunter.hasRifle || !hunter.rifleUsable) return false;
+    if (this.flameTrackerDayShoot) return false; // 已开过枪
+    const flameTracker = this.players.find(p => p.role === ROLES.FLAME_TRACKER && p.alive);
+    if (!flameTracker || !flameTracker.hasRifle || !flameTracker.rifleUsable) return false;
 
     const target = this.getPlayer(targetId);
     if (!target || !target.alive) return false;
 
     target.alive = false;
-    hunter.hasRifle = false;
-    hunter.rifleUsable = false;
-    this.hunterDayShoot = targetId;
+    flameTracker.hasRifle = false;
+    flameTracker.rifleUsable = false;
+    this.flameTrackerDayShoot = targetId;
     // 记录到 dayLog（不会在夜晚被清除）
-    this.dayLog.push({ type: 'hunter_day_shoot', player: hunter.id, target: targetId, msg: `追猎者射击击杀了 ${target.name}` });
+    this.dayLog.push({ type: 'flame_tracker_day_shoot', player: flameTracker.id, target: targetId, msg: `追猎者射击击杀了 ${target.name}` });
 
     this.checkWinCondition();
     return true;
@@ -911,26 +924,27 @@ export class Game {
   // ==================== 胜利条件 ====================
 
   checkWinCondition() {
-    const aliveWolves = this.players.filter(p =>
+    const aliveCorrupted = this.players.filter(p =>
       p.alive && (p.role === ROLES.CORRUPTED ||
-        (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedInfect)))
+        (p.role === ROLES.NETHER_MONK && (p.isTransformed || p.hasUsedCorrupt)))
     );
-    // 未变身/未感染种狼算作村方
-    const aliveVillage = this.players.filter(p =>
+    // 未蚀变/未堕化冥僧人算作守幕者方
+    const aliveKeepers = this.players.filter(p =>
       p.alive && (p.team === TEAMS.VEIL_KEEPERS ||
-        (p.role === ROLES.NETHER_MONK && !p.isTransformed && !p.hasUsedInfect))
+        (p.role === ROLES.NETHER_MONK && !p.isTransformed && !p.hasUsedCorrupt))
     );
 
-    if (aliveWolves.length === 0) {
+    if (aliveCorrupted.length === 0) {
       this.endGame(TEAMS.VEIL_KEEPERS, '所有蚀者已出局');
-    } else if (aliveWolves.length >= aliveVillage.length) {
+    } else if (aliveCorrupted.length >= aliveKeepers.length) {
       this.endGame(TEAMS.CORRUPTED, '蚀者数量不少于守幕者，蚀者获胜');
     }
   }
 
   endGame(winnerTeam, reason) {
     this.phase = PHASES.GAME_OVER;
-    this.gameResult = { winner: winnerTeam, reason };
+    const ending = this.storyManager.generateEnding(winnerTeam, this.players, this.round);
+    this.gameResult = { winner: winnerTeam, reason, ending };
     this._clearPhaseTimeout();
     this.broadcastGameOver();
 
@@ -1006,17 +1020,17 @@ export class Game {
       p.disconnected = false;
       // 重置所有角色状态
       p.isTransformed = false;
-      p.hasUsedInfect = false;
+      p.hasUsedCorrupt = false;
       p.hasKilled = false;
-      p.infectedByAlpha = false;
-      p.willBecomeWolf = false;
-      p.guardingTarget = null;
-      p.isGuarding = false;
+      p.corruptedByNetherMonk = false;
+      p.willBecomeCorrupted = false;
+      p.protectTarget = null;
+      p.isProtecting = false;
       p.heavyInjury = false;
-      p.whoKnowsGuardHeavyInjury = [];
-      p.knownWolves = [];
-      p.wolvesOpenEyesTogether = [];
-      p.wolfKillTarget = null;
+      p.whoKnowsVeilGuardianHeavyInjury = [];
+      p.knownCorrupted = [];
+      p.corruptedOpenEyesTogether = [];
+      p.corruptedKillTarget = null;
       p.hasRifle = false;
       p.hasBlunderbuss = false;
       p.rifleUsable = false;
@@ -1047,7 +1061,7 @@ export class Game {
     this.privateLogs = {};
     this.nightStep = null;
     this.nightStepIndex = 0;
-    this.hunterDayShoot = null;
+    this.flameTrackerDayShoot = null;
     this.dayLog = [];
     this.gameResult = null;
     this.customRoleConfig = null;
@@ -1111,6 +1125,7 @@ export class Game {
     this.broadcast('game:over', {
       winner: this.gameResult.winner,
       reason: this.gameResult.reason,
+      ending: this.gameResult.ending,
       players: this.players.map(p => ({
         id: p.id, name: p.name, role: p.role, team: p.team, alive: p.alive,
       })),
@@ -1160,7 +1175,7 @@ export class Game {
         role: (this.phase === PHASES.GAME_OVER || !p.alive) ? p.role : undefined,
         team: this.phase === PHASES.GAME_OVER ? p.team : undefined,
         heavyInjury: p.heavyInjury,
-        isGuarding: p.isGuarding,
+        isProtecting: p.isProtecting,
         weaverIndex: p.weaverIndex,
         // v2.0: 表层身份（选人完成后公开）
         characterId: this.phase !== PHASES.LOBBY ? p.characterId : undefined,
@@ -1168,8 +1183,9 @@ export class Game {
       votes: this.phase === PHASES.VOTE ? this.votes : {},
       voteResults: this.voteResults,
       nightLog: this.nightLog,
+      nightNarrative: this.nightNarrative || null,
       dayLog: this.dayLog,
-      hunterDayShoot: this.hunterDayShoot,
+      flameTrackerDayShoot: this.flameTrackerDayShoot,
       discussionOrder: this.phase === PHASES.DISCUSSION ? this.discussionOrder : [],
       currentSpeakerId: this.phase === PHASES.DISCUSSION ? this.currentSpeakerId : null,
       discussionTimeLeft: this.phase === PHASES.DISCUSSION ? this.discussionTimeLeft : 0,
@@ -1180,11 +1196,11 @@ export class Game {
     const player = this.getPlayer(playerId);
     if (!player) return null;
 
-    // 从私密日志中提取帷幕学者察灵结果 { targetId: 'GOOD'|'WOLF' }
+    // 从私密日志中提取帷幕学者察灵结果 { targetId: 'GOOD'|'CORRUPTED' }
     const seerCheckResults = {};
     const myLogs = this.privateLogs[playerId] || [];
     for (const entry of myLogs) {
-      if (entry.type === 'seer_check' && entry.target && entry.result) {
+      if (entry.type === 'veil_scholar_check' && entry.target && entry.result) {
         seerCheckResults[entry.target] = entry.result;
       }
     }
@@ -1195,7 +1211,7 @@ export class Game {
       myTeam: player.team,
       myPrivateState: player.toPrivateJSON(),
       privateLog: myLogs,
-      seerCheckResults,  // { targetPlayerId: 'GOOD'|'WOLF' }
+      seerCheckResults,  // { targetPlayerId: 'GOOD'|'CORRUPTED' }
       // 只返回该玩家应看到的信息
       players: this.players.map(p => {
         const base = {
@@ -1203,15 +1219,15 @@ export class Game {
           name: p.name,
           alive: p.alive,
           heavyInjury: p.heavyInjury,
-          isGuarding: p.isGuarding,
+          isProtecting: p.isProtecting,
         };
         // 自己的信息
         if (p.id === playerId) {
           base.role = p.role;
           return base;
         }
-        // 狼人相认后可以看到彼此的role
-        if (player.knownWolves?.includes(p.id)) {
+        // 蚀者相认后可以看到彼此的role
+        if (player.knownCorrupted?.includes(p.id)) {
           base.role = p.role;
         }
         // 只有死亡后才公开role
@@ -1235,6 +1251,7 @@ export class Game {
       customRoleConfig: this.customRoleConfig,
       enableBots: this.enableBots,
       botCount: this.botCount,
+      effectivePlayerCount: this.getEffectivePlayerCount(),
       players: this.players.map(p => ({
         id: p.id,
         name: p.name,
@@ -1266,7 +1283,7 @@ export class Game {
       return (p.currentHouse || p.id) === houseId;
     });
     const count = visitors.length;
-    // 如果是村民因人多被赶回家，只告诉"很多人"
+    // 如果是灵织者因人多被赶回家，只告诉"很多人"
     const requestor = this.getPlayer(requestingPlayerId);
     if (requestor && requestor.role === 'SPIRIT_WEAVER' && count >= 3) {
       return { count: -1, desc: '很多人（≥3人）' }; // -1表示很多人

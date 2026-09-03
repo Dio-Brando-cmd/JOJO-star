@@ -63,17 +63,17 @@ export default function RoleSVG({ role, size = 160 }) {
       case ROLES.CORRUPTED:
         return <VeilLandSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.NETHER_MONK:
-        return <AlphaWolfSilhouette cx={cx} cy={cy} r={r} />;
+        return <NetherMonkSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.VEIL_SCHOLAR:
-        return <SeerSilhouette cx={cx} cy={cy} r={r} />;
+        return <VeilScholarSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.HERBAL_SAGE:
-        return <PoisonWitchSilhouette cx={cx} cy={cy} r={r} />;
+        return <HerbalSageSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.SPIRIT_MENDER:
-        return <HealWitchSilhouette cx={cx} cy={cy} r={r} />;
+        return <SpiritMenderSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.VEIL_GUARDIAN:
-        return <GuardSilhouette cx={cx} cy={cy} r={r} />;
+        return <VeilGuardianSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.FLAME_TRACKER:
-        return <HunterSilhouette cx={cx} cy={cy} r={r} />;
+        return <FlameTrackerSilhouette cx={cx} cy={cy} r={r} />;
       case ROLES.SPIRIT_WEAVER:
       default:
         return <WeaverSilhouette cx={cx} cy={cy} r={r} />;
@@ -162,7 +162,7 @@ function VeilLandSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 40 * scale}, ${cy - 55 * scale}) scale(${scale})`} opacity="0.85">
-      {/* 狼头 */}
+      {/* 蚀者之颅 */}
       <path d="M40 10 C25 8 12 20 10 35 C8 48 15 55 20 55 C22 50 26 45 28 40 C26 48 22 52 25 58 C28 62 32 65 40 68 C48 65 52 62 55 58 C58 52 54 48 52 40 C54 45 58 50 60 55 C65 55 72 48 70 35 C68 20 55 8 40 10Z" fill="#1a0404" stroke="#c41e3a" strokeWidth="0.8" />
       {/* 眼睛 — 红光 */}
       <ellipse cx="28" cy="32" rx="4" ry="3" fill="#c41e3a" opacity="0.9" />
@@ -180,14 +180,14 @@ function VeilLandSilhouette({ cx, cy, r }) {
   );
 }
 
-function AlphaWolfSilhouette({ cx, cy, r }) {
+function NetherMonkSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 42 * scale}, ${cy - 60 * scale}) scale(${scale})`} opacity="0.9">
       {/* 王冠 */}
       <path d="M28 10 L20 0 L30 5 L40 0 L40 10Z" fill="#c9a96e" opacity="0.7" />
       <path d="M22 2 L30 7 L38 2" fill="none" stroke="#f0c060" strokeWidth="0.8" opacity="0.8" />
-      {/* 狼头（更大） */}
+      {/* 蚀者之颅（更大） */}
       <path d="M42 12 C26 10 8 22 6 38 C4 52 14 60 20 60 C22 54 26 48 30 42 C28 52 22 58 26 64 C30 70 36 74 46 78 C56 74 62 70 66 64 C70 58 64 52 62 42 C64 48 70 54 72 60 C78 60 88 52 86 38 C84 22 66 10 42 12Z" fill="#1a0202" stroke="#8b0000" strokeWidth="1" />
       {/* 眼睛 */}
       <ellipse cx="30" cy="34" rx="5" ry="3.5" fill="#c41e3a" opacity="0.95" />
@@ -201,7 +201,7 @@ function AlphaWolfSilhouette({ cx, cy, r }) {
   );
 }
 
-function SeerSilhouette({ cx, cy, r }) {
+function VeilScholarSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 40 * scale}, ${cy - 50 * scale}) scale(${scale})`} opacity="0.85">
@@ -228,7 +228,7 @@ function SeerSilhouette({ cx, cy, r }) {
   );
 }
 
-function PoisonWitchSilhouette({ cx, cy, r }) {
+function HerbalSageSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 38 * scale}, ${cy - 50 * scale}) scale(${scale})`} opacity="0.85">
@@ -249,7 +249,7 @@ function PoisonWitchSilhouette({ cx, cy, r }) {
   );
 }
 
-function HealWitchSilhouette({ cx, cy, r }) {
+function SpiritMenderSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 38 * scale}, ${cy - 50 * scale}) scale(${scale})`} opacity="0.85">
@@ -270,7 +270,7 @@ function HealWitchSilhouette({ cx, cy, r }) {
   );
 }
 
-function GuardSilhouette({ cx, cy, r }) {
+function VeilGuardianSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 38 * scale}, ${cy - 50 * scale}) scale(${scale})`} opacity="0.85">
@@ -291,7 +291,7 @@ function GuardSilhouette({ cx, cy, r }) {
   );
 }
 
-function HunterSilhouette({ cx, cy, r }) {
+function FlameTrackerSilhouette({ cx, cy, r }) {
   const scale = r / 80;
   return (
     <g transform={`translate(${cx - 42 * scale}, ${cy - 52 * scale}) scale(${scale})`} opacity="0.85">

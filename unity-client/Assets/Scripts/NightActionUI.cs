@@ -26,9 +26,12 @@ public class NightActionUI : MonoBehaviour
 
     void Start()
     {
-        NetworkManager.Instance.OnPhaseChange += HandlePhaseChange;
-        NetworkManager.Instance.OnGameStateReceived += HandleGameState;
-        actionPanel.SetActive(false);
+        if (NetworkManager.Instance != null)
+        {
+            NetworkManager.Instance.OnPhaseChange += HandlePhaseChange;
+            NetworkManager.Instance.OnGameStateReceived += HandleGameState;
+        }
+        if (actionPanel != null) actionPanel.SetActive(false);
     }
 
     void HandlePhaseChange(string phase, string nightStep)
@@ -63,36 +66,36 @@ public class NightActionUI : MonoBehaviour
 
         switch (step)
         {
-            case "HUNTER":
-                title = "🔫 猎人行动";
+            case "FLAME_TRACKER":
+                title = "🔫 灵痕追猎者行动";
                 actions = new[] { "睡觉", "出门观察", "使用猎枪", "设陷阱" };
                 break;
-            case "ALPHA_WOLF":
-                title = "👑 种狼行动";
-                actions = new[] { "睡觉", "出门", "变狼+感染", "假身份编织" };
+            case "NETHER_MONK":
+                title = "👑 冥僧人行动";
+                actions = new[] { "睡觉", "出门", "蚀变+堕化", "假身份编织" };
                 break;
-            case "GUARD":
-                title = "🛡️ 守卫行动";
+            case "VEIL_GUARDIAN":
+                title = "🛡️ 帷幕守卫行动";
                 actions = new[] { "睡觉", "出门", "守护", "筑垒", "巡逻", "舍身" };
                 break;
             case "CORRUPTED":
-                title = "🐺 狼人行动";
-                actions = new[] { "睡觉", "出门", "刀人", "嚎叫召集", "伪装混入" };
+                title = "🌑 蚀者行动";
+                actions = new[] { "睡觉", "出门", "刀人", "共鸣召集", "伪装混入" };
                 break;
-            case "SEER":
-                title = "🔮 预言家行动";
+            case "VEIL_SCHOLAR":
+                title = "🔮 帷幕学者行动";
                 actions = new[] { "睡觉", "出门", "查验", "梦境碎片", "灵视" };
                 break;
-            case "POISON_WITCH":
-                title = "☠️ 毒巫行动";
+            case "HERBAL_SAGE":
+                title = "☠️ 草药学者行动";
                 actions = new[] { "睡觉", "出门", "烈性毒药", "毒雾陷阱", "药水救人" };
                 break;
-            case "HEAL_WITCH":
-                title = "💚 药巫行动";
+            case "SPIRIT_MENDER":
+                title = "💚 愈灵师行动";
                 actions = new[] { "睡觉", "出门", "万能药", "单目标毒", "诊断", "药草园" };
                 break;
-            case "VILLAGER":
-                title = "👨‍🌾 村民行动";
+            case "SPIRIT_WEAVER":
+                title = "👨‍🌾 灵织者行动";
                 actions = new[] { "睡觉", "出门", "偷听" };
                 break;
         }
@@ -163,7 +166,7 @@ public class NightActionUI : MonoBehaviour
 
         if (selectedAction.Contains("睡觉")) actionType = "SLEEP";
         else if (selectedAction.Contains("出门")) actionType = "GO_OUT";
-        else if (selectedAction.Contains("嚎叫")) actionType = "HOWL";
+        else if (selectedAction.Contains("共鸣")) actionType = "RIFT_RESONANCE";
         else if (selectedAction.Contains("伪装")) actionType = "DISGUISE";
         else if (selectedAction.Contains("巡逻")) actionType = "PATROL";
         else if (selectedAction.Contains("筑垒")) actionType = "FORTIFY";
@@ -176,13 +179,14 @@ public class NightActionUI : MonoBehaviour
 
         if (selectedAction.Contains("刀人")) ability = new Dictionary<string, object> { ["kill"] = true };
         if (selectedAction.Contains("查验")) ability = new Dictionary<string, object> { ["check"] = true };
-        if (selectedAction.Contains("守护")) ability = new Dictionary<string, object> { ["guard"] = true };
+        if (selectedAction.Contains("守护")) ability = new Dictionary<string, object> { ["protect"] = true };
         if (selectedAction.Contains("烈性毒药")) ability = new Dictionary<string, object> { ["lethalPoison"] = true, ["lethalPoisonTarget"] = target };
         if (selectedAction.Contains("万能药")) ability = new Dictionary<string, object> { ["heal"] = true, ["healTarget"] = target };
         if (selectedAction.Contains("单目标毒")) ability = new Dictionary<string, object> { ["poison"] = true, ["poisonTarget"] = target };
         if (selectedAction.Contains("药水救人")) ability = new Dictionary<string, object> { ["potion"] = true, ["potionTarget"] = target };
 
-        NetworkManager.Instance.SubmitNightAction(actionType, target, ability);
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.SubmitNightAction(actionType, target, ability);
         actionPanel.SetActive(false);
         Debug.Log($"[NightAction] Submitted: {actionType} → {target}");
     }
