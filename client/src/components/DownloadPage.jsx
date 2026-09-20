@@ -53,6 +53,16 @@ export default function DownloadPage({ onNavigate }) {
     document.body.removeChild(link);
   };
 
+  const handleDownload3D = () => {
+    // 3D 测试版（Unity 独立客户端：3D 大厅 + 帷幕追猎 + 探索）
+    const link = document.createElement('a');
+    link.href = '/download/帷幕之地3D.zip';
+    link.download = '帷幕之地3D测试版.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="static-page">
       {/* 导航栏 */}
@@ -107,6 +117,25 @@ export default function DownloadPage({ onNavigate }) {
 
             <p className="download-note">
               下载后双击运行即可安装，无需额外配置
+            </p>
+          </div>
+
+          {/* 3D 测试版下载卡片 */}
+          <div className="download-main-card download-3d-card">
+            <div className="download-platform-icon">🏔️</div>
+            <h2>3D 测试版（新）</h2>
+            <p className="download-ver">3D 大厅 · 帷幕追猎 · 探索 · v1.0 测试</p>
+
+            <button className="btn btn-primary btn-download" onClick={handleDownload3D}>
+              <span className="download-btn-icon">📥</span>
+              <span>
+                <strong>下载 3D 测试版</strong>
+                <small>Windows 64位 · 独立客户端（解压即玩）</small>
+              </span>
+            </button>
+
+            <p className="download-note">
+              全新 3D 桃花源大厅 + 联网「帷幕追猎」追逃玩法，解压后运行 VeilLand3D.exe 即可进入
             </p>
           </div>
         </div>
