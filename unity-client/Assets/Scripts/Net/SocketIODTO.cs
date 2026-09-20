@@ -130,6 +130,7 @@ public class NightStartDTO
 {
     public float timeLeft;
     public int round;
+    public int maxRounds;
     public string nightStep;
     public PlayerState[] players;
 }

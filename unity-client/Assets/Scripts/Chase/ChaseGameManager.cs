@@ -53,6 +53,8 @@ public class ChaseGameManager : MonoBehaviour
     public string myPlayerId;
     public string myRole, myTeam, myCharacterId;
     public bool isCorrupted;
+    public bool hasBlunderbuss;        // 本局随机配发的短铳 (守幕者被噬灵时反杀蚀者)
+    public int myMaxRounds = 3;        // 守幕者需撑过的夜数 (服务端 SURVIVAL_ROUNDS)
     public bool isNight, gameActive, gameOver, localDead, voted;
     public float nightTimeLeft, phaseTimeLeft, cdRemaining, bannerTimer, stateSyncTimer;
     public string banner = "";
@@ -179,6 +181,7 @@ public class ChaseGameManager : MonoBehaviour
         myTeam = ps.myTeam;
         myCharacterId = ps.characterId ?? ps.myPrivateState?.characterId;
         isCorrupted = (myTeam == "CORRUPTED") || IsCorruptedRole(myRole);
+        hasBlunderbuss = ps.myPrivateState?.blunderbussUsable ?? false;
         if (myPlayerId == null) myPlayerId = NetworkManager.Instance?.playerId;
     }
 
@@ -216,7 +219,10 @@ public class ChaseGameManager : MonoBehaviour
         ResetFlames();
 
         LockCursor();
-        banner = "第" + dto.round + "夜 — " + (isCorrupted ? "去吞噬守幕者 (F)" : "逃命或藏匿 (Q)");
+        myMaxRounds = dto.maxRounds > 0 ? dto.maxRounds : 3;
+        banner = "第" + dto.round + "/" + myMaxRounds + "夜 — " + (isCorrupted ? "去吞噬守幕者 (F)" : "逃命或藏匿 (Q)");
+        if (!isCorrupted && hasBlunderbuss)
+            banner += "\n你持有短铳 · 蚀者噬灵你时会被反杀";
         bannerTimer = 4f;
     }
 
@@ -656,7 +662,7 @@ public class ChaseGameManager : MonoBehaviour
         {
             case "KILLED":    banner = "噬灵成功! " + NameOf(r.victim) + " 被吞噬"; break;
             case "ESCAPED":   banner = "目标逃脱了!"; break;
-            case "COUNTERED": banner = "被反杀! 灵痕追猎者击毙了你"; break;
+            case "COUNTERED": banner = "被反杀! 守幕者的短铳击毙了你"; break;
             default:          banner = "攻击结果: " + r.result; break;
         }
         bannerTimer = 3f;

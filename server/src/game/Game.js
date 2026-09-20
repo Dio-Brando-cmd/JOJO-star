@@ -24,13 +24,13 @@ const SPIRIT_FLAME_SPOTS = [
   { id: 'well',     name: '水井',   x: -5,  z: -8  },
   { id: 'smith',    name: '铁匠铺', x: 10,  z: 5   },
   { id: 'tower',    name: '观测塔', x: 36,  z: -30 },
-  { id: 'cemetery', name: '墓地',   x: 0,   z: 48  },
   { id: 'cottage',  name: '村舍',   x: -28, z: -16 },
 ];
 const RITUAL_CENTER = { x: 0, z: 0 };   // 广场
 const RITUAL_RADIUS = 5;                // 引导需站在广场半径内
 const FLAME_COLLECT_RADIUS = 3;         // 采集判定半径
-const RITUAL_CHANNEL_SECONDS = 12;      // 引导时长
+const RITUAL_CHANNEL_SECONDS = 8;       // 引导时长
+const SURVIVAL_ROUNDS = 3;              // 守幕者撑过 N 夜判胜 (蚀者未在时限内噬光)
 const ATTACK_RANGE = 2.5;               // 蚀者噬灵近距判定 (服务端强制, 防远程/穿墙击杀)
 
 export class Game {
@@ -368,6 +368,10 @@ export class Game {
     // 分配隐藏职业：基于表层身份的推荐职业，加入随机因素
     this._assignRolesByCharacter();
 
+    // 3D追逃: 随机给一名守幕者配发一次性短铳 (蚀者噬灵其时会反杀),
+    // 让「蚀者全灭」这条胜利线在任意人数局都可达, 蚀者不敢无脑乱咬
+    if (this.gameMode === 'THIRD_PERSON') this._armRandomKeeper();
+
     // 告知玩家各自的隐藏身份（仅自己可见）
     if (this._io) {
       for (const p of this.players) {
@@ -419,35 +423,30 @@ export class Game {
       ? [...this.customRoleConfig]
       : getRoleConfig(count);
 
-    const roles = [...config];
-    const players = [...this.players];
     const assignments = [];
-    const usedRoles = new Set();
-
-    // Pass 1: 优先匹配 — 为每个角色找推荐该角色的玩家
-    const roleList = [...roles];
-    this.shuffleArray(roleList);
-    for (const role of roleList) {
-      if (usedRoles.has(role)) continue;
-      // 找推荐此角色的未分配玩家
-      const candidates = players.filter(p =>
-        !assignments.some(a => a.player === p) &&
-        CHARACTER_IDENTITIES[p.characterId]?.recommendedHiddenRoles?.includes(role)
-      );
-      if (candidates.length > 0) {
-        const pick = candidates[Math.floor(Math.random() * candidates.length)];
-        assignments.push({ player: pick, role });
-        usedRoles.add(role);
-      }
-    }
-
-    // Pass 2: 剩余角色随机分配给剩余玩家
-    const remainingRoles = roles.filter(r => !usedRoles.has(r));
-    const remainingPlayers = players.filter(p => !assignments.some(a => a.player === p));
+    // 用「角色实例」列表区分重复角色 (如 6 人局的 2 名灵织者),
+    // 避免 Set 按名字去重把第二个同名角色吞掉, 导致缺一人/角色错配/阵营 undefined
+    const remainingRoles = [...config].map(role => ({ role }));
+    const remainingPlayers = [...this.players];
     this.shuffleArray(remainingRoles);
 
+    // Pass 1: 优先匹配 — 为每个角色实例找推荐该角色的玩家 (重复角色各自独立)
+    for (const item of [...remainingRoles]) {
+      const candidates = remainingPlayers.filter(p =>
+        CHARACTER_IDENTITIES[p.characterId]?.recommendedHiddenRoles?.includes(item.role)
+      );
+      if (candidates.length === 0) continue;
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      assignments.push({ player: pick, role: item.role });
+      remainingRoles.splice(remainingRoles.indexOf(item), 1);
+      remainingPlayers.splice(remainingPlayers.indexOf(pick), 1);
+    }
+
+    // Pass 2: 剩余角色随机分配给剩余玩家 (两者等长, 一一对应)
+    this.shuffleArray(remainingRoles);
+    this.shuffleArray(remainingPlayers);
     for (let i = 0; i < remainingPlayers.length; i++) {
-      assignments.push({ player: remainingPlayers[i], role: remainingRoles[i] || remainingRoles[0] });
+      assignments.push({ player: remainingPlayers[i], role: remainingRoles[i].role });
     }
 
     // 应用分配
@@ -549,8 +548,10 @@ export class Game {
     this.nightStep = 'FREE_ROAM';
     this._clearPhaseTimeout();
 
-    // 灵焰仪式状态初始化 (守幕者采集 5 处灵焰 → 广场引导)
-    this.spiritFlames = SPIRIT_FLAME_SPOTS.map(s => ({ ...s, collected: false }));
+    // 灵焰仪式状态初始化 (仅首夜全量重置; 之后跨回合保留已采集进度, 守幕者无需每夜重采)
+    if (this.round <= 1) {
+      this.spiritFlames = SPIRIT_FLAME_SPOTS.map(s => ({ ...s, collected: false }));
+    }
     this._ritual = null;
     this._clearRitualTimeout();
 
@@ -562,6 +563,7 @@ export class Game {
       this._io.to(this.id).emit('game:3dNightStart', {
         timeLeft: this.timeLeft,
         round: this.round,
+        maxRounds: SURVIVAL_ROUNDS,
         nightStep: 'FREE_ROAM',
         // 只广播阵营(蚀者/守幕者), 不暴露具体职业 — 否则蚀者会提前得知
         // 谁是唯一能短铳反杀的 FLAME_TRACKER, 毁掉反制玩法
@@ -597,11 +599,17 @@ export class Game {
     if (this.phase !== PHASES.NIGHT) return;
 
     // 3D追逃没有 2D 桌游的白天/讨论/投票阶段: 直接判定胜负,
-    // 未分胜负则进入下一轮追逃夜 (灵焰重置、死者保持出局), 形成多回合追逃。
+    // 未分胜负则进入下一轮追逃夜 (灵焰跨回合保留、死者保持出局), 形成多回合追逃。
     // 胜利判定走 _check3DWin (守幕者全灭→蚀者胜 / 蚀者全灭→守幕者胜),
     // 守幕者灵焰仪式胜利已在 start3DRitual 的引导计时里单独 endGame。
     this._check3DWin();
     if (this.phase === PHASES.GAME_OVER) return;
+
+    // 守幕者撑过 N 夜判胜 (蚀者未在时限内噬光守幕者)
+    if (this.round >= SURVIVAL_ROUNDS) {
+      this.endGame(TEAMS.VEIL_KEEPERS, '守幕者撑过了第 ' + this.round + ' 夜');
+      return;
+    }
 
     this.round++;
     this.enterNight();
@@ -869,8 +877,8 @@ export class Game {
 
     corrupted._lastAttackTime = now;
 
-    // 检查目标是否有短铳反击
-    if (target.role === 'FLAME_TRACKER' && target.blunderbussUsable) {
+    // 检查目标是否有短铳反击 (随机配发的守幕者短铳 / FLAME_TRACKER 短铳均可反杀)
+    if (target.blunderbussUsable) {
       corrupted.alive = false;
       corrupted._killedBy = targetId;
       target.blunderbussUsable = false;
@@ -978,6 +986,15 @@ export class Game {
       clearTimeout(this._ritualTimeout);
       this._ritualTimeout = null;
     }
+  }
+
+  /** 3D模式: 随机给一名守幕者配发一次性短铳 (被噬灵时反杀蚀者) */
+  _armRandomKeeper() {
+    const keepers = this.players.filter(p => !p.isCorrupted());
+    if (keepers.length === 0) return;
+    const armed = keepers[Math.floor(Math.random() * keepers.length)];
+    armed.hasBlunderbuss = true;
+    armed.blunderbussUsable = true;
   }
 
   /** 3D模式: 击杀后即时判定胜利 (守幕者全灭 → 蚀者胜; 蚀者全灭 → 守幕者胜) */
