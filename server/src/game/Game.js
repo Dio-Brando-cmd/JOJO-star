@@ -561,6 +561,7 @@ export class Game {
     if (this._io) {
       this._io.to(this.id).emit('game:3dNightStart', {
         timeLeft: this.timeLeft,
+        round: this.round,
         nightStep: 'FREE_ROAM',
         // 只广播阵营(蚀者/守幕者), 不暴露具体职业 — 否则蚀者会提前得知
         // 谁是唯一能短铳反杀的 FLAME_TRACKER, 毁掉反制玩法
@@ -587,7 +588,7 @@ export class Game {
     this._start3DBotAI();
   }
 
-  /** 3D模式夜晚结束 → 结算 */
+  /** 3D模式夜晚结束 → 判定胜负, 未分胜负则进入下一轮追逃夜 */
   _end3DNight() {
     this._clearPhaseTimeout();
     this._stop3DBotAI();
@@ -595,24 +596,15 @@ export class Game {
     this._ritual = null;
     if (this.phase !== PHASES.NIGHT) return;
 
-    // 统计3D模式的击杀
-    const kills = [];
-    for (const p of this.players) {
-      if (!p.alive && p._killedBy) {
-        kills.push({ victim: p.id, killer: p._killedBy });
-      }
-    }
+    // 3D追逃没有 2D 桌游的白天/讨论/投票阶段: 直接判定胜负,
+    // 未分胜负则进入下一轮追逃夜 (灵焰重置、死者保持出局), 形成多回合追逃。
+    // 胜利判定走 _check3DWin (守幕者全灭→蚀者胜 / 蚀者全灭→守幕者胜),
+    // 守幕者灵焰仪式胜利已在 start3DRitual 的引导计时里单独 endGame。
+    this._check3DWin();
+    if (this.phase === PHASES.GAME_OVER) return;
 
-    // 用NightResolver做标准结算
-    const resolver = new NightResolver(this);
-    resolver.resolve().then(() => {
-      this.nightLog = resolver.log;
-      this.privateLogs = resolver.privateLogs;
-
-      if (this.phase !== PHASES.GAME_OVER) {
-        this.enterDay();
-      }
-    });
+    this.round++;
+    this.enterNight();
   }
 
   // ==================== 3D 人机AI (自由移动夜) ====================

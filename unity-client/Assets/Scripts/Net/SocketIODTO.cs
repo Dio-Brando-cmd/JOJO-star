@@ -129,6 +129,7 @@ public class PositionBroadcastDTO
 public class NightStartDTO
 {
     public float timeLeft;
+    public int round;
     public string nightStep;
     public PlayerState[] players;
 }

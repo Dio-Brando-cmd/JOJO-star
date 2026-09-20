@@ -186,6 +186,11 @@ public class ChaseGameManager : MonoBehaviour
     {
         if (dto == null) return;
 
+        // 多回合追逃: 先清掉上一轮的玩家/灵焰对象, 避免重复生成
+        if (localPlayer != null) { Destroy(localPlayer.gameObject); localPlayer = null; }
+        foreach (var kv in remotePlayers) if (kv.Value != null) Destroy(kv.Value.gameObject);
+        remotePlayers.Clear();
+
         isNight = true;
         gameActive = true;
         gameOver = false;
@@ -211,7 +216,7 @@ public class ChaseGameManager : MonoBehaviour
         ResetFlames();
 
         LockCursor();
-        banner = isCorrupted ? "夜晚降临 — 去吞噬守幕者 (F)" : "夜晚降临 — 逃命或藏匿 (Q)";
+        banner = "第" + dto.round + "夜 — " + (isCorrupted ? "去吞噬守幕者 (F)" : "逃命或藏匿 (Q)");
         bannerTimer = 4f;
     }
 
@@ -265,7 +270,6 @@ public class ChaseGameManager : MonoBehaviour
                 ps.team = p.team;
             }
         }
-    }
     }
 
     void OnVoteResults(VoteResultsDTO dto)
