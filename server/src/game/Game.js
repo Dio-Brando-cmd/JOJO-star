@@ -562,7 +562,15 @@ export class Game {
       this._io.to(this.id).emit('game:3dNightStart', {
         timeLeft: this.timeLeft,
         nightStep: 'FREE_ROAM',
-        players: this.players.filter(p => p.alive).map(p => p.toJSON()),
+        // 只广播阵营(蚀者/守幕者), 不暴露具体职业 — 否则蚀者会提前得知
+        // 谁是唯一能短铳反杀的 FLAME_TRACKER, 毁掉反制玩法
+        players: this.players.filter(p => p.alive).map(p => ({
+          id: p.id,
+          name: p.name,
+          alive: p.alive,
+          team: p.team,
+          characterId: p.characterId,
+        })),
       });
     }
 
@@ -851,6 +859,7 @@ export class Game {
     const target = this.getPlayer(targetId);
     if (!corrupted || !target || !corrupted.alive || !target.alive) return null;
     if (!corrupted.isCorrupted()) return null; // 只有蚀者能攻击
+    if (target.isCorrupted()) return { success: false, reason: 'FRIENDLY_FIRE' }; // 蚀者不可噬灵队友
 
     // 反作弊: 距离校验 (蚀者只能在近距噬灵, 防远程/穿墙击杀)
     const apos = this.positionSync.getPlayerPosition(corruptedId);

@@ -81,6 +81,7 @@ public class ChaseGameManager : MonoBehaviour
     System.Action<Dictionary<string, PositionDTO>> _hPositions;
     System.Action<PhaseChangeDTO> _hPhaseChange;
     System.Action<string, string> _hGameOver;
+    System.Action<GameOverDTO> _hGameOverFull;
     System.Action<GameState> _hGameState;
     System.Action<VoteResultsDTO> _hVoteResults;
     System.Action<FlameUpdateDTO> _hFlameUpdate;
@@ -131,6 +132,7 @@ public class ChaseGameManager : MonoBehaviour
         _hPositions = OnPositions;
         _hPhaseChange = OnPhaseChange;
         _hGameOver = OnGameOver;
+        _hGameOverFull = OnGameOverFull;
         _hGameState = OnGameState;
         _hVoteResults = OnVoteResults;
         _hReturnToLobby = ResetToLobby;
@@ -143,6 +145,7 @@ public class ChaseGameManager : MonoBehaviour
         net.OnPositionsReceived += _hPositions;
         net.OnPhaseChangeFull += _hPhaseChange;
         net.OnGameOver += _hGameOver;
+        net.OnGameOverFull += _hGameOverFull;
         net.OnGameStateReceived += _hGameState;
         net.OnVoteResults += _hVoteResults;
         net.OnReturnToLobby += _hReturnToLobby;
@@ -160,6 +163,7 @@ public class ChaseGameManager : MonoBehaviour
         net.OnPositionsReceived -= _hPositions;
         net.OnPhaseChangeFull -= _hPhaseChange;
         net.OnGameOver -= _hGameOver;
+        net.OnGameOverFull -= _hGameOverFull;
         net.OnGameStateReceived -= _hGameState;
         net.OnVoteResults -= _hVoteResults;
         net.OnReturnToLobby -= _hReturnToLobby;
@@ -247,6 +251,21 @@ public class ChaseGameManager : MonoBehaviour
         UnlockCursor();
         banner = "游戏结束";
         bannerTimer = 4f;
+    }
+
+    // game:over 附带全员真实职业 (夜晚开始只发阵营不发货职业) → 回填 roster 供结算展示
+    void OnGameOverFull(GameOverDTO dto)
+    {
+        if (dto == null || dto.players == null) return;
+        foreach (var p in dto.players)
+        {
+            if (roster.TryGetValue(p.id, out var ps))
+            {
+                ps.role = p.role;
+                ps.team = p.team;
+            }
+        }
+    }
     }
 
     void OnVoteResults(VoteResultsDTO dto)

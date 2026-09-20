@@ -45,6 +45,7 @@ public class NetworkManager : MonoBehaviour
     public event Action<Dictionary<string, PositionDTO>> OnPositionsReceived;
     public event Action<AttackResultDTO> OnAttackResult;
     public event Action<VoteResultsDTO> OnVoteResults;
+    public event Action<GameOverDTO> OnGameOverFull;
     public event Action<PhaseChangeDTO> OnPhaseChangeFull;
     public event Action OnReturnToLobby;
     public event Action<FlameUpdateDTO> OnFlameUpdate;
@@ -77,7 +78,7 @@ public class NetworkManager : MonoBehaviour
         _socket.On("game:state",        t => OnGameStateReceived?.Invoke(t?.ToObject<GameState>()));
         _socket.On("game:privateState", t => OnPrivateStateReceived?.Invoke(t?.ToObject<PrivateState>()));
         _socket.On("game:started",      t => OnGameStarted?.Invoke(t?["round"]?.ToString()));
-        _socket.On("game:over",         t => { var o = t?.ToObject<GameOverDTO>(); OnGameOver?.Invoke(o?.winner, o?.reason); });
+        _socket.On("game:over",         t => { var o = t?.ToObject<GameOverDTO>(); OnGameOver?.Invoke(o?.winner, o?.reason); OnGameOverFull?.Invoke(o); });
         _socket.On("game:phaseChange",  t => { var o = t?.ToObject<PhaseChangeDTO>(); OnPhaseChange?.Invoke(o?.phase, o?.nightStep); OnPhaseChangeFull?.Invoke(o); });
         _socket.On("game:3dNightStart", t => On3DNightStart?.Invoke(t?.ToObject<NightStartDTO>()));
         _socket.On("players:positions", t => OnPositionsReceived?.Invoke(t?.ToObject<PositionBroadcastDTO>()?.positions));

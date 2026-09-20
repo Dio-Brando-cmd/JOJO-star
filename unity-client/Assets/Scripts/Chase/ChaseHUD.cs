@@ -156,9 +156,13 @@ public class ChaseHUD : MonoBehaviour
         {
             var p = kv.Value;
             bool corrupt = (p.team == "CORRUPTED") || ChaseGameManager.IsCorruptedRole(p.role);
+            // 夜晚只发阵营不发货职业: 自己显示真实职业, 他人只显示阵营(蚀者/守幕者)
+            string roleLabel = (p.id == gm.myPlayerId)
+                ? ChaseGameManager.RoleName(gm.myRole)
+                : ChaseGameManager.TeamName(p.team);
             string line = (p.alive ? "" : "亡 ") + p.name
                         + (p.id == gm.myPlayerId ? " (你)" : "")
-                        + " — " + ChaseGameManager.RoleName(p.role);
+                        + " — " + roleLabel;
             string hex = Hex(!p.alive ? C_DEAD : (corrupt ? C_CORRUPT : C_KEEPER));
             sb.Append("<color=#").Append(hex).Append('>').Append(line).Append("</color>\n");
         }
