@@ -17,7 +17,7 @@ public class PlayerController3D : MonoBehaviour
     public float walkSpeed = 3f;
     public float sprintSpeed = 6f;
     public float crouchSpeed = 1.5f;
-    public float rotationSpeed = 10f;
+    public float turnSpeed = 12f;      // 移动时角色转向速度
     public float jumpForce = 5f;
 
     [Header("Stamina")]
@@ -42,7 +42,7 @@ public class PlayerController3D : MonoBehaviour
 
     // 内部
     private CharacterController characterController;
-    private Camera playerCamera;
+    private Camera chaseCamera;          // 本机第三人称相机
     private Vector3 moveDirection;
     private float currentSpeed;
     private bool isSprinting;
@@ -85,15 +85,14 @@ public class PlayerController3D : MonoBehaviour
 
         if (isLocal)
         {
-            playerCamera = GetComponentInChildren<Camera>();
-            if (playerCamera == null)
-            {
-                // 创建默认摄像机
-                var camObj = new GameObject("PlayerCamera");
-                camObj.transform.SetParent(transform);
-                camObj.transform.localPosition = new Vector3(0, 1.7f, 0);
-                playerCamera = camObj.AddComponent<Camera>();
-            }
+            // 创建第三人称环绕相机 (作为子物体, 随角色销毁自动清理)
+            var camObj = new GameObject("ChaseCamera");
+            camObj.transform.SetParent(transform, false);
+            var tpc = camObj.AddComponent<ThirdPersonCamera>();
+            chaseCamera = camObj.AddComponent<Camera>();
+            camObj.AddComponent<AudioListener>();
+            camObj.tag = "MainCamera";   // 供 Camera.main / 名字标签使用
+            tpc.SetTarget(transform);
             Cursor.lockState = CursorLockMode.Locked;
         }
 
@@ -138,13 +137,22 @@ public class PlayerController3D : MonoBehaviour
     void HandleLocalInput()
     {
         if (!canMove || Cursor.lockState != CursorLockMode.Locked) return;
-        if (characterController == null) return;
+        if (characterController == null || chaseCamera == null) return;
 
-        // === 移动输入 ===
+        // === 藏匿 (Q 切换, 隐藏时禁止移动/交互) ===
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            TryToggleHide();
+        }
+        if (isHidden) return;
+
+        // === 移动输入 (相机相对: W = 背离相机前进) ===
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
-        Vector3 inputDirection = transform.right * horizontal + transform.forward * vertical;
+        Vector3 camForward = Vector3.ProjectOnPlane(chaseCamera.transform.forward, Vector3.up).normalized;
+        Vector3 camRight   = Vector3.ProjectOnPlane(chaseCamera.transform.right,   Vector3.up).normalized;
+        Vector3 inputDirection = camRight * horizontal + camForward * vertical;
         inputDirection = Vector3.ClampMagnitude(inputDirection, 1f);
 
         // === 冲刺 ===
@@ -170,38 +178,35 @@ public class PlayerController3D : MonoBehaviour
             characterController.height = isCrouching ? 1f : 2f;
         }
 
-        // === 移动 ===
+        // === 移动 + 转向 ===
+        float vVel = moveDirection.y;   // 垂直速度单独保留(重力)
         if (inputDirection.magnitude > 0.1f)
         {
             moveDirection = inputDirection * currentSpeed;
+            moveDirection.y = vVel;
+            // 角色只面向移动方向 (相机已独立环绕, 可边跑边回头)
+            Quaternion targetRot = Quaternion.LookRotation(inputDirection);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 1f - Mathf.Exp(-turnSpeed * Time.deltaTime));
         }
         else
         {
-            moveDirection = Vector3.Lerp(moveDirection, Vector3.zero, Time.deltaTime * 5f);
+            Vector3 planar = new Vector3(moveDirection.x, 0f, moveDirection.z);
+            planar = Vector3.Lerp(planar, Vector3.zero, Time.deltaTime * 5f);
+            moveDirection = planar;
+            moveDirection.y = vVel;
         }
 
-        // 重力
-        if (!characterController.isGrounded)
-        {
-            moveDirection.y -= 9.81f * Time.deltaTime;
-        }
+        // 重力 (贴地时轻微下压, 防悬浮/斜坡滑动)
+        if (characterController.isGrounded && moveDirection.y < 0f)
+            moveDirection.y = -2f;
+        moveDirection.y -= 9.81f * Time.deltaTime;
 
         characterController.Move(moveDirection * Time.deltaTime);
-
-        // === 鼠标视角 ===
-        float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
-        transform.Rotate(Vector3.up, mouseX);
 
         // === 交互 ===
         if (Input.GetKeyDown(KeyCode.E))
         {
             TryInteract();
-        }
-
-        // === 藏匿 ===
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            TryToggleHide();
         }
     }
 
@@ -225,24 +230,32 @@ public class PlayerController3D : MonoBehaviour
         {
             // 离开藏匿点
             isHidden = false;
-            GetComponent<Collider>().enabled = true;
-            // 通知服务端
+            SetPlayerCollision(true);
+            NetworkManager.Instance?.Send3DUnhide();
         }
         else
         {
-            // 检测附近是否有藏匿点（柜子、床底、树丛等）
+            // 检测附近是否有藏匿点 (带 HidingSpot 组件)
             Collider[] nearby = Physics.OverlapSphere(transform.position, 2f);
             foreach (var col in nearby)
             {
-                if (col.CompareTag("HidingSpot"))
+                if (col.GetComponent<HidingSpot>() != null)
                 {
                     isHidden = true;
-                    GetComponent<Collider>().enabled = false;
-                    // 通知服务端
+                    SetPlayerCollision(false);
+                    NetworkManager.Instance?.Send3DHide(col.gameObject.name);
                     break;
                 }
             }
         }
+    }
+
+    void SetPlayerCollision(bool enabled)
+    {
+        var cc = GetComponent<CharacterController>();
+        if (cc != null) cc.enabled = enabled;
+        var col = GetComponent<Collider>();
+        if (col != null) col.enabled = enabled;
     }
 
     void SendPositionUpdate()
@@ -270,9 +283,12 @@ public class PlayerController3D : MonoBehaviour
 
     void SmoothToTarget()
     {
-        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * 15f);
+        // 帧率无关的指数平滑 (Lerp 因子用 1-exp(-k·dt), 消除高/低帧率下的手感差异)
+        float pt = 1f - Mathf.Exp(-15f * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, targetPosition, pt);
         Quaternion targetRot = Quaternion.Euler(0, targetRotationY, 0);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 10f);
+        float rt = 1f - Mathf.Exp(-10f * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rt);
     }
 
     // ==================== 特质影响 ====================

@@ -52,6 +52,8 @@ public class SetupFreyjaAnimations : EditorWindow
 
         fbxImporter.clipAnimations = clipAnimations.ToArray();
         fbxImporter.SaveAndReimport();
+        // 强制同步重导入: 否则 LoadAllAssetsAtPath 可能读到旧的 take 名 (异步未完成)
+        AssetDatabase.ImportAsset(fbxPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
         Debug.Log($"✅ 10 个动画 clip 已配置");
 
         // 4. 创建 Animator Controller
@@ -76,7 +78,14 @@ public class SetupFreyjaAnimations : EditorWindow
         foreach (var asset in allClips)
         {
             if (asset is AnimationClip clip)
+            {
                 clipDict[clip.name] = clip;
+                // 容错: Blender 导出可能给 take 名加 __preview__ 前缀/后缀
+                string normalized = clip.name;
+                if (normalized.StartsWith("__preview__")) normalized = normalized.Substring("__preview__".Length);
+                if (normalized.EndsWith("__preview__")) normalized = normalized.Substring(0, normalized.Length - "__preview__".Length);
+                clipDict[normalized] = clip;
+            }
         }
 
         Debug.Log($"   找到 {clipDict.Count} 个 clip: {string.Join(", ", clipDict.Keys)}");
@@ -97,6 +106,9 @@ public class SetupFreyjaAnimations : EditorWindow
         AddBlendTreeMotion(locomotionBlend, "Idle",      clipDict, 0f);
         AddBlendTreeMotion(locomotionBlend, "Walk",      clipDict, 1.5f);
         AddBlendTreeMotion(locomotionBlend, "Run",       clipDict, 6f);
+
+        // 关键: 把 BlendTree 挂为 controller 子资产, 否则保存后被丢弃 → Locomotion motion 为空
+        AssetDatabase.AddObjectToAsset(locomotionBlend, controller);
 
         // —— 单独状态 ——
         var crouchState    = AddState(rootStateMachine, "Crouch",     clipDict, new Vector2(300, 300));
@@ -208,6 +220,7 @@ public class SetupFreyjaAnimations : EditorWindow
         list.Add(new ModelImporterClipAnimation
         {
             name = name,
+            takeName = name,   // 关键: 显式映射到 FBX 同名 take, 否则所有 clip 都指向首个 take
             firstFrame = first,
             lastFrame = last,
             loopTime = loop,

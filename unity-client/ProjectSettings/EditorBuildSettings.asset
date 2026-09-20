@@ -4,5 +4,17 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/ValleyScene.unity
+    guid: 3381d01c231677c4d8e5105b2c00aec6
+  - enabled: 1
+    path: Assets/Scenes/ExplorationScene.unity
+    guid: c1b08c1ee9cf8a545aaaafde868491b0
+  - enabled: 1
+    path: Assets/Scenes/ChaseScene.unity
+    guid: b3525615868e43e46bee282c26fe93a6
+  - enabled: 1
+    path: Assets/Scenes/MainScene.unity
+    guid: ed59813c68f2693438e6d7947b0430e2
   m_configObjects: {}

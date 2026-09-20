@@ -52,8 +52,7 @@ public class LobbyCameraIntro : MonoBehaviour
         if (autoCreatePath)
             CreateDefaultPath();
 
-        if (playOnStart)
-            StartCoroutine(PlayIntro());
+        // 开场改由 LobbyManager 在登录后调用 PlayIntro() 控制 (不再自动播放)
     }
 
     void CreateDefaultPath()

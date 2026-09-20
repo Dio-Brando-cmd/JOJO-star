@@ -1,10 +1,12 @@
 // ============================================================
 // LobbyManager.cs — 大厅主控
-// 管理开场 → 巨石交互 → 场景切换 → UI 显示
+// 流程: 登录(LoginScreenUI) → 桃花源开场 → 沉浸式大厅(无框)
+// 管理登录门控、镜头开场、场景切换。
 // ============================================================
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class LobbyManager : MonoBehaviour
 {
@@ -12,11 +14,16 @@ public class LobbyManager : MonoBehaviour
 
     [Header("══ 引用(自动查找) ══")]
     public LobbyCameraIntro cameraIntro;
-    public LobbySceneSetup sceneSetup;
+    public LobbySceneSetup sceneSetup;      // 旧程序化大厅(回退)
+    public ValleySceneSetup valleySetup;    // 桃花源山谷 v3(优先)
 
     [Header("══ UI ══")]
     public GameObject titleUI;      // 标题 Canvas（可选）
     public GameObject interactHint;  // 交互提示（可选）
+    public LoginScreenUI loginScreen;    // 登录界面 (先于大厅)
+    public LobbyImmersiveUI immersiveUI; // 沉浸式大厅 UI (无框, 仅标题/提示, 不可交互)
+    public LobbyMainMenuUI mainMenu;     // 大厅主菜单 (可交互按钮: 进入3D/2D/退出)
+    public LobbyAvatar avatar;           // 大厅角色展示(芙蕾雅 + 镜头指示)
     public float uiDelay = 1.5f;     // 开场完成后多久显示 UI
 
     [Header("══ 状态 ══")]
@@ -24,11 +31,22 @@ public class LobbyManager : MonoBehaviour
     [SerializeField] private bool _uiShown;
 
     public bool IntroDone => _introDone;
+    public static bool SessionLoggedIn { get; private set; }
 
     void Awake()
     {
         if (Instance == null) Instance = this;
         else { Destroy(gameObject); return; }
+
+        // 登录界面 + 沉浸式大厅 UI — 若无则自动挂载
+        loginScreen = GetComponent<LoginScreenUI>();
+        if (loginScreen == null) loginScreen = gameObject.AddComponent<LoginScreenUI>();
+        immersiveUI = GetComponent<LobbyImmersiveUI>();
+        if (immersiveUI == null) immersiveUI = gameObject.AddComponent<LobbyImmersiveUI>();
+        avatar = GetComponent<LobbyAvatar>();
+        if (avatar == null) avatar = gameObject.AddComponent<LobbyAvatar>();
+        mainMenu = GetComponent<LobbyMainMenuUI>();
+        if (mainMenu == null) mainMenu = gameObject.AddComponent<LobbyMainMenuUI>();
     }
 
     void Start()
@@ -38,36 +56,58 @@ public class LobbyManager : MonoBehaviour
             cameraIntro = FindFirstObjectByType<LobbyCameraIntro>();
         if (sceneSetup == null)
             sceneSetup = FindFirstObjectByType<LobbySceneSetup>();
+        if (valleySetup == null)
+            valleySetup = FindFirstObjectByType<ValleySceneSetup>();
 
         // 初始隐藏 UI
         if (titleUI != null) titleUI.SetActive(false);
         if (interactHint != null) interactHint.SetActive(false);
 
-        // 构建场景（如果尚未构建）
-        if (sceneSetup != null && sceneSetup.buildOnStart)
+        // 登录 → 大厅 门控
+        if (SessionLoggedIn)
         {
-            // LobbySceneSetup 会在自己的 Start 里构建
+            // 已登录(返回大厅): 跳过登录, 直接进入沉浸式大厅
+            StartCoroutine(EnterImmersiveAfterFrame());
+        }
+        else
+        {
+            loginScreen?.Show();
         }
 
         Debug.Log("[Lobby] 帷幕之地 大厅已就绪");
-        Debug.Log("[Lobby] 🎬 等待桃花源镜头...");
-        Debug.Log("[Lobby] ⌨️  按空格可跳过动画");
+        Debug.Log(SessionLoggedIn ? "[Lobby] 🔁 已登录, 直接进入大厅" : "[Lobby] 🔑 等待登录...");
+    }
+
+    IEnumerator EnterImmersiveAfterFrame()
+    {
+        yield return null; // 等 cameraIntro.Start() 生成路径
+        if (cameraIntro != null) cameraIntro.Skip();
+        else OnIntroComplete();
     }
 
     void Update()
     {
-        // 空格跳过
+        // 空格跳过开场
         if (!_introDone && Input.GetKeyDown(KeyCode.Space))
         {
             cameraIntro?.Skip();
         }
-
-        // 任意键显示 UI
-        if (_introDone && !_uiShown && Input.anyKeyDown)
-        {
-            ShowUI();
-        }
     }
+
+    /// <summary>登录成功回调 (LoginScreenUI 调用)</summary>
+    public void OnLoggedIn()
+    {
+        SessionLoggedIn = true;
+        loginScreen?.Hide();
+
+        if (cameraIntro != null && cameraIntro.enabled)
+            StartCoroutine(cameraIntro.PlayIntro());
+        else
+            OnIntroComplete();
+    }
+
+    /// <summary>强制显示登录 (截图/调试用)</summary>
+    public void ShowLoginNow() => loginScreen?.Show();
 
     /// <summary>开场动画完成回调</summary>
     public void OnIntroComplete()
@@ -89,18 +129,21 @@ public class LobbyManager : MonoBehaviour
         if (interactHint != null)
             interactHint.SetActive(true);
 
-        Debug.Log("[Lobby] 📜 UI 已显示");
+        // 可交互主菜单(进入3D追猎/2D桌游/退出) — 大厅唯一的启动入口
+        mainMenu?.Show();
+
+        Debug.Log("[Lobby] 📜 大厅主菜单已显示 (可交互按钮)");
     }
 
     // ============================================================
     // 场景切换
     // ============================================================
 
-    public void Load2DGame()
+    public void Load3DGame()
     {
-        var stone = sceneSetup?.StoneLeftScript;
+        var stone = valleySetup?.StoneRightScript ?? sceneSetup?.StoneRightScript;
         if (stone != null) stone.EnterPortal();
-        else SceneManager.LoadScene("MainScene");
+        else SceneManager.LoadScene("ChaseScene");
     }
 
     // ============================================================

@@ -38,7 +38,7 @@ public class LobbyStone : MonoBehaviour
 
     void Start()
     {
-        canInteract = (stoneType == StoneType.TwoDGame);
+        canInteract = !string.IsNullOrEmpty(targetSceneName);  // 有目标场景即可交互 (2D/3D 均已开通)
 
         if (runeLines != null && runeLines.sharedMaterial != null)
         {
