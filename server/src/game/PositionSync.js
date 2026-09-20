@@ -7,6 +7,7 @@ export class PositionSync {
   constructor(game) {
     this.game = game;
     this.positions = new Map();       // playerId → { x, y, z, rotY, timestamp }
+    this._dirty = false;              // 脏标记: 有位置变化才广播
     this.lastBroadcast = 0;
     this.BROADCAST_INTERVAL = 100;    // 100ms = 10Hz
     this.MAX_SPEED = 10;              // 最大移动速度 (m/s)，超过视为作弊
@@ -19,6 +20,13 @@ export class PositionSync {
   updatePosition(playerId, { x, y, z, rotY, isMoving, isSprinting }) {
     const player = this.game.getPlayer(playerId);
     if (!player || !player.alive) return false;
+
+    // 反作弊: 拒绝 NaN/Infinity 坐标 (否则 Math.sqrt(NaN)=NaN 会让速度/瞬移检测全部失效)
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+      console.log(`[反作弊] ${playerId} 上报非法坐标: ${x}, ${y}, ${z}`);
+      return false;
+    }
+    if (rotY != null && !Number.isFinite(rotY)) return false;
 
     const prev = this.positions.get(playerId);
 
@@ -43,11 +51,21 @@ export class PositionSync {
       }
     }
 
+    const moving = !!isMoving;
+    const sprinting = !!isSprinting;
+
+    // 静止且与上一帧完全一致 → 仅刷新活跃时间戳, 不标记脏 (省 10Hz 全量重发)
+    if (prev && prev.x === x && prev.y === y && prev.z === z &&
+        prev.rotY === rotY && prev.isMoving === moving && prev.isSprinting === sprinting) {
+      prev.timestamp = Date.now();
+      return true;
+    }
+
     // 存储
     this.positions.set(playerId, {
       x, y, z, rotY,
-      isMoving: !!isMoving,
-      isSprinting: !!isSprinting,
+      isMoving: moving,
+      isSprinting: sprinting,
       timestamp: Date.now(),
     });
 
@@ -56,6 +74,7 @@ export class PositionSync {
     player._posY = y;
     player._posZ = z;
 
+    this._dirty = true;
     return true;
   }
 
@@ -67,13 +86,25 @@ export class PositionSync {
     if (now - this.lastBroadcast < this.BROADCAST_INTERVAL) return;
     this.lastBroadcast = now;
 
+    // 无新位置变化 → 跳过广播 (脏标记, 避免 10Hz 全量重发)
+    if (!this._dirty) return;
+    this._dirty = false;
+
     if (!this.game._io) return;
 
     const positionData = {};
     for (const [playerId, pos] of this.positions) {
       // 只广播最近2秒内有更新的玩家
       if (now - pos.timestamp > 2000) continue;
-      positionData[playerId] = pos;
+      // 量化坐标 (2 位小数) 减小 JSON 载荷, 客户端插值无感
+      positionData[playerId] = {
+        x: Math.round(pos.x * 100) / 100,
+        y: Math.round(pos.y * 100) / 100,
+        z: Math.round(pos.z * 100) / 100,
+        rotY: Math.round(pos.rotY * 100) / 100,
+        isMoving: pos.isMoving,
+        isSprinting: pos.isSprinting,
+      };
     }
 
     if (Object.keys(positionData).length === 0) return;

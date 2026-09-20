@@ -111,12 +111,14 @@ export class GameManager {
     return game;
   }
 
-  // 游戏结束后 5 分钟自动清理
+  // 游戏结束后 5 分钟自动清理 (由 Game.endGame 调度; 此前是死代码, 房间从不 GC)
   scheduleGameCleanup(roomCode) {
     setTimeout(() => {
       const game = this.games.get(roomCode);
-      if (game && game.phase === 'GAME_OVER') {
-        // 清理所有未断线的玩家映射
+      if (!game) return;
+      // 游戏已结束/已回大厅, 且没有任何在线的真人玩家 → 清理, 防止房间泄漏
+      const hasLiveHuman = game.players.some(p => !p.isBot && !p.disconnected);
+      if ((game.phase === 'GAME_OVER' || game.phase === 'LOBBY') && !hasLiveHuman) {
         for (const p of game.players) {
           this.playerRooms.delete(p.id);
           this.disconnectedPlayers.delete(p.id);

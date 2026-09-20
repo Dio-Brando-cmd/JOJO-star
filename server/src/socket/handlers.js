@@ -103,13 +103,9 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     userManager.clearSession(socket.id);
   });
 
-  // 更新游戏统计
-  socket.on('auth:updateStats', ({ won }) => {
-    const user = userManager.getUserBySocket(socket.id);
-    if (user) {
-      userManager.updateStats(user.username, won);
-    }
-  });
+  // 更新游戏统计 —— 已移除客户端触发入口。
+  // v2.0 起战绩由服务端 endGame → _updatePlayerStats 权威结算; 客户端上报的
+  // auth:updateStats 是数值膨胀漏洞(可任意刷场次/胜场), 不再接受客户端上报。
 
   // ==================== 版本检查（自动更新） ====================
 
@@ -727,6 +723,28 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     if (!game || game.gameMode !== 'THIRD_PERSON') return;
     if (game.hostId !== socket.id) return;
     game._end3DNight();
+  });
+
+  // 采集灵焰 (守幕者)
+  socket.on('3d:collect', ({ flameId }, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.gameMode !== 'THIRD_PERSON') {
+      callback?.({ success: false, reason: 'NOT_3D_MODE' });
+      return;
+    }
+    const result = game.collect3DFlame(socket.id, flameId);
+    callback?.(result || { success: false });
+  });
+
+  // 引导灵焰仪式 (守幕者, 需全部灵焰已采集且站在广场)
+  socket.on('3d:ritual', (data, callback) => {
+    const game = gameManager.getGameByPlayer(socket.id);
+    if (!game || game.gameMode !== 'THIRD_PERSON') {
+      callback?.({ success: false, reason: 'NOT_3D_MODE' });
+      return;
+    }
+    const result = game.start3DRitual(socket.id);
+    callback?.(result || { success: false });
   });
 
   // ==================== WebRTC 语音信令 ====================

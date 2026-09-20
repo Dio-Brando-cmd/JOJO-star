@@ -18,6 +18,21 @@ import {
   getRoleConfig, getWeaverName, CHARACTER_IDENTITIES,
 } from './constants.js';
 
+// ==================== 3D 灵焰仪式配置 (守幕者采集 5 处灵焰 → 广场引导) ====================
+
+const SPIRIT_FLAME_SPOTS = [
+  { id: 'well',     name: '水井',   x: -5,  z: -8  },
+  { id: 'smith',    name: '铁匠铺', x: 10,  z: 5   },
+  { id: 'tower',    name: '观测塔', x: 36,  z: -30 },
+  { id: 'cemetery', name: '墓地',   x: 0,   z: 48  },
+  { id: 'cottage',  name: '村舍',   x: -28, z: -16 },
+];
+const RITUAL_CENTER = { x: 0, z: 0 };   // 广场
+const RITUAL_RADIUS = 5;                // 引导需站在广场半径内
+const FLAME_COLLECT_RADIUS = 3;         // 采集判定半径
+const RITUAL_CHANNEL_SECONDS = 12;      // 引导时长
+const ATTACK_RANGE = 2.5;               // 蚀者噬灵近距判定 (服务端强制, 防远程/穿墙击杀)
+
 export class Game {
   constructor(roomId, hostId, hostName) {
     this.id = roomId;
@@ -373,7 +388,8 @@ export class Game {
     this._startPositionSync();
 
     // 序幕后进入游戏
-    setTimeout(() => {
+    this._phaseTimeout = setTimeout(() => {
+      if (this.phase !== PHASES.PROLOGUE) return; // 已返回大厅/阶段已变 → 不复活幽灵局
       this.round = 1;
       this.enterNight();
       if (this._io) {
@@ -533,6 +549,11 @@ export class Game {
     this.nightStep = 'FREE_ROAM';
     this._clearPhaseTimeout();
 
+    // 灵焰仪式状态初始化 (守幕者采集 5 处灵焰 → 广场引导)
+    this.spiritFlames = SPIRIT_FLAME_SPOTS.map(s => ({ ...s, collected: false }));
+    this._ritual = null;
+    this._clearRitualTimeout();
+
     // 设置120秒夜晚自由时间
     this.timeLeft = 120;
     this.broadcastPhaseChange();
@@ -545,25 +566,25 @@ export class Game {
       });
     }
 
+    // 广播灵焰初始状态 (含地标坐标 + 采集数 + 仪式状态)
+    this._broadcastFlames();
+
     // 120秒后强制天亮
     this._phaseTimeout = setTimeout(() => {
       if (this.phase !== PHASES.NIGHT) return;
       this._end3DNight();
     }, 120000);
 
-    // 人机AI在3D模式下随机移动
-    for (const bot of this.getAliveBots?.() || []) {
-      if (bot.isCorrupted()) {
-        bot._3dAction = 'HUNT'; // AI蚀者自动噬灵
-      } else {
-        bot._3dAction = Math.random() < 0.4 ? 'HIDE' : 'ROAM';
-      }
-    }
+    // 人机AI: 蚀者追猎 / 守幕者逃离 (自由移动夜)
+    this._start3DBotAI();
   }
 
   /** 3D模式夜晚结束 → 结算 */
   _end3DNight() {
     this._clearPhaseTimeout();
+    this._stop3DBotAI();
+    this._clearRitualTimeout();
+    this._ritual = null;
     if (this.phase !== PHASES.NIGHT) return;
 
     // 统计3D模式的击杀
@@ -586,6 +607,242 @@ export class Game {
     });
   }
 
+  // ==================== 3D 人机AI (自由移动夜) ====================
+
+  /** 启动人机AI: 初始化位置 + 250ms 一跳 */
+  _start3DBotAI() {
+    this._stop3DBotAI();
+    const bots = this.players.filter(p => p.alive && p.isBot);
+    if (bots.length === 0) return;
+
+    // 初始化人机位置 (均匀分布在村庄内, 避免重叠)
+    bots.forEach((bot, i) => {
+      const angle = (i / bots.length) * Math.PI * 2 + i * 0.7;
+      const radius = 12 + (i % 4) * 8;
+      const x = Math.round(Math.cos(angle) * radius * 10) / 10;
+      const z = Math.round(Math.sin(angle) * radius * 10) / 10;
+      this.positionSync.updatePosition(bot.id, { x, y: 0, z, rotY: 0, isMoving: false, isSprinting: false });
+    });
+
+    this._3dBotInterval = setInterval(() => this._tick3DBots(), 250);
+  }
+
+  _stop3DBotAI() {
+    if (this._3dBotInterval) {
+      clearInterval(this._3dBotInterval);
+      this._3dBotInterval = null;
+    }
+  }
+
+  _tick3DBots() {
+    if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return;
+    const bots = this.players.filter(p => p.alive && p.isBot);
+    if (bots.length === 0) return;
+
+    const alive = this.players.filter(p => p.alive);
+    const keepers = alive.filter(p => !p.isCorrupted());
+    // 一次 O(k²) 预计算孤立度, 避免在分配循环里对每个蚀者重复扫描 (O(c·k²) → O(k²+c·k))
+    const isolation = new Map();
+    for (const k of keepers) isolation.set(k.id, this._isolationScore(k, keepers));
+
+    const targets = this._assign3DTargets(bots, keepers, isolation);   // 蚀者分摊目标 (优先引导者/孤立者)
+    for (const bot of bots) {
+      const move = this._compute3DBotMove(bot, alive, targets.get(bot.id));
+      if (!move) continue;
+      this.positionSync.updatePosition(bot.id, move);
+      if (move.attackId) this.submit3DAttack(bot.id, move.attackId);
+      if (move.collectFlameId) this.collect3DFlame(bot.id, move.collectFlameId);
+      if (move.startRitual) this.start3DRitual(bot.id);
+    }
+  }
+
+  /** 蚀者分摊目标: 每个蚀者追不同守幕者, 优先仪式引导者/孤立者 (贪心分配) */
+  _assign3DTargets(corruptedBots, keepers, isolation) {
+    const channellerId = this._ritual ? this._ritual.playerId : null;
+    const map = new Map();
+    const claimed = new Set();
+
+    for (const bot of corruptedBots) {
+      const bpos = this.positionSync.getPlayerPosition(bot.id) || { x: 0, z: 0 };
+      let best = null, bestScore = Infinity;
+      for (const k of keepers) {
+        if (claimed.has(k.id)) continue;
+        const kpos = this.positionSync.getPlayerPosition(k.id);
+        if (!kpos) continue;                       // 真人未上报坐标 → 跳过
+        let score = Math.hypot(kpos.x - bpos.x, kpos.z - bpos.z);
+        if (k.id === channellerId) score -= 25;    // 引导者最高优先级
+        if (k.isHidden) score += 8;                // 藏匿者次要
+        score += isolation.get(k.id) || 0;         // 孤立者轻加权 (预计算)
+        if (score < bestScore) { bestScore = score; best = k; }
+      }
+      if (best) { claimed.add(best.id); map.set(bot.id, best); }
+    }
+    return map;
+  }
+
+  /** 守幕者孤立度: 离最近同伴越远得分越低(越优先被追), 返回负值 */
+  _isolationScore(keeper, keepers) {
+    const kpos = this.positionSync.getPlayerPosition(keeper.id);
+    if (!kpos) return 0;
+    let nearest = Infinity;
+    for (const o of keepers) {
+      if (o.id === keeper.id) continue;
+      const opos = this.positionSync.getPlayerPosition(o.id);
+      if (!opos) continue;
+      nearest = Math.min(nearest, Math.hypot(opos.x - kpos.x, opos.z - kpos.z));
+    }
+    return nearest === Infinity ? 0 : -nearest * 0.2;
+  }
+
+  /** 计算单个人的下一步移动 (蚀者追猎 / 守幕者逃离+藏匿+采集灵焰+引导仪式) */
+  _compute3DBotMove(bot, alive, assignedTarget) {
+    const pos = this.positionSync.getPlayerPosition(bot.id) || { x: 0, y: 0, z: 0, rotY: 0 };
+    const now = Date.now();
+    const DT = 0.25;                                       // tick 间隔 (秒)
+    const SPEED = bot.isCorrupted() ? 4.5 : 4.0;           // 真人冲刺 6m/s, 人机稍慢便于逃脱
+    const BOUND = 55;                                      // 地图边界
+    const ATTACK_RANGE = 2.5;                              // 蚀者噬灵近距判定
+    const FLEE_RADIUS = 14;                                // 守幕者感知猎手的距离
+    const HIDE_RADIUS = 7;                                 // 猎手逼近时守幕者就地藏匿的距离
+    const HIDE_COOLDOWN = 6000;                            // 藏匿冷却 (ms)
+
+    let tx = pos.x, tz = pos.z;
+    let attackId = null, collectFlameId = null, startRitual = false;
+
+    if (bot.isCorrupted()) {
+      // 蚀者: 追分摊到的目标 (优先引导者/孤立者), 贴脸噬灵
+      let target = assignedTarget || null;
+      if (!target) {
+        const prey = alive.filter(p => !p.isCorrupted());
+        const visiblePrey = prey.filter(p => !p.isHidden);
+        const pool = visiblePrey.length > 0 ? visiblePrey : prey;
+        const near = this._nearest3D(pool, pos);
+        target = near ? near.p : null;
+      }
+      const tpos = target ? this.positionSync.getPlayerPosition(target.id) : null;
+      if (tpos) {
+        const d = Math.hypot(tpos.x - pos.x, tpos.z - pos.z);
+        if (d <= ATTACK_RANGE) {
+          if (!bot._lastAttackTime || now - bot._lastAttackTime >= 8000) attackId = target.id;
+        } else {
+          const step = Math.min(d, SPEED * DT);
+          const wobble = (Math.random() - 0.5) * 0.7;
+          const dx = (tpos.x - pos.x) / d;
+          const dz = (tpos.z - pos.z) / d;
+          tx = pos.x + dx * step - dz * wobble * step;
+          tz = pos.z + dz * step + dx * wobble * step;
+        }
+      }
+    } else {
+      // 守幕者: 引导仪式 > 藏匿/逃离 > 采集灵焰 > 走向广场 > 游荡
+      const hunters = alive.filter(p => p.isCorrupted());
+      const hunter = this._nearest3D(hunters, pos);
+      const hunterDist = hunter ? Math.hypot(hunter.pos.x - pos.x, hunter.pos.z - pos.z) : Infinity;
+      const channelling = this._ritual && this._ritual.playerId === bot.id;
+
+      if (channelling) {
+        // 正在引导 → 原地不动 (死亡/走远由 start3DRitual 定时器裁决)
+        tx = pos.x; tz = pos.z;
+      } else if (bot.isHidden) {
+        if (hunterDist > HIDE_RADIUS * 1.8) {
+          bot.isHidden = false; bot._hideSpot = null; bot._lastHideTime = now;
+        }
+        tx = pos.x; tz = pos.z;
+      } else if (hunterDist < HIDE_RADIUS) {
+        // 猎手逼近 → 概率就地藏匿, 否则逃离
+        let hid = false;
+        if (!bot._lastHideTime || now - bot._lastHideTime >= HIDE_COOLDOWN) {
+          if (Math.random() < 0.45) {
+            this.submit3DHide(bot.id, 'bot_hide');
+            bot._lastHideTime = now;
+            hid = true;
+          }
+        }
+        if (hid) {
+          tx = pos.x; tz = pos.z;
+        } else {
+          const dx = pos.x - hunter.pos.x, dz = pos.z - hunter.pos.z;
+          const len = Math.hypot(dx, dz) || 1;
+          tx = pos.x + dx / len * SPEED * DT;
+          tz = pos.z + dz / len * SPEED * DT;
+        }
+      } else if (hunterDist < FLEE_RADIUS) {
+        const dx = pos.x - hunter.pos.x, dz = pos.z - hunter.pos.z;
+        const len = Math.hypot(dx, dz) || 1;
+        tx = pos.x + dx / len * SPEED * DT;
+        tz = pos.z + dz / len * SPEED * DT;
+      } else {
+        // 无威胁 → 采集灵焰 / 走向仪式圈
+        const flames = this.spiritFlames || [];
+        const uncollected = flames.filter(f => !f.collected);
+        if (uncollected.length > 0) {
+          const flame = this._nearestFlame(uncollected, pos);
+          if (flame) {
+            const d = Math.hypot(flame.x - pos.x, flame.z - pos.z);
+            if (d <= FLAME_COLLECT_RADIUS) {
+              collectFlameId = flame.id;
+            } else {
+              const step = Math.min(d, SPEED * DT);
+              tx = pos.x + (flame.x - pos.x) / d * step;
+              tz = pos.z + (flame.z - pos.z) / d * step;
+            }
+          }
+        } else {
+          const d = Math.hypot(RITUAL_CENTER.x - pos.x, RITUAL_CENTER.z - pos.z);
+          if (d <= RITUAL_RADIUS) {
+            startRitual = true;
+          } else {
+            const step = Math.min(d, SPEED * DT);
+            tx = pos.x + (RITUAL_CENTER.x - pos.x) / d * step;
+            tz = pos.z + (RITUAL_CENTER.z - pos.z) / d * step;
+          }
+        }
+      }
+    }
+
+    // 边界钳制
+    tx = Math.max(-BOUND, Math.min(BOUND, tx));
+    tz = Math.max(-BOUND, Math.min(BOUND, tz));
+
+    const dxf = tx - pos.x, dzf = tz - pos.z;
+    const moved = Math.hypot(dxf, dzf) > 0.01;
+    const rotY = moved ? Math.atan2(dxf, dzf) * 180 / Math.PI : (pos.rotY || 0);
+
+    return {
+      x: Math.round(tx * 10) / 10,
+      y: 0,
+      z: Math.round(tz * 10) / 10,
+      rotY: Math.round(rotY * 10) / 10,
+      isMoving: moved,
+      isSprinting: bot.isCorrupted() && moved,
+      attackId,
+      collectFlameId,
+      startRitual,
+    };
+  }
+
+  /** 找距 pos 最近的未采集灵焰 */
+  _nearestFlame(flames, pos) {
+    let best = null, bestD = Infinity;
+    for (const f of flames) {
+      const d = Math.hypot(f.x - pos.x, f.z - pos.z);
+      if (d < bestD) { bestD = d; best = f; }
+    }
+    return best;
+  }
+
+  /** 找距 pos 最近的玩家 (需已有坐标) */
+  _nearest3D(players, pos) {
+    let best = null, bestD = Infinity;
+    for (const p of players) {
+      const pp = this.positionSync.getPlayerPosition(p.id);
+      if (!pp) continue;   // 真人未上报/断线等, 跳过
+      const d = Math.hypot(pp.x - pos.x, pp.z - pos.z);
+      if (d < bestD) { bestD = d; best = { p, pos: pp }; }
+    }
+    return best;
+  }
+
   /** 3D模式: 蚀者噬灵目标 */
   submit3DAttack(corruptedId, targetId) {
     if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return null;
@@ -594,6 +851,14 @@ export class Game {
     const target = this.getPlayer(targetId);
     if (!corrupted || !target || !corrupted.alive || !target.alive) return null;
     if (!corrupted.isCorrupted()) return null; // 只有蚀者能攻击
+
+    // 反作弊: 距离校验 (蚀者只能在近距噬灵, 防远程/穿墙击杀)
+    const apos = this.positionSync.getPlayerPosition(corruptedId);
+    const tpos = this.positionSync.getPlayerPosition(targetId);
+    if (!apos || !tpos) return null;
+    if (Math.hypot(tpos.x - apos.x, tpos.z - apos.z) > ATTACK_RANGE) {
+      return { success: false, reason: 'TOO_FAR' };
+    }
 
     // 检查是否在攻击冷却中
     const now = Date.now();
@@ -608,6 +873,7 @@ export class Game {
       corrupted.alive = false;
       corrupted._killedBy = targetId;
       target.blunderbussUsable = false;
+      this._check3DWin();
       return { success: true, result: 'COUNTERED', victim: corruptedId, killer: targetId };
     }
 
@@ -624,6 +890,9 @@ export class Game {
     // 击杀
     target.alive = false;
     target._killedBy = corruptedId;
+    // 若被杀者是仪式引导者 → 取消仪式
+    if (this._ritual && this._ritual.playerId === targetId) this._cancel3DRitual('引导者被噬灵');
+    this._check3DWin();
     return { success: true, result: 'KILLED', victim: targetId, killer: corruptedId };
   }
 
@@ -635,6 +904,106 @@ export class Game {
     player.isHidden = true;
     player._hideSpot = hideSpotId;
     return true;
+  }
+
+  // ==================== 3D 灵焰仪式 ====================
+
+  /** 3D模式: 守幕者采集灵焰 (距未采集灵焰 ≤ FLAME_COLLECT_RADIUS) */
+  collect3DFlame(playerId, flameId) {
+    if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return { success: false, reason: 'NOT_NIGHT' };
+    const player = this.getPlayer(playerId);
+    if (!player || !player.alive || player.isCorrupted()) return { success: false, reason: 'INVALID' };
+
+    const flame = (this.spiritFlames || []).find(f => f.id === flameId);
+    if (!flame) return { success: false, reason: 'UNKNOWN_FLAME' };
+    if (flame.collected) return { success: false, reason: 'ALREADY_COLLECTED' };
+
+    const pos = this.positionSync.getPlayerPosition(playerId);
+    if (!pos) return { success: false, reason: 'NO_POSITION' };
+    if (Math.hypot(pos.x - flame.x, pos.z - flame.z) > FLAME_COLLECT_RADIUS) return { success: false, reason: 'TOO_FAR' };
+
+    flame.collected = true;
+    this._broadcastFlames();
+    return { success: true };
+  }
+
+  /** 3D模式: 守幕者在广场引导灵焰仪式 (需全部灵焰已采集, 12s 后守幕者胜) */
+  start3DRitual(playerId) {
+    if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return { success: false, reason: 'NOT_NIGHT' };
+    const player = this.getPlayer(playerId);
+    if (!player || !player.alive || player.isCorrupted()) return { success: false, reason: 'INVALID' };
+
+    const flames = this.spiritFlames || [];
+    const allCollected = flames.length > 0 && flames.every(f => f.collected);
+    if (!allCollected) return { success: false, reason: 'FLAMES_INCOMPLETE' };
+
+    const pos = this.positionSync.getPlayerPosition(playerId);
+    if (!pos) return { success: false, reason: 'NO_POSITION' };
+    if (Math.hypot(pos.x - RITUAL_CENTER.x, pos.z - RITUAL_CENTER.z) > RITUAL_RADIUS) return { success: false, reason: 'TOO_FAR' };
+
+    if (this._ritual && this._ritual.playerId === playerId) return { success: true, started: true };
+
+    this._ritual = { playerId, startedAt: Date.now() };
+    this._broadcastFlames();
+
+    // 12s 引导完成 → 守幕者胜 (期间死亡/走远则取消)
+    this._ritualTimeout = setTimeout(() => {
+      if (this.phase !== PHASES.NIGHT || this.gameMode !== 'THIRD_PERSON') return;
+      if (!this._ritual || this._ritual.playerId !== playerId) return;
+      const p = this.getPlayer(playerId);
+      if (!p || !p.alive) return;
+      const pp = this.positionSync.getPlayerPosition(playerId);
+      if (!pp || Math.hypot(pp.x - RITUAL_CENTER.x, pp.z - RITUAL_CENTER.z) > RITUAL_RADIUS) {
+        this._cancel3DRitual('引导者走远');
+        return;
+      }
+      this.endGame(TEAMS.VEIL_KEEPERS, '守幕者完成灵焰仪式');
+    }, RITUAL_CHANNEL_SECONDS * 1000);
+
+    return { success: true, started: true };
+  }
+
+  /** 取消当前仪式引导 */
+  _cancel3DRitual(reason) {
+    this._clearRitualTimeout();
+    if (this._ritual) {
+      this._ritual = null;
+      this._broadcastFlames();
+    }
+  }
+
+  _clearRitualTimeout() {
+    if (this._ritualTimeout) {
+      clearTimeout(this._ritualTimeout);
+      this._ritualTimeout = null;
+    }
+  }
+
+  /** 3D模式: 击杀后即时判定胜利 (守幕者全灭 → 蚀者胜; 蚀者全灭 → 守幕者胜) */
+  _check3DWin() {
+    if (this.gameMode !== 'THIRD_PERSON' || this.phase !== PHASES.NIGHT) return;
+    const aliveKeepers = this.players.filter(p => p.alive && !p.isCorrupted());
+    const aliveCorrupted = this.players.filter(p => p.alive && p.isCorrupted());
+    if (aliveKeepers.length === 0) {
+      this.endGame(TEAMS.CORRUPTED, '守幕者全部被吞噬');
+    } else if (aliveCorrupted.length === 0) {
+      this.endGame(TEAMS.VEIL_KEEPERS, '蚀者全部被消灭');
+    }
+  }
+
+  /** 广播灵焰/仪式状态 (采集数 + 地标 + 仪式) */
+  _broadcastFlames() {
+    if (this._io) this._io.to(this.id).emit('game:flameUpdate', this._flameState());
+  }
+
+  _flameState() {
+    const flames = this.spiritFlames || [];
+    return {
+      flames: flames.map(f => ({ id: f.id, name: f.name, x: f.x, z: f.z, collected: f.collected })),
+      collected: flames.filter(f => f.collected).length,
+      total: flames.length,
+      ritual: this._ritual ? { playerId: this._ritual.playerId, startedAt: this._ritual.startedAt, duration: RITUAL_CHANNEL_SECONDS } : null,
+    };
   }
 
   getNightSteps() {
@@ -884,7 +1253,9 @@ export class Game {
     this.broadcast('game:state', this.getPublicState());
 
     // 短暂延迟让客户端先渲染投票结果，再进入下一夜
-    setTimeout(() => {
+    // (存到 _phaseTimeout 以便 returnToLobby/阶段切换时取消; 重入锁在回调内释放, 防止 2s 窗口内二次结算)
+    this._phaseTimeout = setTimeout(() => {
+      this._resolvingVotes = false;
       // 检查胜利条件
       this.checkWinCondition();
 
@@ -893,8 +1264,10 @@ export class Game {
         this.enterNight();
       }
     }, 2000);
-    } finally {
+    } catch (e) {
+      // 异常路径: 释放重入锁并继续抛出
       this._resolvingVotes = false;
+      throw e;
     }
   }
 
@@ -942,11 +1315,17 @@ export class Game {
   }
 
   endGame(winnerTeam, reason) {
+    if (this.phase === PHASES.GAME_OVER) return;   // 防止重复结算
     this.phase = PHASES.GAME_OVER;
     const ending = this.storyManager.generateEnding(winnerTeam, this.players, this.round);
     this.gameResult = { winner: winnerTeam, reason, ending };
     this._clearPhaseTimeout();
+    this._stop3DBotAI();
+    this._clearRitualTimeout();
     this.broadcastGameOver();
+
+    // 5 分钟后若无在线真人玩家则自动清理房间 (防房间泄漏, 见 GameManager.scheduleGameCleanup)
+    this._gameManager?.scheduleGameCleanup?.(this.id);
 
     // 保存游戏回放
     this._saveReplay(winnerTeam, reason);
@@ -1006,8 +1385,11 @@ export class Game {
       this._returnTimeout = null;
     }
 
-    // 停止位置同步
+    // 停止位置同步 + 人机AI
     this._stopPositionSync();
+    this._stop3DBotAI();
+    this._clearRitualTimeout();
+    this._ritual = null;
 
     // 清理人机
     this._removeBots();
@@ -1027,6 +1409,7 @@ export class Game {
       p.protectTarget = null;
       p.isProtecting = false;
       p.heavyInjury = false;
+      p.halfAlive = false;
       p.whoKnowsVeilGuardianHeavyInjury = [];
       p.knownCorrupted = [];
       p.corruptedOpenEyesTogether = [];
@@ -1057,6 +1440,7 @@ export class Game {
     this.round = 0;
     this.votes = {};
     this.voteResults = null;
+    this._resolvingVotes = false;
     this.nightLog = [];
     this.privateLogs = {};
     this.nightStep = null;

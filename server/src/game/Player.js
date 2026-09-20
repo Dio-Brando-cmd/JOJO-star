@@ -40,6 +40,7 @@ export class Player {
     this.protectTarget = null;
     this.isProtecting = false;
     this.heavyInjury = false;
+    this.halfAlive = false;            // 战场急救"半条命"(暂时无法行动), 须随局重置
     this.whoKnowsVeilGuardianHeavyInjury = [];
     // 新增：筑垒/巡逻/舍身
     this.fortifiedTarget = null;       // 筑垒目标屋子
