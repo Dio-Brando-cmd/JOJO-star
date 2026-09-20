@@ -6,6 +6,8 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -30,6 +32,17 @@ export function createServer(options = {}) {
 
   app.use(cors());
   app.use(express.json());
+
+  // 安全响应头（CSP 暂关：React/Unity WebGL 客户端需内联脚本/blob worker，收紧需实测）
+  app.use(helmet({ contentSecurityPolicy: false }));
+
+  // REST 全局限流（Socket.IO 消息不在此范围；服务器直连无反向代理，req.ip 即客户端 IP）
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,   // 15 分钟窗口
+    limit: 600,                 // 每 IP 600 次/窗口，足够大厅轮询，防爆破/刷反馈
+    message: { success: false, error: '请求过于频繁，请稍后再试' },
+  });
+  app.use('/api/', apiLimiter);
 
   // 初始化用户管理器
   const userManager = new UserManager();
