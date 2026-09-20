@@ -373,7 +373,7 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
     e.preventDefault();
     if (!username.trim()) { setLocalError('请输入用户名'); return; }
     if (username.trim().length < 2) { setLocalError('用户名至少2个字符'); return; }
-    if (!password || password.length < 4) { setLocalError('密码至少4个字符'); return; }
+    if (!password || password.length < 6) { setLocalError('密码至少6个字符'); return; }
     setLocalError('');
     // auth hook 会自动等待 socket 连接
     const result = await auth.register(username.trim(), password);
@@ -453,7 +453,7 @@ function LoginScreen({ auth, socketConnected, onQuickPlay, onCheckUpdate, update
               type="password"
               value={password}
               onChange={e => { setPassword(e.target.value); setLocalError(''); }}
-              placeholder={tab === 'register' ? '至少4个字符' : '输入密码'}
+              placeholder={tab === 'register' ? '至少6个字符' : '输入密码'}
               maxLength={30}
             />
             {localError && <p className="error-text">{localError}</p>}

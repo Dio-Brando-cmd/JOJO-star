@@ -1,6 +1,6 @@
 // tests/21-user-sqlite-smoke.mjs — SQLite 用户层冒烟测试（不连线上服，用临时数据目录）
 // 运行: node tests/21-user-sqlite-smoke.mjs
-// 覆盖: 旧 JSON 迁移、注册、登录(对/错)、统计、回放、getProfile、备份生成
+// 覆盖: 旧 JSON 迁移、bcrypt 注册/登录、旧 HMAC 哈希 rehash、统计、回放、备份生成
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -9,7 +9,7 @@ import crypto from 'crypto';
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'veilland-sqlite-'));
 const SALT = 'veilland-user-salt-2.13';
 
-// 模拟旧 JSON 数据（迁移源）
+// 模拟旧 JSON 数据（迁移源，密码是旧版 HMAC-SHA256）
 fs.writeFileSync(path.join(TMP, 'users.json'), JSON.stringify({
   legacy_user: {
     username: 'legacy_user',
@@ -32,17 +32,22 @@ const check = (name, cond) => {
   else { fail++; console.log(`  ❌ ${name}`); }
 };
 
-// 1. 迁移：旧用户能登录 / 密码错误被拒
-check('迁移旧用户可登录', um.login('legacy_user', 'pw1234').success === true);
-check('旧用户密码错误被拒', um.login('legacy_user', 'wrong').error === '密码错误');
+// 1. 迁移：旧用户(HMAC) 能登录，且登录后被 rehash 成 bcrypt
+const legacyLogin = await um.login('legacy_user', 'pw1234');
+check('迁移旧用户可登录', legacyLogin.success === true);
+check('旧用户密码错误被拒', (await um.login('legacy_user', 'wrong')).error === '密码错误');
+const legacyHash = um.db.prepare('SELECT password_hash FROM users WHERE username = ?').get('legacy_user').password_hash;
+check('旧 HMAC 哈希登录后升级为 bcrypt', legacyHash.startsWith('$2'));
+check('rehash 后仍能登录(bcrypt分支)', (await um.login('legacy_user', 'pw1234')).success === true);
 check('旧 JSON 已备份 .bak', fs.existsSync(path.join(TMP, 'users.json.bak')));
 
-// 2. 注册
-check('注册新用户', um.register('alice', 'secret1').success === true);
-check('重复注册被拒', um.register('alice', 'xxxxx').error === '用户名已被注册');
+// 2. 注册（bcrypt，密码≥6位）
+check('密码<6位被拒', (await um.register('bob', 'abc12')).error === '密码至少需要6个字符');
+check('注册新用户', (await um.register('alice', 'secret1')).success === true);
+check('重复注册被拒', (await um.register('alice', 'xxxxxx')).error === '用户名已被注册');
 
 // 3. 登录 / 统计
-check('新用户登录', um.login('alice', 'secret1').success === true);
+check('新用户登录', (await um.login('alice', 'secret1')).success === true);
 um.updateStats('alice', true);
 um.updateStats('alice', false);
 const prof = um.getProfile('alice');

@@ -62,18 +62,26 @@ export function registerHandlers(io, socket, gameManager, userManager) {
   // ==================== 用户认证 ====================
 
   // 注册
-  socket.on('auth:register', ({ username, password }, callback) => {
-    const result = userManager.register(username, password);
-    callback?.(result);
+  socket.on('auth:register', async ({ username, password }, callback) => {
+    try {
+      const result = await userManager.register(username, password);
+      callback?.(result);
+    } catch (e) {
+      callback?.({ error: safeError(e) });
+    }
   });
 
   // 登录
-  socket.on('auth:login', ({ username, password }, callback) => {
-    const result = userManager.login(username, password);
-    if (result.success) {
-      userManager.setSession(socket.id, result.user.username);
+  socket.on('auth:login', async ({ username, password }, callback) => {
+    try {
+      const result = await userManager.login(username, password);
+      if (result.success) {
+        userManager.setSession(socket.id, result.user.username);
+      }
+      callback?.(result);
+    } catch (e) {
+      callback?.({ error: safeError(e) });
     }
-    callback?.(result);
   });
 
   // 获取用户信息（含回放）

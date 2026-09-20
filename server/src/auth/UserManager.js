@@ -5,6 +5,7 @@
 // ============================================================
 
 import Database from 'better-sqlite3';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -37,6 +38,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');      // 旧数据，仅迁
 const REPLAYS_FILE = path.join(DATA_DIR, 'replays.json');  // 旧数据，仅迁移用
 const USER_SALT = process.env.USER_PASSWORD_SALT || 'veilland-user-salt-2.13';
 const MAX_REPLAYS_PER_USER = 5;
+const BCRYPT_COST = 10;   // bcrypt 计算成本（10 = 默认，约 50-100ms/次）
 
 export class UserManager {
   constructor() {
@@ -140,34 +142,48 @@ export class UserManager {
   }
 
   // ==================== 注册 ====================
-  register(username, password) {
+  async register(username, password) {
     if (!username || typeof username !== 'string') return { error: '用户名格式不合法' };
     const name = username.trim();
     if (name.length < 2 || name.length > 12) return { error: '用户名需2-12个字符' };
     if (/[<>"'&/\\]/.test(name)) return { error: '用户名包含非法字符' };
     if (this._getRow(name)) return { error: '用户名已被注册' };
 
-    if (!password || typeof password !== 'string' || password.length < 4) {
-      return { error: '密码至少需要4个字符' };
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return { error: '密码至少需要6个字符' };
     }
 
     const stats = { gamesPlayed: 0, wins: 0, losses: 0, winRate: 0 };
+    const hash = await bcrypt.hash(password, BCRYPT_COST);
     this.db.prepare('INSERT INTO users (username, password_hash, data) VALUES (?, ?, ?)')
-      .run(name, this.hashPassword(password), JSON.stringify({ createdAt: Date.now(), lastLogin: null, stats }));
+      .run(name, hash, JSON.stringify({ createdAt: Date.now(), lastLogin: null, stats }));
 
     console.log(`[用户] 注册: ${name}`);
     return { success: true, user: { username: name, stats } };
   }
 
   // ==================== 登录 ====================
-  login(username, password) {
+  async login(username, password) {
     const name = username?.trim();
     if (!name) return { error: '请输入用户名' };
 
     const row = this._getRow(name);
     if (!row) return { error: '用户名不存在' };
 
-    if (row.password_hash !== this.hashPassword(password || '')) return { error: '密码错误' };
+    // 旧版哈希是 HMAC-SHA256（64位hex），新版是 bcrypt（$2 开头）
+    let ok = false;
+    if (row.password_hash.startsWith('$2')) {
+      ok = await bcrypt.compare(password || '', row.password_hash);
+    } else {
+      ok = row.password_hash === this.hashPassword(password || '');
+      if (ok) {
+        // 旧哈希验证通过 → 就地升级为 bcrypt（下次登录走 bcrypt 分支）
+        const newHash = await bcrypt.hash(password, BCRYPT_COST);
+        this.db.prepare('UPDATE users SET password_hash = ? WHERE username = ?')
+          .run(newHash, name);
+      }
+    }
+    if (!ok) return { error: '密码错误' };
 
     const user = this._userFromRow(row);
     user.lastLogin = Date.now();
