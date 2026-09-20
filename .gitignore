@@ -22,6 +22,9 @@ release/狼人杀-联机版/*.js
 release/.icon-ico/
 release/*.yml
 
+# Unity Windows 构建输出（体积巨大，由 BuildWindows.cs 生成）
+unity-build/
+
 # 数据文件
 server/data/users.json
 
