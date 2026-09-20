@@ -25,8 +25,9 @@ release/*.yml
 # Unity Windows 构建输出（体积巨大，由 BuildWindows.cs 生成）
 unity-build/
 
-# 数据文件
-server/data/users.json
+# 运行时用户数据 (SQLite 数据库 + 迁移用旧 JSON)
+server/data/
+server/src/data/
 
 # 二进制/压缩包
 *.exe
