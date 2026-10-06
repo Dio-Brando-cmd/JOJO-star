@@ -39,13 +39,15 @@ const c = {
   cyan: (s) => `\x1b[36m${s}\x1b[0m`,
 };
 
-function collectFiles(dir, base = dir) {
+function collectFiles(dir, base = dir, excludeDirs = []) {
   const files = [];
   const entries = readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
-      files.push(...collectFiles(fullPath, base));
+      // 跳过运行时数据目录（如 server/src/data 下的 SQLite 库），防止覆盖生产数据
+      if (excludeDirs.includes(entry.name)) continue;
+      files.push(...collectFiles(fullPath, base, excludeDirs));
     } else {
       files.push({
         localPath: fullPath,
@@ -63,7 +65,7 @@ async function deploy() {
 
   // 1. 收集文件
   console.log(c.yellow('[1/4] 收集部署文件...'));
-  const serverFiles = collectFiles(SERVER_SRC);
+  const serverFiles = collectFiles(SERVER_SRC, SERVER_SRC, ['data']);
   const clientFiles = collectFiles(CLIENT_DIST, CLIENT_DIST).map(f => ({
     ...f,
     remotePath: join(REMOTE_BASE, 'dist', relative(CLIENT_DIST, f.localPath)).replace(/\\/g, '/'),
@@ -72,12 +74,16 @@ async function deploy() {
     localPath: SERVER_PKG,
     remotePath: join(REMOTE_BASE, 'package.json').replace(/\\/g, '/'),
   };
-  // 下载目录（仅同步 .exe .apk 大文件，跳过已有的同名同大小文件以加速）
+  // 下载目录：仅同步安装包（.exe/.apk）。
+  // 注意：帷幕之地3D.zip 由 upload-client-zip-resume.mjs 单独断点续传管理，
+  // 这里排除 *.zip，避免把本地可能残留的半截/损坏 zip 覆盖掉远端好包。
   const downloadFiles = existsSync(DOWNLOAD_DIR)
-    ? collectFiles(DOWNLOAD_DIR).map(f => ({
-        ...f,
-        remotePath: join(REMOTE_BASE, 'download', relative(DOWNLOAD_DIR, f.localPath)).replace(/\\/g, '/'),
-      }))
+    ? collectFiles(DOWNLOAD_DIR)
+        .filter((f) => !f.localPath.toLowerCase().endsWith('.zip'))
+        .map((f) => ({
+          ...f,
+          remotePath: join(REMOTE_BASE, 'download', relative(DOWNLOAD_DIR, f.localPath)).replace(/\\/g, '/'),
+        }))
     : [];
   const allFiles = [...serverFiles, ...clientFiles, pkgFile, ...downloadFiles];
   console.log(`   服务器文件: ${serverFiles.length} 个`);
