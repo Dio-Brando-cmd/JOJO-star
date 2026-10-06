@@ -109,7 +109,7 @@ public class LobbyMainMenu : MonoBehaviour
     {
         SaveSettings();
         if (LobbyManager.Instance != null) LobbyManager.Instance.Load3DGame();
-        else SceneManager.LoadScene("ChaseScene");
+        else SceneManager.LoadScene("DayVillage");
     }
 
     void Quit()

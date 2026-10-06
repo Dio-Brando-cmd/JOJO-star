@@ -220,3 +220,210 @@ public class FlameUpdateDTO
     public int total;
     public RitualDTO ritual;
 }
+
+// ============================================================
+// 真相盘 (TRUTH_DISC) DTO —— 镜像服务端 TruthGame 公开/私有状态
+// ============================================================
+
+// 命运时钟 (公开: truth:state.clocks)
+[System.Serializable]
+public class TruthClocksDTO
+{
+    public int spirit;    // 灵焰 0..(spiritMax+extra)
+    public int despair;   // 绝望 0..despairMax
+    public int veil;      // 帷幕吞噬度 0..veilConsumeMax
+}
+
+// 区域 (公开: truth:state.zones[])
+[System.Serializable]
+public class TruthZoneDTO
+{
+    public string name;
+    public bool consumed;
+}
+
+// 净化点 (公开: truth:state.purifyPoint) —— zone 为 null 表示灰烬之神隐藏净化点
+[System.Serializable]
+public class TruthPurifyPointDTO
+{
+    public string zone;
+}
+
+// 任务 (公开: truth:state.tasks[])
+[System.Serializable]
+public class TruthTaskDTO
+{
+    public string id;
+    public string name;
+    public bool completed;
+    public string completedBy;
+    public bool sabotaged;
+}
+
+// 玩家 (公开: truth:state.players[]) —— id 为座次 P1..Pn; socketId 供位置映射
+[System.Serializable]
+public class TruthPlayerDTO
+{
+    public string id;
+    public string socketId;
+    public string name;
+    public bool alive;
+    public string zone;
+    public string role;   // 仅终局公开
+    public string team;   // 仅终局公开
+}
+
+// 阶段解锁 (公开: truth:state.unlocks)
+[System.Serializable]
+public class TruthUnlocksDTO
+{
+    public bool veilKeeperArmed;   // 守幕者短铳 (阶段2+)
+    public bool spiritCanBurnVeil; // 灵焰烧帷幕 (阶段3+)
+}
+
+// 公开规则常量 (公开: truth:state.rules)
+[System.Serializable]
+public class TruthRulesDTO
+{
+    public int spiritMax;
+    public int despairMax;
+    public int phase2Despair;
+    public int phase3Despair;
+    public int veilConsumeMax;
+    public int veilConsumeIntervalSec;
+    public int corruptedCount;
+    public int playerCount;
+}
+
+// 神 (公开终局: truth:state.god / 私有碎片 hintGod / truth:ended.god)
+[System.Serializable]
+public class TruthGodDTO
+{
+    public string id;
+    public string name;
+    public string icon;
+}
+
+// 神引用 (私有: reincarnationOf)
+[System.Serializable]
+public class TruthGodRefDTO
+{
+    public string id;
+    public string name;
+}
+
+// 座次引用 (私有: guardTarget / fellowCorrupted[])
+[System.Serializable]
+public class TruthSeatRefDTO
+{
+    public string seat;
+    public string name;
+}
+
+// 碎片 (私有: myShards[]) —— 不下发 kind(真/伪)，玩家自行判断
+[System.Serializable]
+public class TruthShardDTO
+{
+    public string id;
+    public string text;
+    public TruthGodDTO hintGod;
+}
+
+// 契约 (私有: myContract)
+[System.Serializable]
+public class TruthContractDTO
+{
+    public string id;
+    public string name;
+    public string icon;
+    public string desc;
+    public int points;
+}
+
+// 个人计分 (终局: truth:state.scores[] / truth:ended.scores[])
+[System.Serializable]
+public class TruthScoreDTO
+{
+    public string playerId;
+    public string name;
+    public string team;
+    public string role;
+    public string contract;
+    public int points;
+    public string[] why;
+}
+
+// 公开状态 (truth:state)
+[System.Serializable]
+public class TruthStateDTO
+{
+    public string id;
+    public string hostId;
+    public string phase;        // LOBBY / PLAYING / GAME_OVER
+    public string gameMode;
+    public int maxPlayers;
+    public int minPlayers;
+
+    public TruthClocksDTO clocks;
+    public int enginePhase;     // 命运时钟阶段 1/2/3
+    public TruthUnlocksDTO unlocks;
+    public bool ebbWindow;      // 潮汐之神退潮窗口
+
+    public TruthZoneDTO[] zones;
+    public TruthPurifyPointDTO purifyPoint;
+    public TruthTaskDTO[] tasks;
+    public TruthPlayerDTO[] players;
+    public TruthRulesDTO rules;
+
+    public string[] log;        // 公开事件日志（不含私密碎片内容）
+    public string winner;
+    public string reason;
+    public string purifiedBy;
+
+    public string seed;         // 仅终局公开
+    public TruthGodDTO god;     // 仅终局公开
+    public TruthScoreDTO[] scores; // 仅终局公开
+}
+
+// 私有状态 (truth:privateState)
+[System.Serializable]
+public class TruthPrivateDTO
+{
+    public string mySeat;
+    public string myRole;
+    public string myTeam;
+
+    public TruthShardDTO[] myShards;
+    public TruthContractDTO myContract;
+    public TruthSeatRefDTO guardTarget;
+    public TruthGodRefDTO reincarnationOf;
+    public TruthSeatRefDTO[] fellowCorrupted;
+
+    public string guessedGodId;
+    public bool burnedFalse;
+    public int sacrificeCount;
+    public bool blunderbussUsed;
+    public string myRejoinToken;
+}
+
+// 终局广播 (truth:ended)
+[System.Serializable]
+public class TruthEndedDTO
+{
+    public string winner;
+    public string reason;
+    public string seed;
+    public TruthGodDTO god;
+    public TruthScoreDTO[] scores;
+}
+
+// 动作应答 (truth:action ack)
+[System.Serializable]
+public class TruthActionResultDTO
+{
+    public bool ok;
+    public string[] events;
+    public string winner;
+    public string reason;
+    public int phase;
+}

@@ -135,9 +135,11 @@ public class LobbyMainMenuUI : MonoBehaviour
         _serverInput = AddInputField(panel.transform, "ServerInput", font,
             PlayerPrefs.GetString("serverUrl", "http://210.16.170.144:4000"), new Vector2(0f, -32f));
 
-        // 主按钮: 进入 3D 追猎
-        AddButton(panel.transform, "进入 3D 追猎", font, C_EMBER, C_EMBER_HL, new Vector2(0f, -108f), new Vector2(440f, 58f),
+        // 主按钮: 进入 3D 追猎 (左) + 真相盘 3D (右)
+        AddButton(panel.transform, "进入 3D 追猎", font, C_EMBER, C_EMBER_HL, new Vector2(-112f, -108f), new Vector2(212f, 58f),
             Enter3D);
+        AddButton(panel.transform, "真相盘 3D", font, C_EMBER, C_EMBER_HL, new Vector2(112f, -108f), new Vector2(212f, 58f),
+            EnterTruthDisc);
 
         // 退出游戏 (次级, 无填充)
         AddButton(panel.transform, "退出游戏", font, C_DIM, C_DIM_HL, new Vector2(0f, -180f), new Vector2(440f, 40f),
@@ -278,7 +280,14 @@ public class LobbyMainMenuUI : MonoBehaviour
     {
         SaveSettings();
         if (LobbyManager.Instance != null) LobbyManager.Instance.Load3DGame();
-        else UnityEngine.SceneManagement.SceneManager.LoadScene("ChaseScene");
+        else UnityEngine.SceneManagement.SceneManager.LoadScene("DayVillage");
+    }
+
+    void EnterTruthDisc()
+    {
+        SaveSettings();
+        if (LobbyManager.Instance != null) LobbyManager.Instance.LoadTruthDisc();
+        else UnityEngine.SceneManagement.SceneManager.LoadScene("TruthDiscScene");
     }
 
     void QuitGame()

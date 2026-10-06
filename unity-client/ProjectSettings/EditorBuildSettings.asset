@@ -17,4 +17,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MainScene.unity
     guid: ed59813c68f2693438e6d7947b0430e2
+  - enabled: 1
+    path: Assets/Scenes/DayVillage.unity
+    guid: 84a0b1ca44fd5974a8d997ddb20474e7
+  - enabled: 1
+    path: Assets/Scenes/TruthDiscScene.unity
+    guid: 9a654f122eb08f24aba80d4c2d93bf6d
   m_configObjects: {}

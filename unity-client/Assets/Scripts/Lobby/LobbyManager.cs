@@ -141,9 +141,14 @@ public class LobbyManager : MonoBehaviour
 
     public void Load3DGame()
     {
-        var stone = valleySetup?.StoneRightScript ?? sceneSetup?.StoneRightScript;
-        if (stone != null) stone.EnterPortal();
-        else SceneManager.LoadScene("ChaseScene");
+        // 进入游戏 → 白天场地(暮色聚落), 之后自动转入夜晚
+        SceneManager.LoadScene("DayVillage");
+    }
+
+    public void LoadTruthDisc()
+    {
+        // 进入真相盘 3D 开放世界 (帷幕之域)
+        SceneManager.LoadScene("TruthDiscScene");
     }
 
     // ============================================================

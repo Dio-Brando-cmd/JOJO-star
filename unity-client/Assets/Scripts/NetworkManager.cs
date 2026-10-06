@@ -50,6 +50,12 @@ public class NetworkManager : MonoBehaviour
     public event Action OnReturnToLobby;
     public event Action<FlameUpdateDTO> OnFlameUpdate;
 
+    // ==================== 事件 (真相盘新增) ====================
+    public event Action<TruthStateDTO> OnTruthState;
+    public event Action<TruthPrivateDTO> OnTruthPrivateState;
+    public event Action OnTruthStarted;
+    public event Action<TruthEndedDTO> OnTruthEnded;
+
     // ==================== Lifecycle ====================
 
     void Awake()
@@ -72,6 +78,7 @@ public class NetworkManager : MonoBehaviour
         {
             playerId = _socket.Sid;
             OnConnected?.Invoke();
+            TryTruthRejoin(); // 断线重连：有未完成的真相盘对局则自动 rejoin
         };
         _socket.OnDisconnected += () => OnDisconnected?.Invoke();
 
@@ -86,6 +93,11 @@ public class NetworkManager : MonoBehaviour
         _socket.On("chat:message",      t => { var c = t?.ToObject<ChatMessageDTO>(); OnChatReceived?.Invoke(c?.playerName, c?.message); });
         _socket.On("game:returnToLobby", t => OnReturnToLobby?.Invoke());
         _socket.On("game:flameUpdate",  t => OnFlameUpdate?.Invoke(t?.ToObject<FlameUpdateDTO>()));
+
+        _socket.On("truth:state",        t => OnTruthState?.Invoke(t?.ToObject<TruthStateDTO>()));
+        _socket.On("truth:privateState",  t => { var d = t?.ToObject<TruthPrivateDTO>(); if (d != null) SaveTruthSeat(d); OnTruthPrivateState?.Invoke(d); });
+        _socket.On("truth:started",       t => OnTruthStarted?.Invoke());
+        _socket.On("truth:ended",         t => { ClearTruthRejoin(); OnTruthEnded?.Invoke(t?.ToObject<TruthEndedDTO>()); });
     }
 
     // ==================== 连接 ====================
@@ -151,10 +163,131 @@ public class NetworkManager : MonoBehaviour
         });
     }
 
-    public void LeaveRoom() => _socket?.Emit("room:leave");
+    public void LeaveRoom()
+    {
+        ClearTruthRejoin();
+        _socket?.Emit("room:leave");
+    }
     public void BackToLobby() => _socket?.Emit("room:backToLobby");
     public void ReturnToRoomLobby() => _socket?.Emit("room:returnToLobby");
     public void RequestState() => _socket?.Emit("game:requestState");
+
+    // ==================== 真相盘 (TRUTH_DISC) ====================
+
+    public void CreateTruthRoom(Action<string> callback = null)
+    {
+        if (!IsConnected) { callback?.Invoke(null); return; }
+        _socket.Emit("room:create", new { playerName, gameMode = "TRUTH_DISC" }, ack =>
+        {
+            if (AckOk(ack))
+            {
+                _roomCode = ack["roomCode"]?.ToObject<string>();
+                _isHost = true;
+                PlayerPrefs.SetString(TD_ROOM, _roomCode ?? "");
+                PlayerPrefs.Save();
+                callback?.Invoke(_roomCode);
+            }
+            else
+            {
+                Debug.LogWarning("[Network] CreateTruthRoom 失败: " + AckStr(ack, "error"));
+                callback?.Invoke(null);
+            }
+        });
+    }
+
+    public void JoinTruthRoom(string roomCode, Action<bool> callback = null)
+    {
+        if (!IsConnected) { callback?.Invoke(false); return; }
+        _socket.Emit("room:join", new { roomCode, playerName }, ack =>
+        {
+            bool ok = AckOk(ack);
+            if (ok)
+            {
+                _roomCode = roomCode;
+                _isHost = false;
+                PlayerPrefs.SetString(TD_ROOM, roomCode);
+                PlayerPrefs.Save();
+            }
+            else Debug.LogWarning("[Network] JoinTruthRoom 失败: " + AckStr(ack, "error"));
+            callback?.Invoke(ok);
+        });
+    }
+
+    public void StartTruthGame()
+    {
+        if (!IsConnected) return;
+        _socket.Emit("game:start", new { }, ack =>
+        {
+            if (!AckOk(ack)) Debug.LogWarning("[Network] StartTruthGame 失败: " + AckStr(ack, "error"));
+        });
+    }
+
+    // 动作：用 Dictionary 避免 null 字段被服务端 typeof 判空（如 move 不带 taskId）
+    public void SendTruthAction(Dictionary<string, object> action, Action<TruthActionResultDTO> callback = null)
+    {
+        if (!IsConnected) { callback?.Invoke(null); return; }
+        _socket.Emit("truth:action", new { action }, ack =>
+        {
+            callback?.Invoke(ack?.ToObject<TruthActionResultDTO>());
+        });
+    }
+
+    public void TruthGetState() => _socket?.Emit("truth:getState");
+
+    public void TruthRejoin(string roomCode, string seat, string token, Action<bool> callback = null)
+    {
+        if (!IsConnected) { callback?.Invoke(false); return; }
+        _socket.Emit("truth:rejoin", new { roomCode, seat, token }, ack =>
+        {
+            bool ok = AckOk(ack);
+            if (ok) _roomCode = roomCode;
+            else { Debug.LogWarning("[Network] TruthRejoin 失败: " + AckStr(ack, "error")); ClearTruthRejoin(); }
+            callback?.Invoke(ok);
+        });
+    }
+
+    // ==================== 真相盘重连持久化 (PlayerPrefs) ====================
+    // 断线后 NetworkManager 跨场景存活, OnConnected 里 TryTruthRejoin 自动回到对局。
+
+    const string TD_ROOM = "td_roomCode";
+    const string TD_SEAT = "td_seat";
+    const string TD_TOKEN = "td_token";
+    const string TD_JOINED = "td_joined";
+
+    void SaveTruthSeat(TruthPrivateDTO priv)
+    {
+        if (priv == null || string.IsNullOrEmpty(priv.mySeat)) return;
+        PlayerPrefs.SetString(TD_SEAT, priv.mySeat);
+        PlayerPrefs.SetString(TD_TOKEN, priv.myRejoinToken ?? "");
+        PlayerPrefs.SetInt(TD_JOINED, 1);
+        PlayerPrefs.Save();
+    }
+
+    public bool HasTruthRejoin() => PlayerPrefs.GetInt(TD_JOINED, 0) == 1;
+
+    public void TryTruthRejoin(Action<bool> callback = null)
+    {
+        if (!HasTruthRejoin()) { callback?.Invoke(false); return; }
+        string room = PlayerPrefs.GetString(TD_ROOM, "");
+        string seat = PlayerPrefs.GetString(TD_SEAT, "");
+        string token = PlayerPrefs.GetString(TD_TOKEN, "");
+        if (string.IsNullOrEmpty(room) || string.IsNullOrEmpty(seat) || string.IsNullOrEmpty(token))
+        {
+            ClearTruthRejoin();
+            callback?.Invoke(false);
+            return;
+        }
+        TruthRejoin(room, seat, token, callback);
+    }
+
+    public void ClearTruthRejoin()
+    {
+        PlayerPrefs.DeleteKey(TD_ROOM);
+        PlayerPrefs.DeleteKey(TD_SEAT);
+        PlayerPrefs.DeleteKey(TD_TOKEN);
+        PlayerPrefs.DeleteKey(TD_JOINED);
+        PlayerPrefs.Save();
+    }
 
     // ==================== 3D 追逃 ====================
 
