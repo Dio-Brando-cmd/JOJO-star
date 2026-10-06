@@ -333,25 +333,25 @@ export class NightResolver {
     // 收集所有蚀者的击杀目标
     const killTargets = new Map(); // targetId -> [corruptedIds]
 
-    for (const corrupted of corrupted) {
-      if (corrupted.nightAction === 'SLEEP') continue;
+    for (const c of corrupted) {
+      if (c.nightAction === 'SLEEP') continue;
 
       // 新增：蚀者共鸣召集
-      if (corrupted.nightAction === 'RIFT_RESONANCE') {
-        corrupted.resonated = true;
-        corrupted.resonanceCooldown = 2; // 冷却2回合
+      if (c.nightAction === 'RIFT_RESONANCE') {
+        c.resonated = true;
+        c.resonanceCooldown = 2; // 冷却2回合
         this.privateLog.push({
           type: 'rift_resonance',
-          player: corrupted.id,
+          player: c.id,
           msg: '蚀者发出共鸣——同伴们听到了召唤',
         });
         // 通知所有未相认的蚀者
         for (const otherCorrupted of corrupted) {
-          if (otherCorrupted.id !== corrupted.id && !otherCorrupted.knownCorrupted.includes(corrupted.id)) {
+          if (otherCorrupted.id !== c.id && !otherCorrupted.knownCorrupted.includes(c.id)) {
             this.privateLog.push({
               type: 'rift_resonance_heard',
               player: otherCorrupted.id,
-              resonator: corrupted.id,
+              resonator: c.id,
               msg: '你听到了同伴的共鸣——有人在召唤你',
             });
           }
@@ -360,52 +360,52 @@ export class NightResolver {
       }
 
       // 新增：蚀者伪装（计入屋子人数）
-      if (corrupted.nightAction === 'DISGUISE') {
-        corrupted.disguised = true;
-        corrupted.atHome = false;
-        if (corrupted.nightTarget) {
-          corrupted.currentHouse = corrupted.nightTarget;
+      if (c.nightAction === 'DISGUISE') {
+        c.disguised = true;
+        c.atHome = false;
+        if (c.nightTarget) {
+          c.currentHouse = c.nightTarget;
         }
         this.privateLog.push({
           type: 'corrupted_disguise',
-          player: corrupted.id,
+          player: c.id,
           msg: '蚀者伪装成守幕者，混入人群中',
         });
         continue; // 伪装的蚀者今晚不刀人
       }
 
       // 蚀者出门
-      if (corrupted.nightAction === 'GO_OUT') {
-        corrupted.atHome = false;
-        if (corrupted.nightTarget) {
-          corrupted.currentHouse = corrupted.nightTarget;
+      if (c.nightAction === 'GO_OUT') {
+        c.atHome = false;
+        if (c.nightTarget) {
+          c.currentHouse = c.nightTarget;
           // 检查是否去了另一个蚀者家 → 相认
-          const houseOwner = this.players.find(p => p.id === corrupted.nightTarget);
+          const houseOwner = this.players.find(p => p.id === c.nightTarget);
           if (houseOwner && houseOwner.isCorrupted() && houseOwner.alive) {
-            if (!corrupted.knownCorrupted.includes(houseOwner.id)) {
-              corrupted.knownCorrupted.push(houseOwner.id);
-              corrupted.corruptedOpenEyesTogether.push(houseOwner.id);
-              houseOwner.knownCorrupted.push(corrupted.id);
-              houseOwner.corruptedOpenEyesTogether.push(corrupted.id);
-              this.privateLog.push({ type: 'corrupted_meet', corrupted: [corrupted.id, houseOwner.id] });
+            if (!c.knownCorrupted.includes(houseOwner.id)) {
+              c.knownCorrupted.push(houseOwner.id);
+              c.corruptedOpenEyesTogether.push(houseOwner.id);
+              houseOwner.knownCorrupted.push(c.id);
+              houseOwner.corruptedOpenEyesTogether.push(c.id);
+              this.privateLog.push({ type: 'corrupted_meet', corrupted: [c.id, houseOwner.id] });
             }
           }
         }
       }
 
       // 新增：嗅觉追踪（刀人时记录目标的去向）
-      if (corrupted.nightAbility?.trackScent && corrupted.nightTarget) {
-        const target = this.players.find(p => p.id === corrupted.nightTarget && p.alive);
+      if (c.nightAbility?.trackScent && c.nightTarget) {
+        const target = this.players.find(p => p.id === c.nightTarget && p.alive);
         if (target && target.nightAction === 'GO_OUT' && target.currentHouse !== target.id) {
-          corrupted.scentTrail.push({
-            target: corrupted.nightTarget,
+          c.scentTrail.push({
+            target: c.nightTarget,
             house: target.currentHouse,
             round: this.game.round,
           });
           this.privateLog.push({
             type: 'corrupted_scent_track',
-            player: corrupted.id,
-            target: corrupted.nightTarget,
+            player: c.id,
+            target: c.nightTarget,
             house: target.currentHouse,
             msg: `嗅觉追踪：目标去了 ${target.currentHouse} 的屋子`,
           });
@@ -413,15 +413,15 @@ export class NightResolver {
       }
 
       // 蚀者刀人（锁定人，不是锁定屋子）
-      if (corrupted.nightAbility?.kill) {
-        const targetId = corrupted.nightTarget;
+      if (c.nightAbility?.kill) {
+        const targetId = c.nightTarget;
         // 蚀者刀人是跟着人走 —— 目标锁定为人
         if (targetId) {
           if (!killTargets.has(targetId)) {
             killTargets.set(targetId, []);
           }
-          killTargets.get(targetId).push(corrupted.id);
-          corrupted.corruptedKillTarget = targetId;
+          killTargets.get(targetId).push(c.id);
+          c.corruptedKillTarget = targetId;
         }
       }
     }

@@ -117,11 +117,11 @@ export function createServer(options = {}) {
   app.get('/api/version', (req, res) => {
     res.json({
       version: process.env.APP_VERSION || '2.13.1',
-      downloadUrl: '/download/帷幕之地_Setup.exe',
+      downloadUrl: '/download/帷幕之地3D.zip',
       apkDownloadUrl: '/download/veilland.apk',
-      releaseDate: '2026-07-20',
-      releaseNotes: 'v2.13.1 🌑 帷幕之地·灵焰纪元 — 全面品牌重塑：蚀者/冥僧人/帷幕学者/草药学者/愈灵师/帷幕守卫/灵痕追猎者/灵织者、灵符体系、灵焰猎枪、全新世界观',
-      fileSize: 113 * 1024 * 1024, // ~113MB
+      releaseDate: '2026-10-02',
+      releaseNotes: 'v2.13.1 🌑 帷幕之地·灵焰纪元 — 全新 3D 开放世界客户端：3D 追猎 + 真相盘 3D（帷幕之域跑动/任务/采碎片/净化仪式），下载解压运行 exe 即玩',
+      fileSize: 411005167, // ~392MB
     });
   });
 
@@ -175,6 +175,15 @@ export function createServer(options = {}) {
 
     socket.on('disconnect', () => {
       console.log(`[断开] ${socket.id}`);
+
+      // 真相盘房间断线处理
+      const truthGame = gameManager.handleTruthDisconnect(socket.id);
+      if (truthGame) {
+        truthGame.setIO(io);
+        io.to(truthGame.id).emit('truth:state', truthGame.getLobbyState());
+        return;
+      }
+
       const game = gameManager.handleDisconnect(socket.id);
       if (game) {
         game.setIO(io);

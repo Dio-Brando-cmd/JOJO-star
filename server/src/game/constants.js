@@ -780,16 +780,19 @@ export const MATCH_TYPES = {
 export const GAME_MODES = {
   BOARD_GAME: 'BOARD_GAME',         // 经典桌游模式: 回合制夜晚/投票/发言
   THIRD_PERSON: 'THIRD_PERSON',     // 3D追逃模式: 自由移动/追逐/动作判定
+  TRUTH_DISC: 'TRUTH_DISC',         // 真相盘模式: 自生成叙事/碎片推理/命运时钟
 };
 
 export const GAME_MODE_NAMES = {
   BOARD_GAME: '经典桌游',
   THIRD_PERSON: '3D追逃',
+  TRUTH_DISC: '真相盘·叙事',
 };
 
 export const GAME_MODE_DESCRIPTIONS = {
   BOARD_GAME: '回合制策略博弈——夜晚按顺序行动、白天讨论投票。经典帷幕之地桌游体验。',
   THIRD_PERSON: '3D非对称竞技——夜晚自由移动、追逐击杀、藏匿逃脱。类似黎明杀机的沉浸式体验。',
+  TRUTH_DISC: '自生成叙事——每局摇出一个新真神与故事，靠真伪碎片推理真相，命运时钟驱动节奏。',
 };
 
 // 3D模式专用参数

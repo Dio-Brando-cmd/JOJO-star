@@ -4,15 +4,21 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { Game } from './Game.js';
+import { TruthGame } from './truth/TruthGame.js';
 import { PHASES } from './constants.js';
 
 export class GameManager {
   constructor() {
     this.games = new Map();     // roomId -> Game
     this.playerRooms = new Map(); // playerId -> roomId
+    this.truthGames = new Map();      // roomId -> TruthGame（真相盘模式，独立于桌游）
+    this.truthPlayerRooms = new Map(); // playerId -> roomId
     this.disconnectedPlayers = new Map(); // playerToken -> { roomCode, playerId, timeoutId }
     this._io = null;            // Socket.IO 实例（用于大厅广播）
     this.userManager = null;    // UserManager 引用（用于回放保存）
+    // 真相盘房间活动清扫：每 5 分钟检查一次，清理超 30 分钟无活动的房间
+    this._truthSweep = setInterval(() => this._sweepTruthRooms(), 5 * 60 * 1000);
+    if (this._truthSweep.unref) this._truthSweep.unref();
   }
 
   // 设置 IO 实例用于全局广播
@@ -40,7 +46,7 @@ export class GameManager {
       }
       attempts++;
       if (attempts > 100) break; // 极不可能但安全兜底
-    } while (this.games.has(code));
+    } while (this.games.has(code) || this.truthGames.has(code));
     return code;
   }
 
@@ -139,6 +145,97 @@ export class GameManager {
   // 获取游戏
   getGame(roomCode) {
     return this.games.get(roomCode) || null;
+  }
+
+  // ==================== 真相盘房间 ====================
+
+  isTruthRoom(roomCode) {
+    return this.truthGames.has(roomCode);
+  }
+
+  createTruthRoom(hostId, hostName) {
+    const roomCode = this.generateRoomCode();
+    const game = new TruthGame(roomCode, hostId, hostName);
+    this.truthGames.set(roomCode, game);
+    this.truthPlayerRooms.set(hostId, roomCode);
+    return game;
+  }
+
+  // 清理超时无活动的真相盘房间（由 _truthSweep 周期调用，只清理无活动房，不误杀进行中的对局）
+  _sweepTruthRooms() {
+    const now = Date.now();
+    for (const [roomCode, g] of this.truthGames) {
+      if (now - g.lastActivity > 30 * 60 * 1000) {
+        g.destroy();
+        this.truthGames.delete(roomCode);
+        for (const [pid, rc] of this.truthPlayerRooms) {
+          if (rc === roomCode) this.truthPlayerRooms.delete(pid);
+        }
+        console.log(`[清理] 真相盘房间 ${roomCode} 超时无活动清理`);
+      }
+    }
+  }
+
+  joinTruthRoom(roomCode, socketId, name) {
+    const game = this.truthGames.get(roomCode);
+    if (!game) return { error: '房间不存在' };
+    const result = game.addPlayer(socketId, name);
+    if (result.error) return { error: result.error };
+    this.truthPlayerRooms.set(socketId, roomCode);
+    return { game, player: result.player };
+  }
+
+  leaveTruthRoom(socketId) {
+    const roomCode = this.truthPlayerRooms.get(socketId);
+    if (!roomCode) return null;
+    const game = this.truthGames.get(roomCode);
+    if (!game) {
+      this.truthPlayerRooms.delete(socketId);
+      return null;
+    }
+    game.removePlayer(socketId);
+    this.truthPlayerRooms.delete(socketId);
+    if (game.players.length === 0) {
+      game.destroy();
+      this.truthGames.delete(roomCode);
+    }
+    return game;
+  }
+
+  getTruthGameByPlayer(socketId) {
+    const roomCode = this.truthPlayerRooms.get(socketId);
+    if (!roomCode) return null;
+    return this.truthGames.get(roomCode) || null;
+  }
+
+  getTruthGame(roomCode) {
+    return this.truthGames.get(roomCode) || null;
+  }
+
+  rejoinTruthPlayer(roomCode, seat, token, newSocketId) {
+    const game = this.truthGames.get(roomCode);
+    if (!game) return null;
+    const oldSocket = game.seatToSocket[seat];
+    if (!game.rebindSeat(seat, newSocketId, token)) return null;
+    // 清理旧持有 socket 的映射，避免无座次孤儿
+    if (oldSocket && oldSocket !== newSocketId) this.truthPlayerRooms.delete(oldSocket);
+    this.truthPlayerRooms.set(newSocketId, roomCode);
+    return game;
+  }
+
+  handleTruthDisconnect(socketId) {
+    const game = this.getTruthGameByPlayer(socketId);
+    if (!game) return null;
+    if (game.phase === 'LOBBY' || game.phase === 'GAME_OVER') {
+      const wasLobby = game.phase === 'LOBBY';
+      this.leaveTruthRoom(socketId);
+      return wasLobby ? game : null;
+    }
+    // PLAYING：座次保留等待重连（truth:rejoin），动作会因 socket 不存在而失败；
+    // 清掉旧 socket 的 truthPlayerRooms 映射，避免重连后残留死映射
+    this.truthPlayerRooms.delete(socketId);
+    game.positionSync?.cleanupPlayer(socketId);
+    return null;
   }
 
   // 断开连接处理 — 不立即删除，标记离线并设置超时

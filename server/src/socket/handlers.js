@@ -182,6 +182,17 @@ export function registerHandlers(io, socket, gameManager, userManager) {
         callback({ success: false, error: '昵称格式不合法（1-12字符，不含特殊符号）' });
         return;
       }
+
+      // 真相盘模式：独立房间，不进桌游大厅，靠房间码加入
+      if (gameMode === 'TRUTH_DISC') {
+        const game = gameManager.createTruthRoom(socket.id, name);
+        game.setIO(io);
+        socket.join(game.id);
+        console.log(`[房间] ${name} 创建了真相盘房间 ${game.id}`);
+        callback({ success: true, roomCode: game.id, gameMode: 'TRUTH_DISC', gameState: game.getLobbyState() });
+        return;
+      }
+
       const game = gameManager.createRoom(socket.id, name);
       game.setIO(io);
       socket.join(game.id);
@@ -231,6 +242,22 @@ export function registerHandlers(io, socket, gameManager, userManager) {
         callback({ success: false, error: '昵称格式不合法（1-12字符，不含特殊符号）' });
         return;
       }
+
+      // 真相盘房间：按房间码加入
+      if (gameManager.isTruthRoom(roomCode)) {
+        const result = gameManager.joinTruthRoom(roomCode, socket.id, name);
+        if (result.error) {
+          callback({ success: false, error: result.error });
+          return;
+        }
+        socket.join(roomCode);
+        result.game.setIO(io);
+        console.log(`[房间] ${name} 加入了真相盘房间 ${roomCode}`);
+        io.to(roomCode).emit('truth:state', result.game.getLobbyState());
+        callback({ success: true, gameMode: 'TRUTH_DISC', gameState: result.game.getLobbyState() });
+        return;
+      }
+
       // 密码哈希比对
       const hashedPwd = password ? hashPassword(password) : null;
       const result = gameManager.joinRoom(roomCode, socket.id, name, hashedPwd);
@@ -251,6 +278,17 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 
   // 离开房间
   socket.on('room:leave', () => {
+    // 真相盘房间
+    const tg = gameManager.getTruthGameByPlayer(socket.id);
+    if (tg) {
+      // 游戏中不允许主动退房（否则留下无法行动的孤儿座次）；断线走 seat 保留流程
+      if (tg.phase === 'PLAYING') return;
+      gameManager.leaveTruthRoom(socket.id);
+      tg.setIO(io);
+      socket.leave(tg.id);
+      io.to(tg.id).emit('truth:state', tg.getLobbyState());
+      return;
+    }
     const game = gameManager.leaveRoom(socket.id);
     if (game) {
       game.setIO(io);
@@ -461,6 +499,31 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 
   // 开始游戏（仅房主）—— 支持自定义角色配置
   socket.on('game:start', ({ roleConfig } = {}, callback) => {
+    // 真相盘房间启动
+    const tg = gameManager.getTruthGameByPlayer(socket.id);
+    if (tg) {
+      const isHost = tg.hostId === socket.id || (tg.players[0]?.id === socket.id);
+      if (!isHost) {
+        callback?.({ success: false, error: '只有房主可以开始游戏' });
+        return;
+      }
+      if (tg.hostId !== socket.id) tg.hostId = socket.id; // 修复首位玩家 hostId
+      if (!tg.startGame()) {
+        callback?.({ success: false, error: `至少需要${tg.minPlayers}名玩家才能开始（当前${tg.players.length}）` });
+        return;
+      }
+      tg.setIO(io);
+      console.log(`[游戏] 真相盘房间 ${tg.id} 开始（${tg.players.length}名玩家）`);
+      io.to(tg.id).emit('truth:state', tg.getPublicState());
+      for (const p of tg.players) {
+        const priv = tg.getPrivateState(p.id);
+        if (priv) io.to(p.id).emit('truth:privateState', priv);
+      }
+      io.to(tg.id).emit('truth:started', {});
+      callback?.({ success: true, gameMode: 'TRUTH_DISC' });
+      return;
+    }
+
     const game = gameManager.getGameByPlayer(socket.id);
     if (!game) {
       callback?.({ success: false, error: '你不在任何房间中' });
@@ -684,8 +747,14 @@ export function registerHandlers(io, socket, gameManager, userManager) {
 
   socket.on('player:position', ({ x, y, z, rotY, isMoving, isSprinting }) => {
     const game = gameManager.getGameByPlayer(socket.id);
-    if (!game || !game.positionSync) return;
-    game.positionSync.updatePosition(socket.id, { x, y, z, rotY, isMoving, isSprinting });
+    if (game && game.positionSync) {
+      game.positionSync.updatePosition(socket.id, { x, y, z, rotY, isMoving, isSprinting });
+      return;
+    }
+    const tg = gameManager.getTruthGameByPlayer(socket.id);
+    if (tg && tg.positionSync && tg.phase === 'PLAYING') {
+      tg.positionSync.updatePosition(socket.id, { x, y, z, rotY, isMoving, isSprinting });
+    }
   });
 
   // ==================== 3D追逃模式专用事件 ====================
@@ -846,6 +915,63 @@ export function registerHandlers(io, socket, gameManager, userManager) {
     const privateState = game.getPrivateState(socket.id);
     if (privateState) {
       socket.emit('game:privateState', privateState);
+    }
+  });
+
+  // ==================== 真相盘模式事件 ====================
+
+  // 玩家动作（服务端注入座次、白名单校验、冷却）
+  socket.on('truth:action', ({ action } = {}, callback) => {
+    try {
+      const tg = gameManager.getTruthGameByPlayer(socket.id);
+      if (!tg) {
+        callback?.({ ok: false, events: ['你不在真相盘房间中'] });
+        return;
+      }
+      const result = tg.handleAction(socket.id, action);
+      tg.setIO(io);
+      tg.broadcastAfterAction(result);
+      callback?.(result);
+    } catch (err) {
+      callback?.({ ok: false, events: [safeError(err)] });
+    }
+  });
+
+  // 请求状态（重连/刷新后同步）
+  socket.on('truth:getState', () => {
+    try {
+      if (!checkRateLimit(`truth:state:${socket.id}`, 60)) return;
+      const tg = gameManager.getTruthGameByPlayer(socket.id);
+      if (!tg) return;
+      tg.setIO(io);
+      socket.emit('truth:state', tg.getPublicState());
+      const priv = tg.getPrivateState(socket.id);
+      if (priv) socket.emit('truth:privateState', priv);
+    } catch (err) {
+      // 静默：状态请求失败不影响游戏
+    }
+  });
+
+  // 断线重连（需携带座次 + 一次性重连凭证，防座次劫持）
+  socket.on('truth:rejoin', ({ roomCode, seat, token } = {}, callback) => {
+    try {
+      if (!checkRateLimit(`truth:rejoin:${socket.id}`, 20)) {
+        callback?.({ success: false, error: '操作太频繁' });
+        return;
+      }
+      const game = gameManager.rejoinTruthPlayer(roomCode, seat, token, socket.id);
+      if (!game) {
+        callback?.({ success: false, error: '重连失败：房间、座次或凭证不正确' });
+        return;
+      }
+      game.setIO(io);
+      socket.join(roomCode);
+      socket.emit('truth:state', game.getPublicState());
+      const priv = game.getPrivateState(socket.id);
+      if (priv) socket.emit('truth:privateState', priv);
+      callback?.({ success: true, gameMode: 'TRUTH_DISC' });
+    } catch (err) {
+      callback?.({ success: false, error: safeError(err) });
     }
   });
 }
