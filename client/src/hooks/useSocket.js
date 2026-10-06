@@ -49,6 +49,11 @@ export function useSocket() {
   const [error, setError] = useState(null);
   // 断线重连数据
   const reconnectRef = useRef({ roomCode: null, oldPlayerId: null, playerName: null });
+  // 真相盘模式状态（独立于桌游，走 truth:state / truth:privateState 事件）
+  const [truthState, setTruthState] = useState(null);
+  const [truthPrivateState, setTruthPrivateState] = useState(null);
+  const [truthEnded, setTruthEnded] = useState(null);
+  const [truthRoomCode, setTruthRoomCode] = useState(null);
 
   useEffect(() => {
     const socket = io(SERVER_URL, {
@@ -129,6 +134,25 @@ export function useSocket() {
 
     socket.on('game:nightStep', ({ nightStep, timeLeft }) => {
       setGameState(prev => prev ? { ...prev, nightStep, timeLeft } : prev);
+    });
+
+    // --- 真相盘模式事件 ---
+    socket.on('truth:state', (state) => {
+      setTruthState(state);
+      // 终局公开态自带 god/seed/scores，可直接用于结算渲染
+      if (state?.phase === 'GAME_OVER') setTruthEnded(state);
+    });
+
+    socket.on('truth:privateState', (state) => {
+      setTruthPrivateState(state);
+    });
+
+    socket.on('truth:started', () => {
+      // 开局信号：状态由随后的 truth:state / truth:privateState 携带
+    });
+
+    socket.on('truth:ended', (data) => {
+      setTruthEnded(data);
     });
 
     // --- 聊天 ---
@@ -331,6 +355,100 @@ export function useSocket() {
     });
   }, []);
 
+  // ==================== 真相盘模式 ====================
+
+  // 创建真相盘房间
+  const createTruthRoom = useCallback((playerName) => {
+    return new Promise((resolve) => {
+      socketRef.current.emit('room:create', { playerName, gameMode: 'TRUTH_DISC' }, (response) => {
+        if (response?.success) {
+          setTruthRoomCode(response.roomCode);
+          setTruthState(response.gameState);
+          setTruthPrivateState(null);
+          setTruthEnded(null);
+        } else {
+          setError(response?.error || '创建失败');
+        }
+        resolve(response);
+      });
+    });
+  }, []);
+
+  // 加入真相盘房间（按房间码）
+  const joinTruthRoom = useCallback((roomCode, playerName) => {
+    return new Promise((resolve) => {
+      socketRef.current.emit('room:join', { roomCode, playerName }, (response) => {
+        if (response?.success) {
+          setTruthRoomCode(roomCode);
+          setTruthState(response.gameState);
+          setTruthPrivateState(null);
+          setTruthEnded(null);
+        } else {
+          setError(response?.error || '加入失败');
+        }
+        resolve(response);
+      });
+    });
+  }, []);
+
+  // 开始真相盘游戏（仅房主）
+  const startTruthGame = useCallback(() => {
+    return new Promise((resolve) => {
+      if (!socketRef.current) {
+        resolve({ success: false, error: '未连接到服务器' });
+        return;
+      }
+      socketRef.current.emit('game:start', {}, (response) => {
+        resolve(response || { success: false, error: '服务器无响应' });
+      });
+    });
+  }, []);
+
+  // 真相盘动作（服务端注入座次、白名单校验、冷却）
+  const truthAction = useCallback((action) => {
+    return new Promise((resolve) => {
+      if (!socketRef.current) {
+        resolve({ ok: false, events: ['未连接到服务器'] });
+        return;
+      }
+      socketRef.current.emit('truth:action', { action }, (response) => {
+        resolve(response || { ok: false, events: ['服务器无响应'] });
+      });
+    });
+  }, []);
+
+  // 请求同步状态（重连/刷新后）
+  const truthGetState = useCallback(() => {
+    if (!socketRef.current) return;
+    socketRef.current.emit('truth:getState');
+  }, []);
+
+  // 断线重连（座次 + 一次性重连凭证）
+  const truthRejoin = useCallback((roomCode, seat, token) => {
+    return new Promise((resolve) => {
+      if (!socketRef.current) {
+        resolve({ success: false, error: '未连接到服务器' });
+        return;
+      }
+      socketRef.current.emit('truth:rejoin', { roomCode, seat, token }, (response) => {
+        if (response?.success) {
+          setTruthRoomCode(roomCode);
+          setTruthEnded(null);
+        }
+        resolve(response);
+      });
+    });
+  }, []);
+
+  // 离开真相盘房间
+  const leaveTruthRoom = useCallback(() => {
+    if (socketRef.current) socketRef.current.emit('room:leave');
+    setTruthState(null);
+    setTruthPrivateState(null);
+    setTruthEnded(null);
+    setTruthRoomCode(null);
+  }, []);
+
   return {
     socket: socketRef.current,
     connected,
@@ -358,6 +476,17 @@ export function useSocket() {
     setBotCount,
     updateMaxPlayers,
     getHouseVisitors,
+    truthState,
+    truthPrivateState,
+    truthEnded,
+    truthRoomCode,
+    createTruthRoom,
+    joinTruthRoom,
+    startTruthGame,
+    truthAction,
+    truthGetState,
+    truthRejoin,
+    leaveTruthRoom,
     playerId: socketRef.current?.id || null,
   };
 }

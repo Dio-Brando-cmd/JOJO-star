@@ -34,6 +34,7 @@ export default function LandingPage({ onNavigate }) {
           </a>
           <div className="nav-links">
             <a onClick={() => onNavigate('home')} className="active">首页</a>
+            <a onClick={() => onNavigate('truth')}>🧭 真相盘</a>
             <a onClick={() => onNavigate('download')}>下载</a>
             <a onClick={() => onNavigate('contact')}>联系</a>
             <button className="btn btn-primary btn-small" onClick={() => onNavigate('play')}>
@@ -63,6 +64,9 @@ export default function LandingPage({ onNavigate }) {
           <div className="hero-actions">
             <button className="btn btn-primary btn-hero" onClick={() => onNavigate('play')}>
               🕯️ 进入帷幕之地
+            </button>
+            <button className="btn btn-secondary btn-hero" onClick={() => onNavigate('truth')}>
+              🧭 真相盘 · 新玩法
             </button>
             <button className="btn btn-secondary btn-hero" onClick={() => onNavigate('download')}>
               💻 下载客户端

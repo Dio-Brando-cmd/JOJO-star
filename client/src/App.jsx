@@ -16,6 +16,7 @@ import ParticleBackground from './components/effects/ParticleBackground';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
 import GameOver from './components/GameOver';
+import TruthDisc from './components/TruthDisc';
 import SettingsPanel from './components/SettingsPanel';
 import UpdatePrompt from './components/UpdatePrompt';
 
@@ -52,9 +53,17 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
+  // 真相盘模式开关（独立于桌游大厅）
+  const [truthMode, setTruthMode] = useState(false);
 
   const handleNavigate = useCallback((target) => {
-    setPage(target);
+    if (target === 'truth') {
+      setTruthMode(true);
+      setPage('play');
+    } else {
+      if (target === 'play') setTruthMode(false);
+      setPage(target);
+    }
   }, []);
 
   // 粒子背景类型映射
@@ -245,6 +254,20 @@ export default function App() {
 
   // 已登录/已设置名字 → 进入大厅
   const displayName = auth.user?.username || playerName;
+
+  // 真相盘模式 → 独立界面（不经过桌游大厅/GameBoard）
+  if (truthMode) {
+    return (
+      <>
+        <ParticleBackground type="embers" density={0.6} />
+        <TruthDisc
+          socket={socket}
+          playerName={displayName}
+          onExit={() => setTruthMode(false)}
+        />
+      </>
+    );
+  }
 
   // 未加入房间 或 在房间大厅等待中 → 大厅界面
   if (!socket.gameState || socket.gameState.phase === 'LOBBY') {

@@ -1,0 +1,241 @@
+/* ============================================================
+   真相盘 · 自生成叙事任务系统 —— 样式
+   深色基调，与整体「帷幕之地」黑暗奇幻风格一致
+   ============================================================ */
+
+.td-screen {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #e8e3d8;
+}
+
+.td-card {
+  background: rgba(18, 15, 26, 0.88);
+  border: 1px solid rgba(150, 120, 200, 0.18);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.td-center { text-align: center; align-items: center; display: flex; flex-direction: column; gap: 12px; }
+.td-col { display: flex; flex-direction: column; gap: 10px; }
+
+.td-logo { font-size: 52px; line-height: 1; }
+.td-title { font-size: 26px; margin: 0; letter-spacing: 1px; color: #f0e9ff; }
+.td-sub { color: #a89cc0; margin: 0; font-size: 14px; }
+.td-dim { color: #7c7392; font-size: 13px; margin: 4px 0; }
+.td-error { color: #ff7a7a; font-size: 13px; margin: 8px 0; }
+
+/* 顶部栏 */
+.td-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.td-id { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.td-phase-badge {
+  padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: #2a2340; color: #d9cff5; border: 1px solid rgba(150,120,200,0.3);
+}
+.td-phase-badge.p2 { background: #3a1f2a; color: #ffd0dd; border-color: rgba(220,90,120,0.4); }
+.td-phase-badge.p3 { background: #2b1220; color: #ff9fbf; border-color: rgba(220,60,100,0.5); }
+.td-hint { color: #a89cc0; font-size: 13px; }
+.td-myid { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.td-team { font-weight: 700; }
+.td-role { color: #ffd27a; font-weight: 700; }
+
+/* 标签页 */
+.td-tabs { display: flex; gap: 8px; margin: 8px 0; }
+.td-tab {
+  flex: 1; padding: 10px; border: 1px solid rgba(150,120,200,0.2); border-radius: 8px;
+  background: transparent; color: #bdb2d6; cursor: pointer; font-size: 14px;
+}
+.td-tab.active { background: #2a2340; color: #fff; border-color: rgba(170,140,220,0.5); }
+
+/* 输入 */
+.td-input {
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(150,120,200,0.25); border-radius: 8px;
+  color: #e8e3d8; padding: 12px; font-size: 15px; width: 100%;
+}
+.td-code { text-align: center; letter-spacing: 4px; font-size: 22px; font-weight: 700; text-transform: uppercase; }
+
+/* 规则说明 */
+.td-rules {
+  margin-top: 8px; padding: 12px 16px; background: rgba(0,0,0,0.22);
+  border-radius: 10px; text-align: left; font-size: 13px; color: #bdb2d6; line-height: 1.6;
+}
+.td-rules h4 { margin: 0 0 6px; color: #e8d9ff; }
+
+/* 房间码 */
+.td-roomcode { text-align: center; margin: 8px 0; }
+.td-code-big {
+  display: inline-block; margin-left: 10px; padding: 10px 22px; font-size: 28px; font-weight: 800;
+  letter-spacing: 6px; background: rgba(0,0,0,0.4); border: 1px dashed rgba(170,140,220,0.5);
+  border-radius: 10px; color: #ffd27a; cursor: pointer;
+}
+
+/* 玩家列表 */
+.td-player-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.td-player-chip {
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(0,0,0,0.25);
+  border-radius: 999px; font-size: 14px; border: 1px solid rgba(150,120,200,0.15);
+}
+.td-seat { font-size: 15px; }
+.td-me { color: #ffd27a; font-size: 12px; }
+
+.td-lobby-actions { margin: 12px 0; }
+
+/* ===== 对局主界面 ===== */
+.td-game { gap: 12px; }
+
+/* 命运时钟 */
+.td-clocks { display: flex; gap: 14px; flex-wrap: wrap; }
+.td-clock { flex: 1; min-width: 200px; }
+.td-clock-label { font-size: 13px; margin-bottom: 4px; color: #c9bfe0; }
+.td-clock-label b { font-size: 17px; color: #fff; }
+.td-clock-track {
+  position: relative; height: 14px; background: rgba(0,0,0,0.45); border-radius: 999px; overflow: hidden;
+}
+.td-clock-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+.td-clock.spirit .td-clock-fill { background: linear-gradient(90deg, #f5b64a, #ffe08a); }
+.td-clock.despair .td-clock-fill { background: linear-gradient(90deg, #6a2a3a, #c63a5a); }
+.td-clock.veil .td-clock-fill { background: linear-gradient(90deg, #3a3550, #6a5a8a); }
+.td-clock-mark {
+  position: absolute; top: 0; width: 2px; height: 100%; background: rgba(255,255,255,0.7);
+}
+
+/* 三栏 */
+.td-columns { display: grid; grid-template-columns: 1.1fr 0.9fr 1fr; gap: 14px; }
+@media (max-width: 860px) { .td-columns { grid-template-columns: 1fr; } }
+.td-columns h3 { margin: 0 0 8px; font-size: 15px; color: #e8d9ff; }
+.td-col-map, .td-col-players, .td-col-me {
+  background: rgba(0,0,0,0.22); border-radius: 12px; padding: 14px; border: 1px solid rgba(150,120,200,0.12);
+}
+
+/* 地图区域 */
+.td-zones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.td-zone {
+  position: relative; padding: 14px 8px; text-align: center; border-radius: 10px; font-size: 14px;
+  background: rgba(60,50,90,0.4); border: 1px solid rgba(150,120,200,0.2);
+}
+.td-zone.consumed { opacity: 0.35; background: rgba(0,0,0,0.5); text-decoration: line-through; }
+.td-zone.here { border-color: #ffd27a; box-shadow: 0 0 0 2px rgba(255,210,122,0.3); }
+.td-zone.purify { border-color: #7ad0ff; box-shadow: 0 0 10px rgba(122,208,255,0.5); }
+.td-zone em {
+  display: block; font-size: 11px; font-style: normal; color: #ffd27a; margin-top: 3px;
+}
+.td-zone em.pp { color: #7ad0ff; }
+
+/* 任务 */
+.td-tasks { display: flex; flex-direction: column; gap: 6px; }
+.td-task {
+  display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+  background: rgba(0,0,0,0.25); border-radius: 8px; font-size: 14px; border: 1px solid transparent;
+}
+.td-task.done { opacity: 0.5; }
+.td-task.done .td-task-state { color: #6fdc8c; }
+.td-task.broken .td-task-state { color: #ff6a6a; }
+.td-task-state { font-size: 15px; }
+
+/* 玩家 */
+.td-people { display: flex; flex-direction: column; gap: 6px; }
+.td-person {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(0,0,0,0.25);
+  border-radius: 8px; font-size: 14px; border: 1px solid transparent;
+}
+.td-person.me { border-color: #ffd27a; }
+.td-person.dead { opacity: 0.45; }
+.td-p-status { font-size: 15px; }
+.td-p-name { font-weight: 600; flex: 1; }
+.td-p-zone { color: #7c7392; font-size: 12px; }
+.td-me-tag { color: #ffd27a; font-size: 12px; }
+.td-allies { margin-top: 10px; }
+.td-ally-chip {
+  display: inline-block; margin: 3px 4px 0 0; padding: 3px 10px; background: #3a1f2a;
+  color: #ffd0dd; border-radius: 999px; font-size: 12px;
+}
+
+/* 碎片 */
+.td-shards { display: flex; flex-direction: column; gap: 8px; }
+.td-shard {
+  padding: 10px 12px; background: rgba(0,0,0,0.3); border-radius: 10px;
+  border-left: 3px solid #8a74c8;
+}
+.td-shard-text { margin: 0 0 6px; color: #e8e3d8; font-style: italic; font-size: 14px; }
+.td-shard-hint { color: #7ad0ff; font-size: 12px; }
+
+/* 契约 */
+.td-contract { display: flex; gap: 10px; align-items: flex-start; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; }
+.td-contract-icon { font-size: 24px; }
+.td-contract b { color: #ffd27a; }
+
+/* 动作栏 */
+.td-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0; }
+.td-action { flex: 1 1 auto; min-width: 96px; }
+.td-action.td-spirit { background: linear-gradient(135deg, #7a5a20, #b8842c); border-color: #d9a63c; }
+.td-action.td-corrupt { background: linear-gradient(135deg, #4a1a2a, #7a2438); border-color: #b03a58; }
+.td-action.td-big { font-weight: 800; font-size: 16px; flex: 2 1 140px; background: linear-gradient(135deg, #2a4a1a, #3f7a2a); border-color: #5fae4a; }
+
+/* 日志 */
+.td-log { background: rgba(0,0,0,0.22); border-radius: 12px; padding: 12px; }
+.td-log-scroll { max-height: 180px; overflow-y: auto; font-size: 13px; }
+.td-log-line { margin: 2px 0; color: #bdb2d6; border-bottom: 1px dashed rgba(150,120,200,0.08); padding-bottom: 2px; }
+
+/* 反馈浮层 */
+.td-feedback {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: rgba(20,16,30,0.96); border: 1px solid rgba(170,140,220,0.4); border-radius: 12px;
+  padding: 14px 18px; min-width: 260px; max-width: 480px; box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+  z-index: 50; text-align: center;
+}
+.td-feedback p { margin: 3px 0; color: #e8e3d8; font-size: 14px; }
+
+/* 目标选择 */
+.td-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+}
+.td-modal-card {
+  background: rgba(20,16,30,0.98); border: 1px solid rgba(170,140,220,0.4); border-radius: 14px;
+  padding: 20px; max-width: 520px; width: 92%; max-height: 70vh; overflow-y: auto;
+}
+.td-modal-card h3 { margin: 0 0 12px; color: #f0e9ff; }
+.td-modal-opts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.td-opt { text-align: left; padding: 11px 14px; }
+
+/* 终局 */
+.td-result { text-align: center; padding: 12px 0 6px; }
+.td-result.win .td-result-icon { filter: drop-shadow(0 0 14px rgba(255,210,122,0.8)); }
+.td-result.lose .td-result-icon { filter: drop-shadow(0 0 14px rgba(180,40,80,0.8)); }
+.td-result-icon { font-size: 56px; }
+.td-result h1 { margin: 8px 0 4px; }
+
+.td-god-reveal, .td-reveal, .td-scores { margin-top: 16px; }
+.td-god-big {
+  display: flex; gap: 14px; align-items: center; padding: 14px; background: rgba(0,0,0,0.3);
+  border-radius: 12px; border: 1px solid rgba(255,210,122,0.3);
+}
+.td-god-icon { font-size: 40px; }
+.td-god-big b { font-size: 20px; color: #ffd27a; }
+.td-seed { color: #7c7392; font-size: 12px; word-break: break-all; }
+.td-seed code { color: #a89cc0; }
+
+.td-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.td-table th, .td-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(150,120,200,0.12); }
+.td-table th { color: #a89cc0; font-weight: 600; }
+.td-table tr.dead td { opacity: 0.5; }
+.td-table tr.me td { background: rgba(255,210,122,0.08); }
+
+/* 按钮微调 */
+.btn-small { padding: 6px 14px; font-size: 13px; }
